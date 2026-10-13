@@ -26,6 +26,26 @@ contract HelperConfigTest is Test {
         );
     }
 
+    function test_UsdcSetupAmountsUseSixDecimals() public {
+        HelperConfig helper = new HelperConfig();
+
+        assertEq(helper.POOL_USDC(), 10_000 * 10 ** 6);
+        assertEq(helper.FUND_1_USDC(), 15_000 * 10 ** 6);
+        assertEq(helper.FUND_2_USDC(), 5_000 * 10 ** 6);
+        assertEq(helper.FUND_3_USDC(), 5_000 * 10 ** 6);
+        assertEq(
+            helper.POOL_USDC() + helper.FUND_1_USDC() + helper.FUND_2_USDC() + helper.FUND_3_USDC(), 35_000 * 10 ** 6
+        );
+    }
+
+    function test_FaucetParametersMatchTheRules() public {
+        HelperConfig helper = new HelperConfig();
+
+        assertEq(helper.USDC_FAUCET_CLAIM_AMOUNT(), 100 * 10 ** 6);
+        assertEq(helper.USDC_FAUCET_CLAIM_COOLDOWN(), 24 hours);
+        assertEq(helper.USDC_FAUCET_DAILY_CLAIM_LIMIT(), 25);
+    }
+
     function test_RevertWhen_ChainIsNotAnvil() public {
         vm.chainId(SEPOLIA_CHAIN_ID);
         HelperConfig helper = new HelperConfig();
