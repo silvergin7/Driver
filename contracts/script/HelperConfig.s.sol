@@ -37,6 +37,18 @@ contract HelperConfig is Script {
     /// @notice Maximum Mock USDC faucet claims across all wallets in one UTC day.
     uint256 public constant USDC_FAUCET_DAILY_CLAIM_LIMIT = 25;
 
+    /// @notice Mock USDC seeded as official pool liquidity.
+    uint256 public constant POOL_USDC = 10_000 * 10 ** 6;
+
+    /// @notice Mock USDC allocated to Fund 1.
+    uint256 public constant FUND_1_USDC = 15_000 * 10 ** 6;
+
+    /// @notice Mock USDC allocated to Fund 2.
+    uint256 public constant FUND_2_USDC = 5_000 * 10 ** 6;
+
+    /// @notice Mock USDC allocated to Fund 3.
+    uint256 public constant FUND_3_USDC = 5_000 * 10 ** 6;
+
     /// @notice No deploy parameters exist for this chain yet.
     /// @param chainId The active chain id.
     error HelperConfig__ChainNotSupported(uint256 chainId);
