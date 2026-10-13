@@ -26,6 +26,14 @@ contract HelperConfigTest is Test {
         );
     }
 
+    function test_FaucetParametersMatchTheRules() public {
+        HelperConfig helper = new HelperConfig();
+
+        assertEq(helper.USDC_FAUCET_CLAIM_AMOUNT(), 100 * 10 ** 6);
+        assertEq(helper.USDC_FAUCET_CLAIM_COOLDOWN(), 24 hours);
+        assertEq(helper.USDC_FAUCET_DAILY_CLAIM_LIMIT(), 25);
+    }
+
     function test_RevertWhen_ChainIsNotAnvil() public {
         vm.chainId(SEPOLIA_CHAIN_ID);
         HelperConfig helper = new HelperConfig();
