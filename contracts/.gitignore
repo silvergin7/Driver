@@ -1,0 +1,11 @@
+# Compiler files
+cache/
+out/
+
+# Broadcast logs can contain private data
+broadcast/
+
+# Dotenv file
+.env
+.env.*
+!.env.example
