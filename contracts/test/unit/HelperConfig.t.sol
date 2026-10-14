@@ -6,13 +6,46 @@ import {DriverToken} from "../../src/DriverToken.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
 contract HelperConfigTest is Test {
-    uint256 internal constant SEPOLIA_CHAIN_ID = 11_155_111;
-
     function test_AnvilConfigReturnsDefaultDeployer() public {
         HelperConfig helper = new HelperConfig();
 
         assertEq(block.chainid, helper.ANVIL_CHAIN_ID());
         assertEq(helper.getConfig().deployer, helper.ANVIL_DEPLOYER());
+    }
+
+    function test_AnvilConfigForReturnsDefaultDeployer() public {
+        HelperConfig helper = new HelperConfig();
+
+        assertEq(helper.configFor(helper.ANVIL_CHAIN_ID(), address(0)).deployer, helper.ANVIL_DEPLOYER());
+        assertEq(
+            helper.configFor(helper.ANVIL_CHAIN_ID(), makeAddr("sepoliaDeployer")).deployer, helper.ANVIL_DEPLOYER()
+        );
+    }
+
+    function test_SepoliaConfigForReturnsGivenDeployer() public {
+        HelperConfig helper = new HelperConfig();
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
+
+        assertEq(helper.configFor(helper.SEPOLIA_CHAIN_ID(), sepoliaDeployer).deployer, sepoliaDeployer);
+    }
+
+    function test_AnvilGetConfigIgnoresSepoliaEnv() public {
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
+        vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(sepoliaDeployer));
+        HelperConfig helper = new HelperConfig();
+
+        assertEq(block.chainid, helper.ANVIL_CHAIN_ID());
+        assertEq(helper.getConfig().deployer, helper.ANVIL_DEPLOYER());
+    }
+
+    function test_SepoliaGetConfigReturnsEnvDeployer() public {
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
+        vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(sepoliaDeployer));
+        vm.chainId(11_155_111);
+        HelperConfig helper = new HelperConfig();
+
+        assertEq(block.chainid, helper.SEPOLIA_CHAIN_ID());
+        assertEq(helper.getConfig().deployer, sepoliaDeployer);
     }
 
     function test_AllocationConstantsSumToMaxSupply() public {
@@ -55,11 +88,18 @@ contract HelperConfigTest is Test {
         assertEq(helper.USDC_FAUCET_DAILY_CLAIM_LIMIT(), 25);
     }
 
-    function test_RevertWhen_ChainIsNotAnvil() public {
-        vm.chainId(SEPOLIA_CHAIN_ID);
+    function test_RevertWhen_SepoliaDeployerIsZero() public {
+        HelperConfig helper = new HelperConfig();
+        uint256 sepoliaChainId = helper.SEPOLIA_CHAIN_ID();
+
+        vm.expectRevert(HelperConfig.HelperConfig__SepoliaDeployerNotSet.selector);
+        helper.configFor(sepoliaChainId, address(0));
+    }
+
+    function test_RevertWhen_ChainIsNotConfigured() public {
         HelperConfig helper = new HelperConfig();
 
-        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__ChainNotSupported.selector, SEPOLIA_CHAIN_ID));
-        helper.getConfig();
+        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__ChainNotSupported.selector, 1));
+        helper.configFor(1, address(0));
     }
 }

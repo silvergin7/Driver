@@ -4,7 +4,7 @@ pragma solidity 0.8.30;
 import {Script} from "forge-std/Script.sol";
 
 /// @title HelperConfig
-/// @notice Per-chain deploy parameters. Anvil is the only chain configured on this branch.
+/// @notice Per-chain deploy parameters for Anvil and Sepolia.
 contract HelperConfig is Script {
     struct NetworkConfig {
         address deployer;
@@ -12,6 +12,9 @@ contract HelperConfig is Script {
 
     /// @notice Chain id of a local Anvil node.
     uint256 public constant ANVIL_CHAIN_ID = 31337;
+
+    /// @notice Chain id of Ethereum Sepolia.
+    uint256 public constant SEPOLIA_CHAIN_ID = 11_155_111;
 
     /// @notice Anvil default account 0.
     address public constant ANVIL_DEPLOYER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
@@ -62,12 +65,33 @@ contract HelperConfig is Script {
     /// @param chainId The active chain id.
     error HelperConfig__ChainNotSupported(uint256 chainId);
 
+    /// @notice Sepolia was selected and the deployer address was missing or zero.
+    error HelperConfig__SepoliaDeployerNotSet();
+
+    /// @notice Resolves deploy parameters for one chain.
+    /// @dev Anvil ignores `sepoliaDeployer`. Sepolia reverts when that address is zero.
+    /// @param chainId Chain id to resolve.
+    /// @param sepoliaDeployer Deployer address used when `chainId` is Sepolia.
+    /// @return config Deploy parameters for `chainId`.
+    function configFor(uint256 chainId, address sepoliaDeployer) public pure returns (NetworkConfig memory config) {
+        if (chainId == ANVIL_CHAIN_ID) {
+            config = NetworkConfig({deployer: ANVIL_DEPLOYER});
+        } else if (chainId == SEPOLIA_CHAIN_ID) {
+            if (sepoliaDeployer == address(0)) {
+                revert HelperConfig__SepoliaDeployerNotSet();
+            }
+            config = NetworkConfig({deployer: sepoliaDeployer});
+        } else {
+            revert HelperConfig__ChainNotSupported(chainId);
+        }
+    }
+
     /// @notice Returns the deployer for the active chain.
+    /// @dev Reads `SEPOLIA_DEPLOYER` only when the active chain is Sepolia.
     /// @return config Deploy parameters for this chain.
     function getConfig() public view returns (NetworkConfig memory config) {
-        if (block.chainid != ANVIL_CHAIN_ID) {
-            revert HelperConfig__ChainNotSupported(block.chainid);
-        }
-        config = NetworkConfig({deployer: ANVIL_DEPLOYER});
+        address sepoliaDeployer =
+            block.chainid == SEPOLIA_CHAIN_ID ? vm.envOr("SEPOLIA_DEPLOYER", address(0)) : address(0);
+        config = configFor(block.chainid, sepoliaDeployer);
     }
 }
