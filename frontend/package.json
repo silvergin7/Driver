@@ -13,6 +13,7 @@
     "start": "next start",
     "generate": "wagmi generate",
     "sync:anvil": "node scripts/sync-anvil-addresses.mts",
+    "test": "vitest run",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "next typegen && tsc --noEmit"
   },
@@ -32,6 +33,7 @@
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.0",
     "tailwindcss": "4.3.3",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "5.0.4"
   }
 }
