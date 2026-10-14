@@ -36,3 +36,90 @@ jobs:
 
       - name: Run Forge tests
         run: forge test -vvv
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Vitest
+        run: npm test
+
+      - name: Run TypeScript
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+  frontend-generated:
+    name: Frontend generated files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Generate contract ABIs
+        working-directory: frontend
+        run: npm run generate
+
+      - name: Deploy to Anvil
+        working-directory: contracts
+        run: |
+          anvil --host 127.0.0.1 --port 8545 >/tmp/anvil.log 2>&1 &
+          ready=0
+          for _ in $(seq 1 30); do
+            if cast block-number --rpc-url http://127.0.0.1:8545; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/anvil.log
+            exit 1
+          fi
+          forge script script/DeployDriverToken.s.sol:DeployDriverToken --rpc-url http://127.0.0.1:8545 --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+
+      - name: Sync Anvil addresses
+        working-directory: frontend
+        run: npm run sync:anvil
+
+      - name: Check generated files
+        run: git diff --exit-code -- frontend/src/generated frontend/src/config/addresses.json
