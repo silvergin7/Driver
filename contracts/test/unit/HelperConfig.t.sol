@@ -38,6 +38,15 @@ contract HelperConfigTest is Test {
         );
     }
 
+    function test_DvrFaucetParametersMatchTheRules() public {
+        HelperConfig helper = new HelperConfig();
+
+        assertEq(helper.DVR_FAUCET_CLAIM_AMOUNT(), 10 * 10 ** 18);
+        assertEq(helper.DVR_FAUCET_CLAIM_COOLDOWN(), 24 hours);
+        assertEq(helper.DVR_FAUCET_DAILY_CLAIM_LIMIT(), 25);
+        assertEq(helper.FAUCET_ALLOCATION() / helper.DVR_FAUCET_CLAIM_AMOUNT(), 5_000);
+    }
+
     function test_FaucetParametersMatchTheRules() public {
         HelperConfig helper = new HelperConfig();
 
