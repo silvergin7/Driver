@@ -28,6 +28,15 @@ contract HelperConfig is Script {
     /// @notice DVR allocated to the team reserve.
     uint256 public constant TEAM_ALLOCATION = 150_000 * 10 ** 18;
 
+    /// @notice DVR transferred by one faucet claim, in base units.
+    uint256 public constant DVR_FAUCET_CLAIM_AMOUNT = 10 * 10 ** 18;
+
+    /// @notice Minimum time between two DVR claims by the same wallet.
+    uint256 public constant DVR_FAUCET_CLAIM_COOLDOWN = 24 hours;
+
+    /// @notice Maximum DVR faucet claims across all wallets in one UTC day.
+    uint256 public constant DVR_FAUCET_DAILY_CLAIM_LIMIT = 25;
+
     /// @notice Mock USDC minted by one faucet claim, in base units.
     uint256 public constant USDC_FAUCET_CLAIM_AMOUNT = 100 * 10 ** 6;
 
