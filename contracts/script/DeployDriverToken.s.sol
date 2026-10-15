@@ -9,7 +9,7 @@ import {MockUsdcFaucet} from "../src/MockUsdcFaucet.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 /// @title DeployDriverToken
-/// @notice Deploys DriverToken, the DVR faucet, Mock USDC, and the Mock USDC faucet on Anvil.
+/// @notice Deploys DriverToken, the DVR faucet, Mock USDC, and the Mock USDC faucet on Anvil or Sepolia.
 contract DeployDriverToken is Script {
     /// @notice The DVR faucet allocation transfer returned false.
     error DeployDriverToken__TransferFailed();

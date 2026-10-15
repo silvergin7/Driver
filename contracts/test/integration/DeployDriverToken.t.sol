@@ -67,4 +67,54 @@ contract DeployDriverTokenTest is Test {
         usdc.mint(deployer, 1);
         assertEq(usdc.balanceOf(deployer), setupBalance + 1);
     }
+
+    function test_SepoliaDeployUsesEnvDeployer() public {
+        HelperConfig helper = new HelperConfig();
+        address deployer = makeAddr("sepoliaDeployer");
+        vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(deployer));
+        vm.chainId(helper.SEPOLIA_CHAIN_ID());
+
+        (DriverToken token, DriverFaucet dvrFaucet, MockUSDC usdc, MockUsdcFaucet faucet) =
+            new DeployDriverToken().run();
+        uint256 maxSupply = token.MAX_SUPPLY();
+        uint256 setupBalance = 35_000 * 10 ** 6;
+
+        assertEq(token.owner(), deployer);
+        assertEq(token.totalMinted(), maxSupply);
+        assertEq(token.totalSupply(), maxSupply);
+        assertEq(token.balanceOf(address(dvrFaucet)), helper.FAUCET_ALLOCATION());
+        assertEq(token.balanceOf(deployer), maxSupply - helper.FAUCET_ALLOCATION());
+        assertEq(address(dvrFaucet.i_token()), address(token));
+        assertEq(dvrFaucet.i_claimAmount(), helper.DVR_FAUCET_CLAIM_AMOUNT());
+        assertEq(dvrFaucet.i_claimCooldown(), helper.DVR_FAUCET_CLAIM_COOLDOWN());
+        assertEq(dvrFaucet.i_dailyClaimLimit(), helper.DVR_FAUCET_DAILY_CLAIM_LIMIT());
+
+        assertEq(usdc.owner(), deployer);
+        assertEq(usdc.minter(), address(faucet));
+        assertTrue(usdc.owner() != address(faucet));
+        assertEq(usdc.decimals(), 6);
+        assertEq(usdc.balanceOf(deployer), setupBalance);
+        assertEq(usdc.balanceOf(address(faucet)), 0);
+        assertEq(address(faucet.i_usdc()), address(usdc));
+        assertEq(faucet.i_claimAmount(), helper.USDC_FAUCET_CLAIM_AMOUNT());
+        assertEq(faucet.i_claimCooldown(), helper.USDC_FAUCET_CLAIM_COOLDOWN());
+        assertEq(faucet.i_dailyClaimLimit(), helper.USDC_FAUCET_DAILY_CLAIM_LIMIT());
+
+        address user = makeAddr("user");
+        vm.prank(user);
+        dvrFaucet.claim();
+        vm.prank(user);
+        faucet.claim();
+        assertEq(token.balanceOf(user), 10 * 10 ** 18);
+        assertEq(token.balanceOf(address(dvrFaucet)), helper.FAUCET_ALLOCATION() - 10 * 10 ** 18);
+        assertEq(token.totalMinted(), maxSupply);
+        assertEq(usdc.balanceOf(user), 100 * 10 ** 6);
+        assertEq(usdc.balanceOf(address(faucet)), 0);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(DriverToken.DriverToken__LifetimeMintCapExceeded.selector, maxSupply, 1, maxSupply)
+        );
+        vm.prank(deployer);
+        token.mint(deployer, 1);
+    }
 }
