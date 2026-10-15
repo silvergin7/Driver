@@ -7,6 +7,7 @@ const contractNames = [
   "DriverFaucet",
   "MockUSDC",
   "MockUsdcFaucet",
+  "DemoDriverClock",
 ] as const;
 
 type ContractName = (typeof contractNames)[number];
@@ -96,6 +97,7 @@ export async function syncAnvilAddresses(
     DriverFaucet: requireAddress(found, "DriverFaucet"),
     MockUSDC: requireAddress(found, "MockUSDC"),
     MockUsdcFaucet: requireAddress(found, "MockUsdcFaucet"),
+    DemoDriverClock: requireAddress(found, "DemoDriverClock"),
   };
 
   await mkdir(dirname(outputFile), { recursive: true });

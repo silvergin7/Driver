@@ -8,6 +8,7 @@ import {Script} from "forge-std/Script.sol";
 contract HelperConfig is Script {
     struct NetworkConfig {
         address deployer;
+        bool demoClock;
     }
 
     /// @notice Chain id of a local Anvil node.
@@ -70,24 +71,26 @@ contract HelperConfig is Script {
 
     /// @notice Resolves deploy parameters for one chain.
     /// @dev Anvil ignores `sepoliaDeployer`. Sepolia reverts when that address is zero.
+    /// `demoClock` is true on Anvil and false on Sepolia.
     /// @param chainId Chain id to resolve.
     /// @param sepoliaDeployer Deployer address used when `chainId` is Sepolia.
     /// @return config Deploy parameters for `chainId`.
     function configFor(uint256 chainId, address sepoliaDeployer) public pure returns (NetworkConfig memory config) {
         if (chainId == ANVIL_CHAIN_ID) {
-            config = NetworkConfig({deployer: ANVIL_DEPLOYER});
+            config = NetworkConfig({deployer: ANVIL_DEPLOYER, demoClock: true});
         } else if (chainId == SEPOLIA_CHAIN_ID) {
             if (sepoliaDeployer == address(0)) {
                 revert HelperConfig__SepoliaDeployerNotSet();
             }
-            config = NetworkConfig({deployer: sepoliaDeployer});
+            config = NetworkConfig({deployer: sepoliaDeployer, demoClock: false});
         } else {
             revert HelperConfig__ChainNotSupported(chainId);
         }
     }
 
-    /// @notice Returns the deployer for the active chain.
+    /// @notice Returns deploy parameters for the active chain.
     /// @dev Reads `SEPOLIA_DEPLOYER` only when the active chain is Sepolia.
+    /// `demoClock` is true on Anvil and false on Sepolia.
     /// @return config Deploy parameters for this chain.
     function getConfig() public view returns (NetworkConfig memory config) {
         address sepoliaDeployer =

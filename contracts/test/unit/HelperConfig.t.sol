@@ -11,15 +11,18 @@ contract HelperConfigTest is Test {
 
         assertEq(block.chainid, helper.ANVIL_CHAIN_ID());
         assertEq(helper.getConfig().deployer, helper.ANVIL_DEPLOYER());
+        assertTrue(helper.getConfig().demoClock);
     }
 
     function test_AnvilConfigForReturnsDefaultDeployer() public {
         HelperConfig helper = new HelperConfig();
 
         assertEq(helper.configFor(helper.ANVIL_CHAIN_ID(), address(0)).deployer, helper.ANVIL_DEPLOYER());
+        assertTrue(helper.configFor(helper.ANVIL_CHAIN_ID(), address(0)).demoClock);
         assertEq(
             helper.configFor(helper.ANVIL_CHAIN_ID(), makeAddr("sepoliaDeployer")).deployer, helper.ANVIL_DEPLOYER()
         );
+        assertTrue(helper.configFor(helper.ANVIL_CHAIN_ID(), makeAddr("sepoliaDeployer")).demoClock);
     }
 
     function test_SepoliaConfigForReturnsGivenDeployer() public {
@@ -27,6 +30,7 @@ contract HelperConfigTest is Test {
         address sepoliaDeployer = makeAddr("sepoliaDeployer");
 
         assertEq(helper.configFor(helper.SEPOLIA_CHAIN_ID(), sepoliaDeployer).deployer, sepoliaDeployer);
+        assertFalse(helper.configFor(helper.SEPOLIA_CHAIN_ID(), sepoliaDeployer).demoClock);
     }
 
     function test_AnvilGetConfigIgnoresSepoliaEnv() public {
@@ -36,6 +40,7 @@ contract HelperConfigTest is Test {
 
         assertEq(block.chainid, helper.ANVIL_CHAIN_ID());
         assertEq(helper.getConfig().deployer, helper.ANVIL_DEPLOYER());
+        assertTrue(helper.getConfig().demoClock);
     }
 
     function test_SepoliaGetConfigReturnsEnvDeployer() public {
@@ -46,6 +51,7 @@ contract HelperConfigTest is Test {
 
         assertEq(block.chainid, helper.SEPOLIA_CHAIN_ID());
         assertEq(helper.getConfig().deployer, sepoliaDeployer);
+        assertFalse(helper.getConfig().demoClock);
     }
 
     function test_AllocationConstantsSumToMaxSupply() public {
