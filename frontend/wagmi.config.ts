@@ -11,6 +11,8 @@ export default defineConfig({
         "DriverFaucet.sol/DriverFaucet.json",
         "MockUSDC.sol/MockUSDC.json",
         "MockUsdcFaucet.sol/MockUsdcFaucet.json",
+        "DriverClock.sol/DriverClock.json",
+        "DemoDriverClock.sol/DemoDriverClock.json",
       ],
       includeBroadcasts: false,
       forge: {

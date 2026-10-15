@@ -2,6 +2,9 @@
 pragma solidity 0.8.30;
 
 import {Script} from "forge-std/Script.sol";
+import {IDriverClock} from "../src/interfaces/IDriverClock.sol";
+import {DriverClock} from "../src/DriverClock.sol";
+import {DemoDriverClock} from "../src/DemoDriverClock.sol";
 import {DriverToken} from "../src/DriverToken.sol";
 import {DriverFaucet} from "../src/DriverFaucet.sol";
 import {MockUSDC} from "../src/MockUSDC.sol";
@@ -9,7 +12,7 @@ import {MockUsdcFaucet} from "../src/MockUsdcFaucet.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 /// @title DeployDriverToken
-/// @notice Deploys DriverToken, the DVR faucet, Mock USDC, and the Mock USDC faucet on Anvil or Sepolia.
+/// @notice Deploys DriverToken, the DVR faucet, Mock USDC, the Mock USDC faucet, and the shared clock.
 contract DeployDriverToken is Script {
     /// @notice The DVR faucet allocation transfer returned false.
     error DeployDriverToken__TransferFailed();
@@ -18,17 +21,26 @@ contract DeployDriverToken is Script {
     /// @dev The pool, community pool, team reserve, and funds do not exist yet, so those allocations
     /// stay with the deployer. The DVR faucet receives {HelperConfig.FAUCET_ALLOCATION} by transfer in
     /// this broadcast. There is no extra mint and no approval. The Mock USDC faucet is the minter and
-    /// receives no pre-minted balance.
+    /// receives no pre-minted balance. The clock is created last. Anvil deploys {DemoDriverClock}.
+    /// Sepolia deploys {DriverClock}.
     /// @return token The deployed DVR token.
     /// @return dvrFaucet The deployed DVR faucet.
     /// @return usdc The deployed Mock USDC token.
     /// @return usdcFaucet The deployed Mock USDC faucet.
+    /// @return clock The deployed clock.
     function run()
         external
-        returns (DriverToken token, DriverFaucet dvrFaucet, MockUSDC usdc, MockUsdcFaucet usdcFaucet)
+        returns (
+            DriverToken token,
+            DriverFaucet dvrFaucet,
+            MockUSDC usdc,
+            MockUsdcFaucet usdcFaucet,
+            IDriverClock clock
+        )
     {
         HelperConfig helper = new HelperConfig();
-        address deployer = helper.getConfig().deployer;
+        HelperConfig.NetworkConfig memory config = helper.getConfig();
+        address deployer = config.deployer;
 
         vm.startBroadcast(deployer);
         token = new DriverToken(deployer);
@@ -59,6 +71,11 @@ contract DeployDriverToken is Script {
         usdc.mint(deployer, helper.FUND_1_USDC());
         usdc.mint(deployer, helper.FUND_2_USDC());
         usdc.mint(deployer, helper.FUND_3_USDC());
+        if (config.demoClock) {
+            clock = new DemoDriverClock(deployer);
+        } else {
+            clock = new DriverClock();
+        }
         vm.stopBroadcast();
     }
 }
