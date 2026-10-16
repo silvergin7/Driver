@@ -73,17 +73,19 @@ contract OfficialPoolTest is Test {
         _assertSolvent();
     }
 
-    function test_RevertWhen_ConstructorAddressIsZero() public {
+    function test_RevertWhen_DvrIsZeroAddress() public {
         vm.expectRevert(OfficialPool.OfficialPool__ZeroAddress.selector);
         new OfficialPool(DriverToken(address(0)), usdc, splitter, owner, 100);
+    }
 
+    function test_RevertWhen_UsdcIsZeroAddress() public {
         vm.expectRevert(OfficialPool.OfficialPool__ZeroAddress.selector);
         new OfficialPool(token, MockUSDC(address(0)), splitter, owner, 100);
+    }
 
+    function test_RevertWhen_TaxSplitterIsZeroAddress() public {
         vm.expectRevert(OfficialPool.OfficialPool__ZeroAddress.selector);
         new OfficialPool(token, usdc, TaxSplitter(address(0)), owner, 100);
-
-        _assertSeedUntouched();
     }
 
     function test_RevertWhen_InitialOwnerIsZero() public {
