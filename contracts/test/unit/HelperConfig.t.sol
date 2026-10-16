@@ -94,6 +94,12 @@ contract HelperConfigTest is Test {
         assertEq(helper.USDC_FAUCET_DAILY_CLAIM_LIMIT(), 25);
     }
 
+    function test_InitialTaxBpsIsOnePercent() public {
+        HelperConfig helper = new HelperConfig();
+
+        assertEq(helper.INITIAL_TAX_BPS(), 100);
+    }
+
     function test_RevertWhen_SepoliaDeployerIsZero() public {
         HelperConfig helper = new HelperConfig();
         uint256 sepoliaChainId = helper.SEPOLIA_CHAIN_ID();

@@ -1053,3 +1053,730 @@ export const mockUsdcFaucetAbi = [
   { type: 'error', inputs: [], name: 'MockUsdcFaucet__ZeroValue' },
   { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
 ] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OfficialPool
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const officialPoolAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'dvr', internalType: 'contract DriverToken', type: 'address' },
+      { name: 'usdc', internalType: 'contract MockUSDC', type: 'address' },
+      {
+        name: 'taxSplitter',
+        internalType: 'contract TaxSplitter',
+        type: 'address',
+      },
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+      { name: 'initialTaxBps', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'BPS_DENOMINATOR',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MAX_TAX_BPS',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'acceptOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'dvrAmount', internalType: 'uint256', type: 'uint256' },
+      { name: 'usdcAmount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'addLiquidity',
+    outputs: [
+      { name: 'dvrUsed', internalType: 'uint256', type: 'uint256' },
+      { name: 'usdcUsed', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_dvr',
+    outputs: [
+      { name: '', internalType: 'contract DriverToken', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_taxSplitter',
+    outputs: [
+      { name: '', internalType: 'contract TaxSplitter', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_usdc',
+    outputs: [{ name: '', internalType: 'contract MockUSDC', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'direction',
+        internalType: 'enum IOfficialPool.Direction',
+        type: 'uint8',
+      },
+      { name: 'amountIn', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'quoteExactInput',
+    outputs: [
+      { name: 'amountOut', internalType: 'uint256', type: 'uint256' },
+      { name: 'usdcTax', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'direction',
+        internalType: 'enum IOfficialPool.Direction',
+        type: 'uint8',
+      },
+      { name: 'amountOut', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'quoteExactOutput',
+    outputs: [
+      { name: 'amountIn', internalType: 'uint256', type: 'uint256' },
+      { name: 'usdcTax', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'reserveDvr',
+    outputs: [
+      { name: 'reserveDvr_', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'reserveUsdc',
+    outputs: [
+      { name: 'reserveUsdc_', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newTaxBps', internalType: 'uint256', type: 'uint256' }],
+    name: 'setTaxBps',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'direction',
+        internalType: 'enum IOfficialPool.Direction',
+        type: 'uint8',
+      },
+      { name: 'amountIn', internalType: 'uint256', type: 'uint256' },
+      { name: 'minAmountOut', internalType: 'uint256', type: 'uint256' },
+      { name: 'deadline', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'swapExactInput',
+    outputs: [{ name: 'amountOut', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'direction',
+        internalType: 'enum IOfficialPool.Direction',
+        type: 'uint8',
+      },
+      { name: 'amountOut', internalType: 'uint256', type: 'uint256' },
+      { name: 'maxAmountIn', internalType: 'uint256', type: 'uint256' },
+      { name: 'deadline', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'swapExactOutput',
+    outputs: [{ name: 'amountIn', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'taxBps',
+    outputs: [{ name: 'taxBps_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'dvrUsed',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'usdcUsed',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'reserveDvr',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'reserveUsdc',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'LiquidityAdded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferStarted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'trader',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'direction',
+        internalType: 'enum IOfficialPool.Direction',
+        type: 'uint8',
+        indexed: false,
+      },
+      {
+        name: 'amountIn',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'amountOut',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'usdcTax',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Swapped',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousBps',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'newBps',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'TaxBpsUpdated',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'deadline', internalType: 'uint256', type: 'uint256' },
+      { name: 'timestamp', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'OfficialPool__DeadlinePassed',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'amountIn', internalType: 'uint256', type: 'uint256' },
+      { name: 'maxAmountIn', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'OfficialPool__ExcessiveInput',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'amountOut', internalType: 'uint256', type: 'uint256' },
+      { name: 'minAmountOut', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'OfficialPool__InsufficientOutput',
+  },
+  { type: 'error', inputs: [], name: 'OfficialPool__InsufficientReserves' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'taxBps', internalType: 'uint256', type: 'uint256' },
+      { name: 'maxTaxBps', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'OfficialPool__TaxAboveMaximum',
+  },
+  { type: 'error', inputs: [], name: 'OfficialPool__ZeroAddress' },
+  { type: 'error', inputs: [], name: 'OfficialPool__ZeroAmount' },
+  { type: 'error', inputs: [], name: 'OfficialPool__ZeroOutput' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
+  {
+    type: 'error',
+    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
+    name: 'SafeERC20FailedOperation',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TaxSplitter
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const taxSplitterAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'usdc', internalType: 'contract MockUSDC', type: 'address' },
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'BPS_DENOMINATOR',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'FUND_1_BPS',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'FUND_2_BPS',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'FUND_3_BPS',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'acceptOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'accrue',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'fundId',
+        internalType: 'enum TaxSplitter.FundId',
+        type: 'uint8',
+      },
+    ],
+    name: 'accrued',
+    outputs: [{ name: 'accrued_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_usdc',
+    outputs: [{ name: '', internalType: 'contract MockUSDC', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pool',
+    outputs: [{ name: 'pool_', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'fundId',
+        internalType: 'enum TaxSplitter.FundId',
+        type: 'uint8',
+      },
+    ],
+    name: 'recipient',
+    outputs: [{ name: 'recipient_', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'fundId',
+        internalType: 'enum TaxSplitter.FundId',
+        type: 'uint8',
+      },
+    ],
+    name: 'release',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newPool', internalType: 'address', type: 'address' }],
+    name: 'setPool',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'fundId',
+        internalType: 'enum TaxSplitter.FundId',
+        type: 'uint8',
+      },
+      { name: 'newRecipient', internalType: 'address', type: 'address' },
+    ],
+    name: 'setRecipient',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferStarted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'pool', internalType: 'address', type: 'address', indexed: true },
+    ],
+    name: 'PoolSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'fundId',
+        internalType: 'enum TaxSplitter.FundId',
+        type: 'uint8',
+        indexed: true,
+      },
+      {
+        name: 'recipient',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'RecipientSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'fund1Share',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'fund2Share',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'fund3Share',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'TaxAccrued',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'fundId',
+        internalType: 'enum TaxSplitter.FundId',
+        type: 'uint8',
+        indexed: true,
+      },
+      {
+        name: 'recipient',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'TaxReleased',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
+  {
+    type: 'error',
+    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
+    name: 'SafeERC20FailedOperation',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
+    name: 'TaxSplitter__CallerNotPool',
+  },
+  {
+    type: 'error',
+    inputs: [
+      {
+        name: 'fundId',
+        internalType: 'enum TaxSplitter.FundId',
+        type: 'uint8',
+      },
+      { name: 'caller', internalType: 'address', type: 'address' },
+    ],
+    name: 'TaxSplitter__CallerNotRecipient',
+  },
+  { type: 'error', inputs: [], name: 'TaxSplitter__PoolAlreadySet' },
+  {
+    type: 'error',
+    inputs: [{ name: 'pool', internalType: 'address', type: 'address' }],
+    name: 'TaxSplitter__PoolMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
+      {
+        name: 'fundId',
+        internalType: 'enum TaxSplitter.FundId',
+        type: 'uint8',
+      },
+    ],
+    name: 'TaxSplitter__RecipientAlreadySet',
+  },
+  {
+    type: 'error',
+    inputs: [
+      {
+        name: 'fundId',
+        internalType: 'enum TaxSplitter.FundId',
+        type: 'uint8',
+      },
+    ],
+    name: 'TaxSplitter__RecipientNotSet',
+  },
+  { type: 'error', inputs: [], name: 'TaxSplitter__ZeroAddress' },
+  { type: 'error', inputs: [], name: 'TaxSplitter__ZeroAmount' },
+] as const

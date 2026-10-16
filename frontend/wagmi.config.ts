@@ -13,6 +13,8 @@ export default defineConfig({
         "MockUsdcFaucet.sol/MockUsdcFaucet.json",
         "DriverClock.sol/DriverClock.json",
         "DemoDriverClock.sol/DemoDriverClock.json",
+        "TaxSplitter.sol/TaxSplitter.json",
+        "OfficialPool.sol/OfficialPool.json",
       ],
       includeBroadcasts: false,
       forge: {
