@@ -12,7 +12,15 @@ const contractNames = [
   "OfficialPool",
 ] as const;
 
+const farmNames = [
+  "CruiseFarm",
+  "HighwayFarm",
+  "AutobahnFarm",
+  "DriftFarm",
+] as const;
+
 type ContractName = (typeof contractNames)[number];
+type FarmName = (typeof farmNames)[number];
 
 type BroadcastTransaction = {
   transactionType?: string;
@@ -70,6 +78,7 @@ export async function syncAnvilAddresses(
   }
 
   const found = new Map<ContractName, string>();
+  const farms: string[] = [];
   for (const transaction of transactions) {
     if (
       transaction.transactionType !== "CREATE" &&
@@ -82,17 +91,30 @@ export async function syncAnvilAddresses(
     if (!name || !deployed) {
       fail("Broadcast create is missing a contract name or address.");
     }
+    if (!addressPattern.test(deployed)) {
+      fail(`Invalid address for ${name}.`);
+    }
+    const address = deployed.toLowerCase();
+    if (name === "MockFarm") {
+      farms.push(address);
+      continue;
+    }
     if (!isContractName(name)) {
       fail(`Unexpected contract in the broadcast: ${name}.`);
     }
     if (found.has(name)) {
       fail(`Duplicate contract in the broadcast: ${name}.`);
     }
-    if (!addressPattern.test(deployed)) {
-      fail(`Invalid address for ${name}.`);
-    }
-    found.set(name, deployed);
+    found.set(name, address);
   }
+
+  if (farms.length !== farmNames.length) {
+    fail(`Expected exactly four MockFarm creates, found ${farms.length}.`);
+  }
+
+  const farmAddresses = Object.fromEntries(
+    farmNames.map((name, index) => [name, farms[index]]),
+  ) as Record<FarmName, string>;
 
   const addresses = {
     DriverToken: requireAddress(found, "DriverToken"),
@@ -102,6 +124,7 @@ export async function syncAnvilAddresses(
     DemoDriverClock: requireAddress(found, "DemoDriverClock"),
     TaxSplitter: requireAddress(found, "TaxSplitter"),
     OfficialPool: requireAddress(found, "OfficialPool"),
+    ...farmAddresses,
   };
 
   await mkdir(dirname(outputFile), { recursive: true });

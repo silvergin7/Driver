@@ -94,6 +94,27 @@ contract HelperConfigTest is Test {
         assertEq(helper.USDC_FAUCET_DAILY_CLAIM_LIMIT(), 25);
     }
 
+    function test_FarmReservesMatchTwoYearsAtTheMaximumBalance() public {
+        HelperConfig helper = new HelperConfig();
+
+        assertEq(helper.CRUISE_APR_BPS(), 500);
+        assertEq(helper.HIGHWAY_APR_BPS(), 4_000);
+        assertEq(helper.AUTOBAHN_APR_BPS(), 8_000);
+        assertEq(helper.DRIFT_APR_BPS(), 16_000);
+        assertEq(helper.CRUISE_MAX_BALANCE(), 30_000 * 10 ** 6);
+        assertEq(helper.HIGHWAY_MAX_BALANCE(), 15_000 * 10 ** 6);
+        assertEq(helper.AUTOBAHN_MAX_BALANCE(), 15_000 * 10 ** 6);
+        assertEq(helper.DRIFT_MAX_BALANCE(), 30_000 * 10 ** 6);
+        assertEq(helper.CRUISE_RESERVE(), _twoYearReserve(helper.CRUISE_MAX_BALANCE(), helper.CRUISE_APR_BPS()));
+        assertEq(helper.HIGHWAY_RESERVE(), _twoYearReserve(helper.HIGHWAY_MAX_BALANCE(), helper.HIGHWAY_APR_BPS()));
+        assertEq(helper.AUTOBAHN_RESERVE(), _twoYearReserve(helper.AUTOBAHN_MAX_BALANCE(), helper.AUTOBAHN_APR_BPS()));
+        assertEq(helper.DRIFT_RESERVE(), _twoYearReserve(helper.DRIFT_MAX_BALANCE(), helper.DRIFT_APR_BPS()));
+        assertEq(
+            helper.CRUISE_RESERVE() + helper.HIGHWAY_RESERVE() + helper.AUTOBAHN_RESERVE() + helper.DRIFT_RESERVE(),
+            135_000 * 10 ** 6
+        );
+    }
+
     function test_InitialTaxBpsIsOnePercent() public {
         HelperConfig helper = new HelperConfig();
 
@@ -113,5 +134,9 @@ contract HelperConfigTest is Test {
 
         vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__ChainNotSupported.selector, 1));
         helper.configFor(1, address(0));
+    }
+
+    function _twoYearReserve(uint256 maxBalance, uint256 aprBps) private pure returns (uint256 reserve) {
+        reserve = maxBalance * aprBps * 2 / 10_000;
     }
 }

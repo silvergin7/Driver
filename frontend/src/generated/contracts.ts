@@ -618,6 +618,404 @@ export const driverTokenAbi = [
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// MockFarm
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const mockFarmAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'usdc', internalType: 'contract MockUSDC', type: 'address' },
+      { name: 'clock', internalType: 'contract IDriverClock', type: 'address' },
+      { name: 'initialAprBps', internalType: 'uint256', type: 'uint256' },
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'BPS_DENOMINATOR',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'SECONDS_PER_YEAR',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'acceptOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'accrued',
+    outputs: [{ name: 'accrued_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'depositor', internalType: 'address', type: 'address' }],
+    name: 'addDepositor',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'aprBps',
+    outputs: [{ name: 'aprBps_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'claim',
+    outputs: [{ name: 'paid', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'deposit',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'emergencyWithdraw',
+    outputs: [{ name: 'principal', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'fundRewards',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_aprBps',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_clock',
+    outputs: [
+      { name: '', internalType: 'contract IDriverClock', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_usdc',
+    outputs: [{ name: '', internalType: 'contract MockUSDC', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'isDepositor',
+    outputs: [{ name: 'isDepositor_', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'principalOf',
+    outputs: [{ name: 'principal_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'rewardReserve',
+    outputs: [
+      { name: 'rewardReserve_', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'totalPrincipal',
+    outputs: [
+      { name: 'totalPrincipal_', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'withdraw',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'principal',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Deposited',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'depositor',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'DepositorAdded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'principal',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'forfeited',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'EmergencyWithdrawn',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferStarted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'paid',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'unpaid',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'RewardsClaimed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'funder',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'rewardReserve',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'RewardsFunded',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'principal',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Withdrawn',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
+    name: 'MockFarm__CallerNotDepositor',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'depositor', internalType: 'address', type: 'address' }],
+    name: 'MockFarm__DepositorAlreadyAdded',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'principal', internalType: 'uint256', type: 'uint256' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'MockFarm__InsufficientPrincipal',
+  },
+  { type: 'error', inputs: [], name: 'MockFarm__ZeroAddress' },
+  { type: 'error', inputs: [], name: 'MockFarm__ZeroAmount' },
+  { type: 'error', inputs: [], name: 'MockFarm__ZeroApr' },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'bits', internalType: 'uint8', type: 'uint8' },
+      { name: 'value', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'SafeCastOverflowedUintDowncast',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
+    name: 'SafeERC20FailedOperation',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // MockUSDC
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
