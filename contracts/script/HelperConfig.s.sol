@@ -62,6 +62,9 @@ contract HelperConfig is Script {
     /// @notice Mock USDC allocated to Fund 3.
     uint256 public constant FUND_3_USDC = 5_000 * 10 ** 6;
 
+    /// @notice Starting official-pool tax, in basis points. 100 is 1 percent.
+    uint256 public constant INITIAL_TAX_BPS = 100;
+
     /// @notice No deploy parameters exist for this chain yet.
     /// @param chainId The active chain id.
     error HelperConfig__ChainNotSupported(uint256 chainId);

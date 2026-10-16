@@ -8,6 +8,8 @@ const contractNames = [
   "MockUSDC",
   "MockUsdcFaucet",
   "DemoDriverClock",
+  "TaxSplitter",
+  "OfficialPool",
 ] as const;
 
 type ContractName = (typeof contractNames)[number];
@@ -98,6 +100,8 @@ export async function syncAnvilAddresses(
     MockUSDC: requireAddress(found, "MockUSDC"),
     MockUsdcFaucet: requireAddress(found, "MockUsdcFaucet"),
     DemoDriverClock: requireAddress(found, "DemoDriverClock"),
+    TaxSplitter: requireAddress(found, "TaxSplitter"),
+    OfficialPool: requireAddress(found, "OfficialPool"),
   };
 
   await mkdir(dirname(outputFile), { recursive: true });

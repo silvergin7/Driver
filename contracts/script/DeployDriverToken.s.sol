@@ -9,25 +9,30 @@ import {DriverToken} from "../src/DriverToken.sol";
 import {DriverFaucet} from "../src/DriverFaucet.sol";
 import {MockUSDC} from "../src/MockUSDC.sol";
 import {MockUsdcFaucet} from "../src/MockUsdcFaucet.sol";
+import {OfficialPool} from "../src/OfficialPool.sol";
+import {TaxSplitter} from "../src/TaxSplitter.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 /// @title DeployDriverToken
-/// @notice Deploys DriverToken, the DVR faucet, Mock USDC, the Mock USDC faucet, and the shared clock.
+/// @notice Deploys DriverToken, the faucets, the clock, the tax splitter, and the official pool.
 contract DeployDriverToken is Script {
     /// @notice The DVR faucet allocation transfer returned false.
     error DeployDriverToken__TransferFailed();
 
-    /// @notice Deploys the contracts, mints the setup balances, and funds the DVR faucet.
-    /// @dev The pool, community pool, team reserve, and funds do not exist yet, so those allocations
-    /// stay with the deployer. The DVR faucet receives {HelperConfig.FAUCET_ALLOCATION} by transfer in
-    /// this broadcast. There is no extra mint and no approval. The Mock USDC faucet is the minter and
-    /// receives no pre-minted balance. The clock is created last. Anvil deploys {DemoDriverClock}.
-    /// Sepolia deploys {DriverClock}.
+    /// @notice Deploys the contracts, mints the setup balances, funds the DVR faucet, and seeds the pool.
+    /// @dev Community and team DVR stay with the deployer. Fund mUSDC stays with the deployer. The official
+    /// pool receives {HelperConfig.POOL_ALLOCATION} and {HelperConfig.POOL_USDC}. The DVR faucet receives
+    /// {HelperConfig.FAUCET_ALLOCATION} by transfer. There is no extra mint. The Mock USDC faucet is the
+    /// minter and receives no pre-minted balance. Anvil deploys {DemoDriverClock}. Sepolia deploys
+    /// {DriverClock}. The splitter and the pool are created after the clock. The starting tax is
+    /// {HelperConfig.INITIAL_TAX_BPS}.
     /// @return token The deployed DVR token.
     /// @return dvrFaucet The deployed DVR faucet.
     /// @return usdc The deployed Mock USDC token.
     /// @return usdcFaucet The deployed Mock USDC faucet.
     /// @return clock The deployed clock.
+    /// @return splitter The deployed tax splitter.
+    /// @return pool The deployed official pool.
     function run()
         external
         returns (
@@ -35,7 +40,9 @@ contract DeployDriverToken is Script {
             DriverFaucet dvrFaucet,
             MockUSDC usdc,
             MockUsdcFaucet usdcFaucet,
-            IDriverClock clock
+            IDriverClock clock,
+            TaxSplitter splitter,
+            OfficialPool pool
         )
     {
         HelperConfig helper = new HelperConfig();
@@ -76,6 +83,13 @@ contract DeployDriverToken is Script {
         } else {
             clock = new DriverClock();
         }
+
+        splitter = new TaxSplitter(usdc, deployer);
+        pool = new OfficialPool(token, usdc, splitter, deployer, helper.INITIAL_TAX_BPS());
+        splitter.setPool(address(pool));
+        token.approve(address(pool), helper.POOL_ALLOCATION());
+        usdc.approve(address(pool), helper.POOL_USDC());
+        pool.addLiquidity(helper.POOL_ALLOCATION(), helper.POOL_USDC());
         vm.stopBroadcast();
     }
 }
