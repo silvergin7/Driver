@@ -18,19 +18,20 @@ import {HelperConfig} from "../../script/HelperConfig.s.sol";
 contract DeployDriverTokenTest is Test {
     function test_AnvilDeployMintsFullSupplyAndFundsFaucet() public {
         HelperConfig helper = new HelperConfig();
-        (
-            DriverToken token,
-            DriverFaucet dvrFaucet,,,,,
-            OfficialPool pool,
-            MockFarm cruise,
-            MockFarm highway,
-            MockFarm autobahn,
-            MockFarm drift
-        ) = new DeployDriverToken().run();
-        assertEq(
-            cruise.totalPrincipal() + highway.totalPrincipal() + autobahn.totalPrincipal() + drift.totalPrincipal(), 0
-        );
+        DeployDriverToken.Deployed memory deployed = new DeployDriverToken().run();
+        DriverToken token = deployed.token;
+        DriverFaucet dvrFaucet = deployed.dvrFaucet;
+        OfficialPool pool = deployed.pool;
+        MockFarm cruise = deployed.cruise;
+        MockFarm highway = deployed.highway;
+        MockFarm autobahn = deployed.autobahn;
+        MockFarm drift = deployed.drift;
         address deployer = helper.ANVIL_DEPLOYER();
+        _assertSeed(helper, deployer, deployed);
+        assertEq(
+            cruise.totalPrincipal() + highway.totalPrincipal() + autobahn.totalPrincipal() + drift.totalPrincipal(),
+            helper.FUND_1_USDC()
+        );
         uint256 maxSupply = token.MAX_SUPPLY();
 
         assertEq(token.owner(), deployer);
@@ -60,25 +61,24 @@ contract DeployDriverTokenTest is Test {
 
     function test_AnvilDeployMintsUsdcSetupBalancesAndSetsFaucetMinter() public {
         HelperConfig helper = new HelperConfig();
-        (
-            ,,
-            MockUSDC usdc,
-            MockUsdcFaucet faucet,,,
-            OfficialPool pool,
-            MockFarm cruise,
-            MockFarm highway,
-            MockFarm autobahn,
-            MockFarm drift
-        ) = new DeployDriverToken().run();
+        DeployDriverToken.Deployed memory deployed = new DeployDriverToken().run();
+        MockUSDC usdc = deployed.usdc;
+        MockUsdcFaucet faucet = deployed.usdcFaucet;
+        OfficialPool pool = deployed.pool;
+        MockFarm cruise = deployed.cruise;
+        MockFarm highway = deployed.highway;
+        MockFarm autobahn = deployed.autobahn;
+        MockFarm drift = deployed.drift;
         address deployer = helper.ANVIL_DEPLOYER();
-        uint256 deployerBalance = helper.FUND_1_USDC() + helper.FUND_2_USDC() + helper.FUND_3_USDC();
+        uint256 deployerBalance = helper.FUND_3_USDC();
+        _assertSeed(helper, deployer, deployed);
 
         assertEq(usdc.owner(), deployer);
         assertEq(usdc.minter(), address(faucet));
         assertTrue(usdc.owner() != address(faucet));
         assertEq(usdc.decimals(), 6);
         assertEq(usdc.totalSupply(), 170_000 * 10 ** 6);
-        assertEq(usdc.balanceOf(address(cruise)), helper.CRUISE_RESERVE());
+        assertEq(usdc.balanceOf(address(cruise)), helper.CRUISE_RESERVE() + helper.FUND_1_USDC());
         assertEq(usdc.balanceOf(address(highway)), helper.HIGHWAY_RESERVE());
         assertEq(usdc.balanceOf(address(autobahn)), helper.AUTOBAHN_RESERVE());
         assertEq(usdc.balanceOf(address(drift)), helper.DRIFT_RESERVE());
@@ -104,19 +104,17 @@ contract DeployDriverTokenTest is Test {
     function test_AnvilDeployAppendsDemoClock() public {
         HelperConfig helper = new HelperConfig();
         uint256 deployerDvr = helper.COMMUNITY_ALLOCATION() + helper.TEAM_ALLOCATION();
-        uint256 deployerUsdc = helper.FUND_1_USDC() + helper.FUND_2_USDC() + helper.FUND_3_USDC();
-        (
-            DriverToken token,
-            DriverFaucet dvrFaucet,
-            MockUSDC usdc,
-            MockUsdcFaucet usdcFaucet,
-            IDriverClock clock,
-            TaxSplitter splitter,
-            OfficialPool pool,,,,
-        ) = new DeployDriverToken().run();
+        uint256 deployerUsdc = helper.FUND_3_USDC();
+        DeployDriverToken.Deployed memory deployed = new DeployDriverToken().run();
+        DriverToken token = deployed.token;
+        DriverFaucet dvrFaucet = deployed.dvrFaucet;
+        MockUSDC usdc = deployed.usdc;
+        MockUsdcFaucet usdcFaucet = deployed.usdcFaucet;
+        IDriverClock clock = deployed.clock;
+        TaxSplitter splitter = deployed.splitter;
+        OfficialPool pool = deployed.pool;
         address deployer = helper.ANVIL_DEPLOYER();
-
-        assertEq(vm.getNonce(deployer), 34);
+        _assertSeed(helper, deployer, deployed);
         assertEq(address(token), 0x5FbDB2315678afecb367f032d93F642f64180aa3);
         assertEq(address(dvrFaucet), 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707);
         assertEq(address(usdc), 0xa513E6E4b8f2a923D98304ec87F64353C4D5C853);
@@ -156,69 +154,57 @@ contract DeployDriverTokenTest is Test {
         address deployer = makeAddr("sepoliaDeployer");
         vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(deployer));
         vm.chainId(helper.SEPOLIA_CHAIN_ID());
-        uint256 deployerDvr = helper.COMMUNITY_ALLOCATION() + helper.TEAM_ALLOCATION();
-        uint256 deployerUsdc = helper.FUND_1_USDC() + helper.FUND_2_USDC() + helper.FUND_3_USDC();
+        DeployDriverToken.Deployed memory deployed = new DeployDriverToken().run();
+        uint256 maxSupply = deployed.token.MAX_SUPPLY();
+        _assertSeed(helper, deployer, deployed);
+        assertEq(deployed.token.owner(), deployer);
+        assertEq(deployed.token.totalMinted(), maxSupply);
+        assertEq(deployed.token.totalSupply(), maxSupply);
+        assertEq(deployed.token.balanceOf(address(deployed.dvrFaucet)), helper.FAUCET_ALLOCATION());
+        assertEq(deployed.token.balanceOf(address(deployed.pool)), helper.POOL_ALLOCATION());
+        assertEq(deployed.token.balanceOf(deployer), helper.COMMUNITY_ALLOCATION() + helper.TEAM_ALLOCATION());
+        assertEq(deployed.pool.reserveDvr(), helper.POOL_ALLOCATION());
+        assertEq(deployed.pool.reserveUsdc(), helper.POOL_USDC());
+        assertEq(deployed.pool.taxBps(), helper.INITIAL_TAX_BPS());
+        assertEq(deployed.splitter.pool(), address(deployed.pool));
+        assertEq(address(deployed.dvrFaucet.i_token()), address(deployed.token));
+        assertEq(deployed.dvrFaucet.i_claimAmount(), helper.DVR_FAUCET_CLAIM_AMOUNT());
+        assertEq(deployed.dvrFaucet.i_claimCooldown(), helper.DVR_FAUCET_CLAIM_COOLDOWN());
+        assertEq(deployed.dvrFaucet.i_dailyClaimLimit(), helper.DVR_FAUCET_DAILY_CLAIM_LIMIT());
 
-        (
-            DriverToken token,
-            DriverFaucet dvrFaucet,
-            MockUSDC usdc,
-            MockUsdcFaucet faucet,
-            IDriverClock clock,
-            TaxSplitter splitter,
-            OfficialPool pool,,,,
-        ) = new DeployDriverToken().run();
-        uint256 maxSupply = token.MAX_SUPPLY();
-
-        assertEq(vm.getNonce(deployer), 34);
-        assertEq(token.owner(), deployer);
-        assertEq(token.totalMinted(), maxSupply);
-        assertEq(token.totalSupply(), maxSupply);
-        assertEq(token.balanceOf(address(dvrFaucet)), helper.FAUCET_ALLOCATION());
-        assertEq(token.balanceOf(address(pool)), helper.POOL_ALLOCATION());
-        assertEq(token.balanceOf(deployer), deployerDvr);
-        assertEq(pool.reserveDvr(), helper.POOL_ALLOCATION());
-        assertEq(pool.reserveUsdc(), helper.POOL_USDC());
-        assertEq(pool.taxBps(), helper.INITIAL_TAX_BPS());
-        assertEq(splitter.pool(), address(pool));
-        assertEq(address(dvrFaucet.i_token()), address(token));
-        assertEq(dvrFaucet.i_claimAmount(), helper.DVR_FAUCET_CLAIM_AMOUNT());
-        assertEq(dvrFaucet.i_claimCooldown(), helper.DVR_FAUCET_CLAIM_COOLDOWN());
-        assertEq(dvrFaucet.i_dailyClaimLimit(), helper.DVR_FAUCET_DAILY_CLAIM_LIMIT());
-
-        assertEq(usdc.owner(), deployer);
-        assertEq(usdc.minter(), address(faucet));
-        assertTrue(usdc.owner() != address(faucet));
-        assertEq(usdc.decimals(), 6);
-        assertEq(usdc.balanceOf(deployer), deployerUsdc);
-        assertEq(usdc.totalSupply(), 170_000 * 10 ** 6);
-        assertEq(usdc.balanceOf(address(pool)), helper.POOL_USDC());
-        assertEq(usdc.balanceOf(address(faucet)), 0);
-        assertEq(token.allowance(deployer, address(pool)), 0);
-        assertEq(usdc.allowance(deployer, address(pool)), 0);
-        assertEq(address(faucet.i_usdc()), address(usdc));
-        assertEq(faucet.i_claimAmount(), helper.USDC_FAUCET_CLAIM_AMOUNT());
-        assertEq(faucet.i_claimCooldown(), helper.USDC_FAUCET_CLAIM_COOLDOWN());
-        assertEq(faucet.i_dailyClaimLimit(), helper.USDC_FAUCET_DAILY_CLAIM_LIMIT());
+        assertEq(deployed.usdc.owner(), deployer);
+        assertEq(deployed.usdc.minter(), address(deployed.usdcFaucet));
+        assertTrue(deployed.usdc.owner() != address(deployed.usdcFaucet));
+        assertEq(deployed.usdc.decimals(), 6);
+        assertEq(deployed.usdc.balanceOf(deployer), helper.FUND_3_USDC());
+        assertEq(deployed.usdc.totalSupply(), 170_000 * 10 ** 6);
+        assertEq(deployed.usdc.balanceOf(address(deployed.pool)), helper.POOL_USDC());
+        assertEq(deployed.usdc.balanceOf(address(deployed.usdcFaucet)), 0);
+        assertEq(deployed.token.allowance(deployer, address(deployed.pool)), 0);
+        assertEq(deployed.usdc.allowance(deployer, address(deployed.pool)), 0);
+        assertEq(address(deployed.usdcFaucet.i_usdc()), address(deployed.usdc));
+        assertEq(deployed.usdcFaucet.i_claimAmount(), helper.USDC_FAUCET_CLAIM_AMOUNT());
+        assertEq(deployed.usdcFaucet.i_claimCooldown(), helper.USDC_FAUCET_CLAIM_COOLDOWN());
+        assertEq(deployed.usdcFaucet.i_dailyClaimLimit(), helper.USDC_FAUCET_DAILY_CLAIM_LIMIT());
 
         address user = makeAddr("user");
         vm.prank(user);
-        dvrFaucet.claim();
+        deployed.dvrFaucet.claim();
         vm.prank(user);
-        faucet.claim();
-        assertEq(token.balanceOf(user), 10 * 10 ** 18);
-        assertEq(token.balanceOf(address(dvrFaucet)), helper.FAUCET_ALLOCATION() - 10 * 10 ** 18);
-        assertEq(token.totalMinted(), maxSupply);
-        assertEq(usdc.balanceOf(user), 100 * 10 ** 6);
-        assertEq(usdc.balanceOf(address(faucet)), 0);
+        deployed.usdcFaucet.claim();
+        assertEq(deployed.token.balanceOf(user), 10 * 10 ** 18);
+        assertEq(deployed.token.balanceOf(address(deployed.dvrFaucet)), helper.FAUCET_ALLOCATION() - 10 * 10 ** 18);
+        assertEq(deployed.token.totalMinted(), maxSupply);
+        assertEq(deployed.usdc.balanceOf(user), 100 * 10 ** 6);
+        assertEq(deployed.usdc.balanceOf(address(deployed.usdcFaucet)), 0);
 
         vm.expectRevert(
             abi.encodeWithSelector(DriverToken.DriverToken__LifetimeMintCapExceeded.selector, maxSupply, 1, maxSupply)
         );
         vm.prank(deployer);
-        token.mint(deployer, 1);
+        deployed.token.mint(deployer, 1);
 
-        DriverClock production = DriverClock(address(clock));
+        DriverClock production = DriverClock(address(deployed.clock));
         assertEq(production.currentTime(), block.timestamp);
         vm.warp(block.timestamp + 100);
         assertEq(production.currentTime(), block.timestamp);
@@ -231,24 +217,30 @@ contract DeployDriverTokenTest is Test {
 
     function test_AnvilDeployFundsTheFourFarms() public {
         HelperConfig helper = new HelperConfig();
-        (
-            ,,
-            MockUSDC usdc,,
-            IDriverClock clock,,,
-            MockFarm cruise,
-            MockFarm highway,
-            MockFarm autobahn,
-            MockFarm drift
-        ) = new DeployDriverToken().run();
+        DeployDriverToken.Deployed memory deployed = new DeployDriverToken().run();
+        MockUSDC usdc = deployed.usdc;
+        IDriverClock clock = deployed.clock;
+        MockFarm cruise = deployed.cruise;
+        MockFarm highway = deployed.highway;
+        MockFarm autobahn = deployed.autobahn;
+        MockFarm drift = deployed.drift;
         address deployer = helper.ANVIL_DEPLOYER();
+        _assertSeed(helper, deployer, deployed);
 
-        assertEq(vm.getNonce(deployer), 34);
         assertEq(address(cruise), 0x59b670e9fA9D0A427751Af201D676719a970857b);
         assertEq(address(highway), 0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1);
         assertEq(address(autobahn), 0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44);
         assertEq(address(drift), 0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f);
+        assertEq(address(deployed.cruiseControl), 0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9);
+        assertEq(address(deployed.degenDriver), 0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8);
+        assertEq(deployed.cruiseControl.strategyCount(), 1);
+        assertEq(address(deployed.cruiseControl.strategyAt(0)), address(cruise));
+        assertEq(deployed.degenDriver.strategyCount(), 3);
+        assertEq(address(deployed.degenDriver.strategyAt(0)), address(highway));
+        assertEq(address(deployed.degenDriver.strategyAt(1)), address(autobahn));
+        assertEq(address(deployed.degenDriver.strategyAt(2)), address(drift));
         assertEq(usdc.totalSupply(), 170_000 * 10 ** 6);
-        assertEq(usdc.balanceOf(deployer), 25_000 * 10 ** 6);
+        assertEq(usdc.balanceOf(deployer), helper.FUND_3_USDC());
         _assertFarms(helper, usdc, clock, deployer, cruise, highway, autobahn, drift);
     }
 
@@ -258,19 +250,17 @@ contract DeployDriverTokenTest is Test {
         vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(deployer));
         vm.chainId(helper.SEPOLIA_CHAIN_ID());
 
-        (
-            ,,
-            MockUSDC usdc,,
-            IDriverClock clock,,,
-            MockFarm cruise,
-            MockFarm highway,
-            MockFarm autobahn,
-            MockFarm drift
-        ) = new DeployDriverToken().run();
+        DeployDriverToken.Deployed memory deployed = new DeployDriverToken().run();
+        MockUSDC usdc = deployed.usdc;
+        IDriverClock clock = deployed.clock;
+        MockFarm cruise = deployed.cruise;
+        MockFarm highway = deployed.highway;
+        MockFarm autobahn = deployed.autobahn;
+        MockFarm drift = deployed.drift;
+        _assertSeed(helper, deployer, deployed);
 
-        assertEq(vm.getNonce(deployer), 34);
         assertEq(usdc.totalSupply(), 170_000 * 10 ** 6);
-        assertEq(usdc.balanceOf(deployer), 25_000 * 10 ** 6);
+        assertEq(usdc.balanceOf(deployer), helper.FUND_3_USDC());
         _assertFarms(helper, usdc, clock, deployer, cruise, highway, autobahn, drift);
 
         DriverClock production = DriverClock(address(clock));
@@ -308,10 +298,65 @@ contract DeployDriverTokenTest is Test {
         assertEq(address(farm.i_clock()), address(clock));
         assertEq(farm.owner(), deployer);
         assertEq(farm.rewardReserve(), reserve);
-        assertEq(farm.totalPrincipal(), 0);
         assertFalse(farm.isDepositor(deployer));
         assertFalse(farm.isDepositor(address(0)));
         assertEq(usdc.allowance(deployer, address(farm)), 0);
-        assertEq(usdc.balanceOf(address(farm)), reserve);
+    }
+
+    function _assertSeed(HelperConfig helper, address deployer, DeployDriverToken.Deployed memory deployed)
+        private
+        view
+    {
+        assertEq(vm.getNonce(deployer), 48);
+        assertEq(deployed.token.balanceOf(deployer), helper.COMMUNITY_ALLOCATION() + helper.TEAM_ALLOCATION());
+        assertEq(deployed.usdc.balanceOf(deployer), helper.FUND_3_USDC());
+        assertEq(deployed.cruiseControl.idle(), 0);
+        assertEq(deployed.cruiseControl.principal(), helper.FUND_1_USDC());
+        assertEq(deployed.cruiseControl.value(), helper.FUND_1_USDC());
+        assertEq(deployed.cruise.principalOf(address(deployed.cruiseControl)), helper.FUND_1_USDC());
+        assertEq(deployed.cruise.totalPrincipal(), helper.FUND_1_USDC());
+        assertEq(deployed.usdc.balanceOf(address(deployed.cruise)), helper.CRUISE_RESERVE() + helper.FUND_1_USDC());
+        assertEq(deployed.degenDriver.idle(), helper.FUND_2_USDC());
+        assertEq(deployed.degenDriver.principal(), 0);
+        assertEq(deployed.degenDriver.value(), helper.FUND_2_USDC());
+        assertEq(address(deployed.degenDriver.activeFarm()), address(0));
+        assertEq(deployed.highway.totalPrincipal(), 0);
+        assertEq(deployed.autobahn.totalPrincipal(), 0);
+        assertEq(deployed.drift.totalPrincipal(), 0);
+        assertEq(deployed.highway.principalOf(address(deployed.degenDriver)), 0);
+        assertEq(deployed.cruise.rewardReserve(), helper.CRUISE_RESERVE());
+        assertEq(deployed.highway.rewardReserve(), helper.HIGHWAY_RESERVE());
+        assertEq(deployed.autobahn.rewardReserve(), helper.AUTOBAHN_RESERVE());
+        assertEq(deployed.drift.rewardReserve(), helper.DRIFT_RESERVE());
+        assertEq(deployed.usdc.balanceOf(address(deployed.highway)), helper.HIGHWAY_RESERVE());
+        assertEq(deployed.usdc.balanceOf(address(deployed.autobahn)), helper.AUTOBAHN_RESERVE());
+        assertEq(deployed.usdc.balanceOf(address(deployed.drift)), helper.DRIFT_RESERVE());
+        assertEq(deployed.token.allowance(deployer, address(deployed.pool)), 0);
+        assertEq(deployed.usdc.allowance(deployer, address(deployed.pool)), 0);
+        assertEq(deployed.usdc.allowance(deployer, address(deployed.cruise)), 0);
+        assertEq(deployed.usdc.allowance(deployer, address(deployed.highway)), 0);
+        assertEq(deployed.usdc.allowance(deployer, address(deployed.autobahn)), 0);
+        assertEq(deployed.usdc.allowance(deployer, address(deployed.drift)), 0);
+        assertEq(deployed.usdc.allowance(deployer, address(deployed.cruiseControl)), 0);
+        assertEq(deployed.usdc.allowance(deployer, address(deployed.degenDriver)), 0);
+        assertEq(deployed.usdc.allowance(address(deployed.cruiseControl), address(deployed.cruise)), 0);
+        assertEq(deployed.usdc.allowance(address(deployed.degenDriver), address(deployed.highway)), 0);
+        assertEq(deployed.usdc.allowance(address(deployed.degenDriver), address(deployed.autobahn)), 0);
+        assertEq(deployed.usdc.allowance(address(deployed.degenDriver), address(deployed.drift)), 0);
+        assertEq(deployed.splitter.recipient(TaxSplitter.FundId.Fund1), address(deployed.cruiseControl));
+        assertEq(deployed.splitter.recipient(TaxSplitter.FundId.Fund2), address(deployed.degenDriver));
+        assertEq(deployed.splitter.recipient(TaxSplitter.FundId.Fund3), address(0));
+        assertTrue(deployed.cruise.isDepositor(address(deployed.cruiseControl)));
+        assertTrue(deployed.highway.isDepositor(address(deployed.degenDriver)));
+        assertTrue(deployed.autobahn.isDepositor(address(deployed.degenDriver)));
+        assertTrue(deployed.drift.isDepositor(address(deployed.degenDriver)));
+        assertFalse(deployed.cruise.isDepositor(deployer));
+        assertFalse(deployed.highway.isDepositor(deployer));
+        assertFalse(deployed.autobahn.isDepositor(deployer));
+        assertFalse(deployed.drift.isDepositor(deployer));
+        assertFalse(deployed.cruise.isDepositor(address(deployed.degenDriver)));
+        assertFalse(deployed.highway.isDepositor(address(deployed.cruiseControl)));
+        assertFalse(deployed.autobahn.isDepositor(address(deployed.cruiseControl)));
+        assertFalse(deployed.drift.isDepositor(address(deployed.cruiseControl)));
     }
 }

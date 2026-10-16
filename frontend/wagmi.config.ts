@@ -16,6 +16,8 @@ export default defineConfig({
         "TaxSplitter.sol/TaxSplitter.json",
         "OfficialPool.sol/OfficialPool.json",
         "MockFarm.sol/MockFarm.json",
+        "CruiseControl.sol/CruiseControl.json",
+        "DegenDriver.sol/DegenDriver.json",
       ],
       includeBroadcasts: false,
       forge: {

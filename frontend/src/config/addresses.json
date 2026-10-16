@@ -10,6 +10,8 @@
     "CruiseFarm": "0x59b670e9fa9d0a427751af201d676719a970857b",
     "HighwayFarm": "0x4ed7c70f96b99c776995fb64377f0d4ab3b0e1c1",
     "AutobahnFarm": "0x322813fd9a801c5507c9de605d63cea4f2ce6c44",
-    "DriftFarm": "0xa85233c63b9ee964add6f2cffe00fd84eb32338f"
+    "DriftFarm": "0xa85233c63b9ee964add6f2cffe00fd84eb32338f",
+    "CruiseControl": "0xa82ff9afd8f496c3d6ac40e2a0f282e47488cfc9",
+    "DegenDriver": "0x1613beb3b2c4f22ee086b2b38c1476a3ce7f78e8"
   }
 }
