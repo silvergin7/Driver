@@ -10,6 +10,8 @@ const contractNames = [
   "DemoDriverClock",
   "TaxSplitter",
   "OfficialPool",
+  "CruiseControl",
+  "DegenDriver",
 ] as const;
 
 const farmNames = [
@@ -125,6 +127,8 @@ export async function syncAnvilAddresses(
     TaxSplitter: requireAddress(found, "TaxSplitter"),
     OfficialPool: requireAddress(found, "OfficialPool"),
     ...farmAddresses,
+    CruiseControl: requireAddress(found, "CruiseControl"),
+    DegenDriver: requireAddress(found, "DegenDriver"),
   };
 
   await mkdir(dirname(outputFile), { recursive: true });
