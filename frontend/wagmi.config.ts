@@ -15,6 +15,7 @@ export default defineConfig({
         "DemoDriverClock.sol/DemoDriverClock.json",
         "TaxSplitter.sol/TaxSplitter.json",
         "OfficialPool.sol/OfficialPool.json",
+        "MockFarm.sol/MockFarm.json",
       ],
       includeBroadcasts: false,
       forge: {

@@ -65,6 +65,42 @@ contract HelperConfig is Script {
     /// @notice Starting official-pool tax, in basis points. 100 is 1 percent.
     uint256 public constant INITIAL_TAX_BPS = 100;
 
+    /// @notice Cruise farm APR, in basis points. 500 is 5 percent. Fund 1 only.
+    uint256 public constant CRUISE_APR_BPS = 500;
+
+    /// @notice Highway farm APR, in basis points. 4_000 is 40 percent. Fund 2 vote option.
+    uint256 public constant HIGHWAY_APR_BPS = 4_000;
+
+    /// @notice Autobahn farm APR, in basis points. 8_000 is 80 percent. Fund 2 vote option.
+    uint256 public constant AUTOBAHN_APR_BPS = 8_000;
+
+    /// @notice Drift farm APR, in basis points. 16_000 is 160 percent. Fund 2 vote option.
+    uint256 public constant DRIFT_APR_BPS = 16_000;
+
+    /// @notice Expected maximum Cruise principal, in mUSDC base units.
+    uint256 public constant CRUISE_MAX_BALANCE = 30_000 * 10 ** 6;
+
+    /// @notice Expected maximum Highway principal, in mUSDC base units.
+    uint256 public constant HIGHWAY_MAX_BALANCE = 15_000 * 10 ** 6;
+
+    /// @notice Expected maximum Autobahn principal, in mUSDC base units.
+    uint256 public constant AUTOBAHN_MAX_BALANCE = 15_000 * 10 ** 6;
+
+    /// @notice Expected maximum Drift principal, in mUSDC base units.
+    uint256 public constant DRIFT_MAX_BALANCE = 30_000 * 10 ** 6;
+
+    /// @notice Cruise reward reserve, in mUSDC base units. Two years of {CRUISE_APR_BPS} on {CRUISE_MAX_BALANCE}.
+    uint256 public constant CRUISE_RESERVE = 3_000 * 10 ** 6;
+
+    /// @notice Highway reward reserve, in mUSDC base units. Two years of {HIGHWAY_APR_BPS} on {HIGHWAY_MAX_BALANCE}.
+    uint256 public constant HIGHWAY_RESERVE = 12_000 * 10 ** 6;
+
+    /// @notice Autobahn reward reserve, in mUSDC base units. Two years of {AUTOBAHN_APR_BPS} on {AUTOBAHN_MAX_BALANCE}.
+    uint256 public constant AUTOBAHN_RESERVE = 24_000 * 10 ** 6;
+
+    /// @notice Drift reward reserve, in mUSDC base units. Two years of {DRIFT_APR_BPS} on {DRIFT_MAX_BALANCE}.
+    uint256 public constant DRIFT_RESERVE = 96_000 * 10 ** 6;
+
     /// @notice No deploy parameters exist for this chain yet.
     /// @param chainId The active chain id.
     error HelperConfig__ChainNotSupported(uint256 chainId);
