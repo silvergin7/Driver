@@ -95,6 +95,8 @@ contract MockUsdcFaucet is ReentrancyGuard {
     /// @return nextClaimAt_ Zero when `account` has never claimed. Otherwise the last claim plus the cooldown.
     function nextClaimAt(address account) public view returns (uint256 nextClaimAt_) {
         uint256 lastClaimAt = s_lastClaimAt[account];
+        // Zero is the never-claimed sentinel.
+        // slither-disable-next-line incorrect-equality
         if (lastClaimAt == 0) {
             return 0;
         }
@@ -118,6 +120,8 @@ contract MockUsdcFaucet is ReentrancyGuard {
 
     /// @dev Truncates `timestamp` to the UTC midnight that begins its day.
     function _dayStart(uint256 timestamp) internal pure returns (uint256 dayStart) {
+        // Floors to UTC midnight on purpose.
+        // slither-disable-next-line divide-before-multiply
         dayStart = (timestamp / 1 days) * 1 days;
     }
 }

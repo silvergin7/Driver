@@ -49,6 +49,8 @@ contract MockUSDC is ERC20, Ownable2Step {
     /// @param newMinter Account that may mint through the faucet path. The zero address clears it.
     function setMinter(address newMinter) external onlyOwner {
         address previous = s_minter;
+        // The zero address clears the minter on purpose.
+        // slither-disable-next-line missing-zero-check
         s_minter = newMinter;
         emit MinterUpdated(previous, newMinter);
     }
