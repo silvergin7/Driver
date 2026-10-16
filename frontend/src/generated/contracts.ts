@@ -1,4 +1,729 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CruiseControl
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const cruiseControlAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'usdc', internalType: 'contract MockUSDC', type: 'address' },
+      { name: 'clock', internalType: 'contract IDriverClock', type: 'address' },
+      {
+        name: 'taxSplitter',
+        internalType: 'contract TaxSplitter',
+        type: 'address',
+      },
+      { name: 'pool', internalType: 'contract IOfficialPool', type: 'address' },
+      {
+        name: 'farms',
+        internalType: 'contract IMockFarm[]',
+        type: 'address[]',
+      },
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'acceptOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'activeFarm',
+    outputs: [
+      { name: 'farm_', internalType: 'contract IMockFarm', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'deposit',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'heldRewards',
+    outputs: [
+      { name: 'heldRewards_', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_clock',
+    outputs: [
+      { name: '', internalType: 'contract IDriverClock', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fundId',
+    outputs: [
+      { name: '', internalType: 'enum TaxSplitter.FundId', type: 'uint8' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_pool',
+    outputs: [
+      { name: '', internalType: 'contract IOfficialPool', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_taxSplitter',
+    outputs: [
+      { name: '', internalType: 'contract TaxSplitter', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_usdc',
+    outputs: [{ name: '', internalType: 'contract MockUSDC', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'idle',
+    outputs: [{ name: 'idle_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'isStrategy',
+    outputs: [{ name: 'allowed_', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingRewards',
+    outputs: [{ name: 'rewards_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'principal',
+    outputs: [{ name: 'principal_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'newFarm', internalType: 'contract IMockFarm', type: 'address' },
+    ],
+    name: 'setStrategy',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'index', internalType: 'uint256', type: 'uint256' }],
+    name: 'strategyAt',
+    outputs: [
+      { name: 'farm_', internalType: 'contract IMockFarm', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'strategyCount',
+    outputs: [{ name: 'count_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'supply',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'value',
+    outputs: [{ name: 'value_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'farm', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'idle',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'CapitalDeployed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'from', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'idle',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'CapitalSupplied',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferStarted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'farm', internalType: 'address', type: 'address', indexed: true },
+    ],
+    name: 'StrategyListed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousFarm',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newFarm',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'principalMoved',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'rewardsClaimed',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'StrategySet',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
+  {
+    type: 'error',
+    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
+    name: 'SafeERC20FailedOperation',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__FarmClockMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__FarmTokenMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'idle', internalType: 'uint256', type: 'uint256' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'TreasuryFund__InsufficientIdle',
+  },
+  { type: 'error', inputs: [], name: 'TreasuryFund__NoActiveFarm' },
+  { type: 'error', inputs: [], name: 'TreasuryFund__NoFarms' },
+  {
+    type: 'error',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__StrategyAlreadyListed',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__StrategyNotAllowed',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__StrategyUnchanged',
+  },
+  { type: 'error', inputs: [], name: 'TreasuryFund__ZeroAddress' },
+  { type: 'error', inputs: [], name: 'TreasuryFund__ZeroAmount' },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// DegenDriver
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const degenDriverAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'usdc', internalType: 'contract MockUSDC', type: 'address' },
+      { name: 'clock', internalType: 'contract IDriverClock', type: 'address' },
+      {
+        name: 'taxSplitter',
+        internalType: 'contract TaxSplitter',
+        type: 'address',
+      },
+      { name: 'pool', internalType: 'contract IOfficialPool', type: 'address' },
+      {
+        name: 'farms',
+        internalType: 'contract IMockFarm[]',
+        type: 'address[]',
+      },
+      { name: 'initialOwner', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'acceptOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'activeFarm',
+    outputs: [
+      { name: 'farm_', internalType: 'contract IMockFarm', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'deposit',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'heldRewards',
+    outputs: [
+      { name: 'heldRewards_', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_clock',
+    outputs: [
+      { name: '', internalType: 'contract IDriverClock', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fundId',
+    outputs: [
+      { name: '', internalType: 'enum TaxSplitter.FundId', type: 'uint8' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_pool',
+    outputs: [
+      { name: '', internalType: 'contract IOfficialPool', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_taxSplitter',
+    outputs: [
+      { name: '', internalType: 'contract TaxSplitter', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_usdc',
+    outputs: [{ name: '', internalType: 'contract MockUSDC', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'idle',
+    outputs: [{ name: 'idle_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'isStrategy',
+    outputs: [{ name: 'allowed_', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingOwner',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingRewards',
+    outputs: [{ name: 'rewards_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'principal',
+    outputs: [{ name: 'principal_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'index', internalType: 'uint256', type: 'uint256' }],
+    name: 'strategyAt',
+    outputs: [
+      { name: 'farm_', internalType: 'contract IMockFarm', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'strategyCount',
+    outputs: [{ name: 'count_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'supply',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
+    name: 'transferOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'value',
+    outputs: [{ name: 'value_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'farm', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'idle',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'CapitalDeployed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'from', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'idle',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'CapitalSupplied',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferStarted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newOwner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'farm', internalType: 'address', type: 'address', indexed: true },
+    ],
+    name: 'StrategyListed',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'previousFarm',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'newFarm',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'principalMoved',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'rewardsClaimed',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'StrategySet',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
+    name: 'OwnableInvalidOwner',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
+    name: 'OwnableUnauthorizedAccount',
+  },
+  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
+  {
+    type: 'error',
+    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
+    name: 'SafeERC20FailedOperation',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__FarmClockMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__FarmTokenMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'idle', internalType: 'uint256', type: 'uint256' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'TreasuryFund__InsufficientIdle',
+  },
+  { type: 'error', inputs: [], name: 'TreasuryFund__NoActiveFarm' },
+  { type: 'error', inputs: [], name: 'TreasuryFund__NoFarms' },
+  {
+    type: 'error',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__StrategyAlreadyListed',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__StrategyNotAllowed',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__StrategyUnchanged',
+  },
+  { type: 'error', inputs: [], name: 'TreasuryFund__ZeroAddress' },
+  { type: 'error', inputs: [], name: 'TreasuryFund__ZeroAmount' },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // DemoDriverClock
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
