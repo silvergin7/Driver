@@ -30,6 +30,9 @@ import {
 } from "../mocks/HarvestMocks.sol";
 
 contract HarvestTest is Test {
+    uint256 internal constant SHARE_1 = 15_000 * 10 ** 6;
+    uint256 internal constant SHARE_2 = 5_000 * 10 ** 6;
+
     uint256 internal constant SEED_DVR = 500_000 * 10 ** 18;
     uint256 internal constant SEED_USDC = 10_000 * 10 ** 6;
     uint256 internal constant PRINCIPAL = 15_000 * 10 ** 6;
@@ -75,7 +78,7 @@ contract HarvestTest is Test {
         vm.prank(owner);
         splitter.setPool(address(pool));
         farm = new MockFarm(usdc, clock, APR, owner);
-        fund = new CruiseControl(usdc, clock, schedule, splitter, pool, _one(farm), owner);
+        fund = new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, _one(farm), owner);
 
         vm.startPrank(owner);
         token.mint(owner, SEED_DVR);
@@ -213,8 +216,9 @@ contract HarvestTest is Test {
         DriverClock production = new DriverClock();
         RoundSchedule productionSchedule = new RoundSchedule(production, 30 days);
         MockFarm productionFarm = new MockFarm(usdc, production, APR, owner);
-        CruiseControl productionFund =
-            new CruiseControl(usdc, production, productionSchedule, splitter, pool, _one(productionFarm), owner);
+        CruiseControl productionFund = new CruiseControl(
+            usdc, production, productionSchedule, splitter, pool, SHARE_1, SHARE_2, _one(productionFarm), owner
+        );
         vm.startPrank(owner);
         usdc.approve(address(productionFarm), 1_000_000 * 10 ** 6);
         productionFarm.fundRewards(1_000_000 * 10 ** 6);
@@ -267,7 +271,8 @@ contract HarvestTest is Test {
 
     function test_ZeroRewardsSkipTheSwap() public {
         MockFarm empty = new MockFarm(usdc, clock, APR, owner);
-        CruiseControl idleFund = new CruiseControl(usdc, clock, schedule, splitter, pool, _one(empty), owner);
+        CruiseControl idleFund =
+            new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, _one(empty), owner);
         vm.startPrank(owner);
         empty.addDepositor(address(idleFund));
         idleFund.setStrategy(empty);
@@ -292,7 +297,8 @@ contract HarvestTest is Test {
         IMockFarm[] memory farms = new IMockFarm[](2);
         farms[0] = farm;
         farms[1] = other;
-        CruiseControl switching = new CruiseControl(usdc, clock, schedule, splitter, pool, farms, owner);
+        CruiseControl switching =
+            new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, owner);
         vm.startPrank(owner);
         farm.addDepositor(address(switching));
         other.addDepositor(address(switching));
@@ -425,7 +431,7 @@ contract HarvestTest is Test {
         OfficialPool tiny = _tinyPool();
         MockFarm hot = new MockFarm(usdc, clock, 10_000, owner);
         RoundSchedule short = new RoundSchedule(clock, 1 days);
-        CruiseControl dust = new CruiseControl(usdc, clock, short, splitter, tiny, _one(hot), owner);
+        CruiseControl dust = new CruiseControl(usdc, clock, short, splitter, tiny, SHARE_1, SHARE_2, _one(hot), owner);
         vm.startPrank(owner);
         splitter.setRecipient(TaxSplitter.FundId.Fund1, address(dust));
         hot.addDepositor(address(dust));
@@ -466,7 +472,7 @@ contract HarvestTest is Test {
         otherSplitter.setPool(address(rejecting));
         FixedFarm stub = new FixedFarm(usdc, clock);
         CruiseControl rejectingFund =
-            new CruiseControl(usdc, clock, schedule, otherSplitter, rejecting, _one(stub), owner);
+            new CruiseControl(usdc, clock, schedule, otherSplitter, rejecting, SHARE_1, SHARE_2, _one(stub), owner);
         stub.configure(rejectingFund, 2, false);
         vm.prank(owner);
         rejectingFund.setStrategy(stub);
@@ -486,7 +492,8 @@ contract HarvestTest is Test {
         otherSplitter.setPool(address(empty));
         FixedFarm stub = new FixedFarm(usdc, clock);
         RoundSchedule otherSchedule = new RoundSchedule(clock, 30 days);
-        CruiseControl emptyFund = new CruiseControl(usdc, clock, otherSchedule, otherSplitter, empty, _one(stub), owner);
+        CruiseControl emptyFund =
+            new CruiseControl(usdc, clock, otherSchedule, otherSplitter, empty, SHARE_1, SHARE_2, _one(stub), owner);
         stub.configure(emptyFund, 2, false);
         vm.prank(owner);
         emptyFund.setStrategy(stub);
@@ -499,7 +506,8 @@ contract HarvestTest is Test {
 
     function test_ReenteringFarmRevertsTheHarvest() public {
         FixedFarm stub = new FixedFarm(usdc, clock);
-        CruiseControl reentering = new CruiseControl(usdc, clock, schedule, splitter, pool, _one(stub), owner);
+        CruiseControl reentering =
+            new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, _one(stub), owner);
         stub.configure(reentering, 0, true);
         vm.prank(owner);
         reentering.setStrategy(stub);
@@ -517,7 +525,7 @@ contract HarvestTest is Test {
         otherSplitter.setPool(address(reentering));
         FixedFarm stub = new FixedFarm(usdc, clock);
         CruiseControl reenteringFund =
-            new CruiseControl(usdc, clock, schedule, otherSplitter, reentering, _one(stub), owner);
+            new CruiseControl(usdc, clock, schedule, otherSplitter, reentering, SHARE_1, SHARE_2, _one(stub), owner);
         stub.configure(reenteringFund, 2, false);
         reentering.setFund(reenteringFund);
         vm.prank(owner);
@@ -754,7 +762,7 @@ contract HarvestTest is Test {
         farms[0] = high;
         farms[1] = low;
         RoundSchedule short = new RoundSchedule(clock, 1 days);
-        dust = new CruiseControl(usdc, clock, short, splitter, pool, farms, owner);
+        dust = new CruiseControl(usdc, clock, short, splitter, pool, SHARE_1, SHARE_2, farms, owner);
         vm.startPrank(owner);
         high.addDepositor(address(dust));
         low.addDepositor(address(dust));
@@ -775,7 +783,7 @@ contract HarvestTest is Test {
         farms[0] = highway;
         farms[1] = autobahn;
         farms[2] = drift;
-        degen = new DegenDriver(usdc, clock, schedule, splitter, pool, farms, owner);
+        degen = new DegenDriver(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, owner);
         vm.startPrank(owner);
         highway.addDepositor(address(degen));
         autobahn.addDepositor(address(degen));

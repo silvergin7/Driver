@@ -114,4 +114,14 @@ interface ITreasuryFund {
     /// @notice Returns the round schedule this fund harvests against.
     /// @return schedule_ Shared schedule.
     function i_schedule() external view returns (RoundSchedule schedule_);
+
+    /// @notice Returns Fund 1's starting share of the two-fund ratio.
+    /// @dev This is the deploy amount passed into the constructor, not this fund's live balance.
+    /// @return share_ Share in mUSDC base units.
+    function i_fund1Usdc() external view returns (uint256 share_);
+
+    /// @notice Returns Fund 2's starting share of the two-fund ratio.
+    /// @dev This is the deploy amount passed into the constructor, not this fund's live balance.
+    /// @return share_ Share in mUSDC base units.
+    function i_fund2Usdc() external view returns (uint256 share_);
 }

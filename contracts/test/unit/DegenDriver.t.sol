@@ -15,6 +15,9 @@ import {TaxSplitter} from "../../src/TaxSplitter.sol";
 import {TreasuryFund} from "../../src/TreasuryFund.sol";
 
 contract DegenDriverTest is Test {
+    uint256 internal constant SHARE_1 = 15_000 * 10 ** 6;
+    uint256 internal constant SHARE_2 = 5_000 * 10 ** 6;
+
     MockUSDC internal usdc;
     MockFarm internal highway;
     MockFarm internal autobahn;
@@ -41,7 +44,7 @@ contract DegenDriverTest is Test {
         farms[0] = highway;
         farms[1] = autobahn;
         farms[2] = drift;
-        fund = new DegenDriver(usdc, clock, schedule, splitter, pool, farms, owner);
+        fund = new DegenDriver(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, owner);
     }
 
     function test_ConstructorListsTheThreeFarms() public view {
@@ -57,6 +60,8 @@ contract DegenDriverTest is Test {
         assertEq(address(fund.activeFarm()), address(0));
         assertEq(fund.idle(), 0);
         assertEq(fund.value(), 0);
+        assertEq(fund.i_fund1Usdc(), SHARE_1);
+        assertEq(fund.i_fund2Usdc(), SHARE_2);
     }
 
     function test_RevertWhen_DepositHasNoActiveFarm() public {

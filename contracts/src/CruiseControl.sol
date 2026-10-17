@@ -20,6 +20,9 @@ contract CruiseControl is TreasuryFund {
     /// @param schedule Shared round schedule. The zero address is rejected.
     /// @param taxSplitter Splitter whose Fund 1 bucket this fund will release. The zero address is rejected.
     /// @param pool Official pool stored for a later buyback. The zero address is rejected.
+    /// @param fund1Usdc Fund 1's starting share, in mUSDC base units. Zero is rejected, and it must be
+    /// strictly larger than `fund2Usdc`.
+    /// @param fund2Usdc Fund 2's starting share, in mUSDC base units. Zero is rejected.
     /// @param farms Farms the owner may select. The deploy passes Cruise alone.
     /// @param initialOwner Account allowed to supply, deposit, and set the farm. The zero address is rejected.
     constructor(
@@ -28,9 +31,24 @@ contract CruiseControl is TreasuryFund {
         RoundSchedule schedule,
         TaxSplitter taxSplitter,
         IOfficialPool pool,
+        uint256 fund1Usdc,
+        uint256 fund2Usdc,
         IMockFarm[] memory farms,
         address initialOwner
-    ) TreasuryFund(usdc, clock, schedule, taxSplitter, pool, TaxSplitter.FundId.Fund1, farms, initialOwner) {}
+    )
+        TreasuryFund(
+            usdc,
+            clock,
+            schedule,
+            taxSplitter,
+            pool,
+            TaxSplitter.FundId.Fund1,
+            fund1Usdc,
+            fund2Usdc,
+            farms,
+            initialOwner
+        )
+    {}
 
     /// @notice Points this fund at one farm from its constructor list.
     /// @dev Calls {_switchFarm}. Only the owner may call this. `nonReentrant` covers the farm calls inside

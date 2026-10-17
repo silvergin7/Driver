@@ -18,6 +18,9 @@ import {TaxSplitter} from "../../src/TaxSplitter.sol";
 import {TreasuryFund} from "../../src/TreasuryFund.sol";
 
 contract CruiseControlTest is Test {
+    uint256 internal constant SHARE_1 = 15_000 * 10 ** 6;
+    uint256 internal constant SHARE_2 = 5_000 * 10 ** 6;
+
     uint256 internal constant APR = 500;
     uint256 internal constant YEAR = 365 days;
 
@@ -44,7 +47,7 @@ contract CruiseControlTest is Test {
         splitter.setPool(address(pool));
         farmA = new MockFarm(usdc, clock, APR, owner);
         farmB = new MockFarm(usdc, clock, APR, owner);
-        fund = new CruiseControl(usdc, clock, schedule, splitter, pool, _pair(farmA, farmB), owner);
+        fund = new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, _pair(farmA, farmB), owner);
 
         vm.startPrank(owner);
         usdc.mint(owner, 2_000_000 * 10 ** 6);
@@ -74,6 +77,8 @@ contract CruiseControlTest is Test {
         assertEq(fund.principal(), 0);
         assertEq(fund.value(), 0);
         assertEq(fund.pendingRewards(), 0);
+        assertEq(fund.i_fund1Usdc(), SHARE_1);
+        assertEq(fund.i_fund2Usdc(), SHARE_2);
     }
 
     function test_ConstructorEmitsStrategyListed() public {
@@ -81,45 +86,75 @@ contract CruiseControlTest is Test {
         emit TreasuryFund.StrategyListed(address(farmA));
         vm.expectEmit(true, false, false, true);
         emit TreasuryFund.StrategyListed(address(farmB));
-        new CruiseControl(usdc, clock, schedule, splitter, pool, _pair(farmA, farmB), owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, _pair(farmA, farmB), owner);
     }
 
     function test_RevertWhen_UsdcIsZeroAddress() public {
         vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
-        new CruiseControl(MockUSDC(address(0)), clock, schedule, splitter, pool, _pair(farmA, farmB), owner);
+        new CruiseControl(
+            MockUSDC(address(0)), clock, schedule, splitter, pool, SHARE_1, SHARE_2, _pair(farmA, farmB), owner
+        );
     }
 
     function test_RevertWhen_ClockIsZeroAddress() public {
         vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
-        new CruiseControl(usdc, IDriverClock(address(0)), schedule, splitter, pool, _pair(farmA, farmB), owner);
+        new CruiseControl(
+            usdc, IDriverClock(address(0)), schedule, splitter, pool, SHARE_1, SHARE_2, _pair(farmA, farmB), owner
+        );
     }
 
     function test_RevertWhen_SplitterIsZeroAddress() public {
         vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
-        new CruiseControl(usdc, clock, schedule, TaxSplitter(address(0)), pool, _pair(farmA, farmB), owner);
+        new CruiseControl(
+            usdc, clock, schedule, TaxSplitter(address(0)), pool, SHARE_1, SHARE_2, _pair(farmA, farmB), owner
+        );
     }
 
     function test_RevertWhen_PoolIsZeroAddress() public {
         vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
-        new CruiseControl(usdc, clock, schedule, splitter, IOfficialPool(address(0)), _pair(farmA, farmB), owner);
+        new CruiseControl(
+            usdc, clock, schedule, splitter, IOfficialPool(address(0)), SHARE_1, SHARE_2, _pair(farmA, farmB), owner
+        );
+    }
+
+    function test_RevertWhen_Fund1ShareIsZero() public {
+        vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAmount.selector);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, 0, SHARE_2, _pair(farmA, farmB), owner);
+    }
+
+    function test_RevertWhen_Fund2ShareIsZero() public {
+        vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAmount.selector);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, 0, _pair(farmA, farmB), owner);
+    }
+
+    function test_RevertWhen_SharesAreEqual() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(TreasuryFund.TreasuryFund__Fund1ShareNotLarger.selector, SHARE_2, SHARE_2)
+        );
+        new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_2, SHARE_2, _pair(farmA, farmB), owner);
+    }
+
+    function test_RevertWhen_Fund1ShareIsSmaller() public {
+        vm.expectRevert(abi.encodeWithSelector(TreasuryFund.TreasuryFund__Fund1ShareNotLarger.selector, 1, SHARE_2));
+        new CruiseControl(usdc, clock, schedule, splitter, pool, 1, SHARE_2, _pair(farmA, farmB), owner);
     }
 
     function test_RevertWhen_OwnerIsZeroAddress() public {
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
-        new CruiseControl(usdc, clock, schedule, splitter, pool, _pair(farmA, farmB), address(0));
+        new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, _pair(farmA, farmB), address(0));
     }
 
     function test_RevertWhen_FarmListIsEmpty() public {
         IMockFarm[] memory farms = new IMockFarm[](0);
         vm.expectRevert(TreasuryFund.TreasuryFund__NoFarms.selector);
-        new CruiseControl(usdc, clock, schedule, splitter, pool, farms, owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, owner);
     }
 
     function test_RevertWhen_FarmIsZeroAddress() public {
         IMockFarm[] memory farms = new IMockFarm[](1);
         farms[0] = IMockFarm(address(0));
         vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
-        new CruiseControl(usdc, clock, schedule, splitter, pool, farms, owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, owner);
     }
 
     function test_RevertWhen_FarmIsDuplicated() public {
@@ -129,7 +164,7 @@ contract CruiseControlTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(TreasuryFund.TreasuryFund__StrategyAlreadyListed.selector, address(farmA))
         );
-        new CruiseControl(usdc, clock, schedule, splitter, pool, farms, owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, owner);
     }
 
     function test_RevertWhen_FarmTokenMismatches() public {
@@ -138,26 +173,28 @@ contract CruiseControlTest is Test {
         IMockFarm[] memory farms = new IMockFarm[](1);
         farms[0] = bad;
         vm.expectRevert(abi.encodeWithSelector(TreasuryFund.TreasuryFund__FarmTokenMismatch.selector, address(bad)));
-        new CruiseControl(usdc, clock, schedule, splitter, pool, farms, owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, owner);
     }
 
     function test_RevertWhen_ScheduleIsZeroAddress() public {
         vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
-        new CruiseControl(usdc, clock, RoundSchedule(address(0)), splitter, pool, _pair(farmA, farmB), owner);
+        new CruiseControl(
+            usdc, clock, RoundSchedule(address(0)), splitter, pool, SHARE_1, SHARE_2, _pair(farmA, farmB), owner
+        );
     }
 
     function test_RevertWhen_ScheduleClockMismatches() public {
         DemoDriverClock other = new DemoDriverClock(owner);
         RoundSchedule bad = new RoundSchedule(other, 30 days);
         vm.expectRevert(abi.encodeWithSelector(TreasuryFund.TreasuryFund__ScheduleClockMismatch.selector, address(bad)));
-        new CruiseControl(usdc, clock, bad, splitter, pool, _pair(farmA, farmB), owner);
+        new CruiseControl(usdc, clock, bad, splitter, pool, SHARE_1, SHARE_2, _pair(farmA, farmB), owner);
     }
 
     function test_RevertWhen_SplitterPoolMismatches() public {
         DriverToken token = new DriverToken(owner);
         OfficialPool other = new OfficialPool(token, usdc, splitter, owner, 100);
         vm.expectRevert(abi.encodeWithSelector(TreasuryFund.TreasuryFund__PoolMismatch.selector, address(other)));
-        new CruiseControl(usdc, clock, schedule, splitter, other, _pair(farmA, farmB), owner);
+        new CruiseControl(usdc, clock, schedule, splitter, other, SHARE_1, SHARE_2, _pair(farmA, farmB), owner);
     }
 
     function test_RevertWhen_PoolTokenMismatches() public {
@@ -168,7 +205,7 @@ contract CruiseControlTest is Test {
         vm.prank(owner);
         otherSplitter.setPool(address(otherPool));
         vm.expectRevert(abi.encodeWithSelector(TreasuryFund.TreasuryFund__PoolMismatch.selector, address(otherPool)));
-        new CruiseControl(usdc, clock, schedule, otherSplitter, otherPool, _pair(farmA, farmB), owner);
+        new CruiseControl(usdc, clock, schedule, otherSplitter, otherPool, SHARE_1, SHARE_2, _pair(farmA, farmB), owner);
     }
 
     function test_RevertWhen_FarmClockMismatches() public {
@@ -177,7 +214,7 @@ contract CruiseControlTest is Test {
         IMockFarm[] memory farms = new IMockFarm[](1);
         farms[0] = bad;
         vm.expectRevert(abi.encodeWithSelector(TreasuryFund.TreasuryFund__FarmClockMismatch.selector, address(bad)));
-        new CruiseControl(usdc, clock, schedule, splitter, pool, farms, owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, owner);
     }
 
     function test_SupplyCreditsIdleFromCaller() public {

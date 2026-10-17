@@ -41,6 +41,12 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     /// @inheritdoc ITreasuryFund
     TaxSplitter.FundId public immutable i_fundId;
 
+    /// @inheritdoc ITreasuryFund
+    uint256 public immutable i_fund1Usdc;
+
+    /// @inheritdoc ITreasuryFund
+    uint256 public immutable i_fund2Usdc;
+
     /// @notice mUSDC pulled by {supply} and not yet deposited.
     uint256 private s_idle;
 
@@ -117,6 +123,11 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     /// @notice The amount was zero.
     error TreasuryFund__ZeroAmount();
 
+    /// @notice Fund 1's starting share was not strictly larger than Fund 2's.
+    /// @param fund1Usdc Fund 1's share, in mUSDC base units.
+    /// @param fund2Usdc Fund 2's share, in mUSDC base units.
+    error TreasuryFund__Fund1ShareNotLarger(uint256 fund1Usdc, uint256 fund2Usdc);
+
     /// @notice The constructor farm list was empty.
     error TreasuryFund__NoFarms();
 
@@ -165,16 +176,21 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
 
     /// @notice Stores the token, the clock, the schedule, the splitter, the pool, the bucket, and the farm list.
     /// @dev Reverts with {TreasuryFund__ZeroAddress} when `usdc`, `clock`, `schedule`, `taxSplitter`, or `pool`
-    /// is zero. Reverts with {TreasuryFund__PoolMismatch} unless the splitter's pool is `pool` and that pool's
-    /// mUSDC is `usdc`. Reverts with {TreasuryFund__ScheduleClockMismatch} unless the schedule reads `clock`.
-    /// A zero owner reverts in {Ownable}. The farm list is checked by {_listFarms}. A zero `fundId` is not
-    /// possible: the child passes {TaxSplitter.FundId}.
+    /// is zero. Reverts with {TreasuryFund__ZeroAmount} when `fund1Usdc` or `fund2Usdc` is zero, and with
+    /// {TreasuryFund__Fund1ShareNotLarger} when `fund1Usdc` is not strictly larger than `fund2Usdc`. Reverts
+    /// with {TreasuryFund__PoolMismatch} unless the splitter's pool is `pool` and that pool's mUSDC is `usdc`.
+    /// Reverts with {TreasuryFund__ScheduleClockMismatch} unless the schedule reads `clock`. A zero owner
+    /// reverts in {Ownable}. The farm list is checked by {_listFarms}. A zero `fundId` is not possible: the
+    /// child passes {TaxSplitter.FundId}.
     /// @param usdc Mock USDC this fund holds. The zero address is rejected.
     /// @param clock Clock this fund and its farms read. The zero address is rejected.
     /// @param schedule Shared round schedule. The zero address is rejected.
     /// @param taxSplitter Splitter whose bucket this fund will release. The zero address is rejected.
     /// @param pool Official pool stored for a later buyback. The zero address is rejected.
     /// @param fundId Splitter bucket. Cruise Control passes Fund 1. Degen Driver passes Fund 2.
+    /// @param fund1Usdc Fund 1's starting share, in mUSDC base units. Zero is rejected, and it must be
+    /// strictly larger than `fund2Usdc`.
+    /// @param fund2Usdc Fund 2's starting share, in mUSDC base units. Zero is rejected.
     /// @param farms Farms this fund may use. The list must be non-empty, and each entry must be non-zero,
     /// unique, and use `usdc` and `clock`.
     /// @param initialOwner Account allowed to supply and deposit. The zero address is rejected.
@@ -185,6 +201,8 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
         TaxSplitter taxSplitter,
         IOfficialPool pool,
         TaxSplitter.FundId fundId,
+        uint256 fund1Usdc,
+        uint256 fund2Usdc,
         IMockFarm[] memory farms,
         address initialOwner
     ) Ownable(initialOwner) {
@@ -193,6 +211,12 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
                 || address(taxSplitter) == address(0) || address(pool) == address(0)
         ) {
             revert TreasuryFund__ZeroAddress();
+        }
+        if (fund1Usdc == 0 || fund2Usdc == 0) {
+            revert TreasuryFund__ZeroAmount();
+        }
+        if (fund1Usdc <= fund2Usdc) {
+            revert TreasuryFund__Fund1ShareNotLarger(fund1Usdc, fund2Usdc);
         }
         if (taxSplitter.pool() != address(pool) || address(pool.i_usdc()) != address(usdc)) {
             revert TreasuryFund__PoolMismatch(address(pool));
@@ -206,6 +230,8 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
         i_taxSplitter = taxSplitter;
         i_pool = pool;
         i_fundId = fundId;
+        i_fund1Usdc = fund1Usdc;
+        i_fund2Usdc = fund2Usdc;
         _listFarms(farms);
     }
 

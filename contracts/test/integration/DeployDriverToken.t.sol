@@ -314,6 +314,10 @@ contract DeployDriverTokenTest is Test {
         assertEq(deployed.schedule.i_start(), block.timestamp);
         assertEq(address(deployed.cruiseControl.i_schedule()), address(deployed.schedule));
         assertEq(address(deployed.degenDriver.i_schedule()), address(deployed.schedule));
+        assertEq(deployed.cruiseControl.i_fund1Usdc(), helper.FUND_1_USDC());
+        assertEq(deployed.cruiseControl.i_fund2Usdc(), helper.FUND_2_USDC());
+        assertEq(deployed.degenDriver.i_fund1Usdc(), helper.FUND_1_USDC());
+        assertEq(deployed.degenDriver.i_fund2Usdc(), helper.FUND_2_USDC());
         assertEq(deployed.token.balanceOf(deployer), helper.COMMUNITY_ALLOCATION() + helper.TEAM_ALLOCATION());
         assertEq(deployed.usdc.balanceOf(deployer), helper.FUND_3_USDC());
         assertEq(deployed.cruiseControl.idle(), 0);

@@ -51,7 +51,8 @@ contract DeployDriverToken is Script {
     /// {OfficialPool.addLiquidity}, this deploys Cruise, Highway, Autobahn, and Drift, mints the sum of their
     /// reserves to the deployer in one call, then approves and calls {MockFarm.fundRewards} for that exact
     /// reserve on each farm, in that order. It then deploys {RoundSchedule} for {HelperConfig.EPOCH_LENGTH},
-    /// {CruiseControl} with Cruise only, and {DegenDriver} with Highway, Autobahn, and Drift, and supplies
+    /// {CruiseControl} with Cruise only, and {DegenDriver} with Highway, Autobahn, and Drift. Both funds
+    /// receive {HelperConfig.FUND_1_USDC} and {HelperConfig.FUND_2_USDC} as their starting shares. It supplies
     /// {HelperConfig.FUND_1_USDC} and
     /// {HelperConfig.FUND_2_USDC}, adds the funds as depositors, selects Cruise, and deposits Fund 1.
     /// The splitter's Fund 1 and Fund 2 recipients are the two funds. Fund 3 has no recipient.
@@ -136,6 +137,8 @@ contract DeployDriverToken is Script {
             deployed.schedule,
             deployed.splitter,
             deployed.pool,
+            helper.FUND_1_USDC(),
+            helper.FUND_2_USDC(),
             _cruiseFarms(deployed.cruise),
             deployer
         );
@@ -145,6 +148,8 @@ contract DeployDriverToken is Script {
             deployed.schedule,
             deployed.splitter,
             deployed.pool,
+            helper.FUND_1_USDC(),
+            helper.FUND_2_USDC(),
             _degenFarms(deployed.highway, deployed.autobahn, deployed.drift),
             deployer
         );

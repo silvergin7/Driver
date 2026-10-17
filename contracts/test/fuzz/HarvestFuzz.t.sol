@@ -15,6 +15,9 @@ import {RoundSchedule} from "../../src/RoundSchedule.sol";
 import {TaxSplitter} from "../../src/TaxSplitter.sol";
 
 contract HarvestFuzzTest is Test {
+    uint256 internal constant SHARE_1 = 15_000 * 10 ** 6;
+    uint256 internal constant SHARE_2 = 5_000 * 10 ** 6;
+
     uint256 internal constant BPS = 10_000;
     uint256 internal constant YEAR = 365 days;
     uint256 internal constant SEED_DVR = 1_000 * 10 ** 18;
@@ -55,7 +58,8 @@ contract HarvestFuzzTest is Test {
         RoundSchedule schedule = new RoundSchedule(clock, elapsed);
         IMockFarm[] memory farms = new IMockFarm[](1);
         farms[0] = farm;
-        CruiseControl fund = new CruiseControl(usdc, clock, schedule, splitter, pool, farms, address(this));
+        CruiseControl fund =
+            new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, address(this));
         farm.addDepositor(address(fund));
         usdc.approve(address(farm), 1_000_000 * 10 ** 6);
         farm.fundRewards(1_000_000 * 10 ** 6);

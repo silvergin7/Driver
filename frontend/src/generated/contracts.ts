@@ -19,6 +19,8 @@ export const cruiseControlAbi = [
         type: 'address',
       },
       { name: 'pool', internalType: 'contract IOfficialPool', type: 'address' },
+      { name: 'fund1Usdc', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Usdc', internalType: 'uint256', type: 'uint256' },
       {
         name: 'farms',
         internalType: 'contract IMockFarm[]',
@@ -91,6 +93,20 @@ export const cruiseControlAbi = [
     outputs: [
       { name: '', internalType: 'contract IDriverClock', type: 'address' },
     ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fund1Usdc',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fund2Usdc',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -467,6 +483,14 @@ export const cruiseControlAbi = [
   {
     type: 'error',
     inputs: [
+      { name: 'fund1Usdc', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Usdc', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'TreasuryFund__Fund1ShareNotLarger',
+  },
+  {
+    type: 'error',
+    inputs: [
       { name: 'idle', internalType: 'uint256', type: 'uint256' },
       { name: 'amount', internalType: 'uint256', type: 'uint256' },
     ],
@@ -529,6 +553,8 @@ export const degenDriverAbi = [
         type: 'address',
       },
       { name: 'pool', internalType: 'contract IOfficialPool', type: 'address' },
+      { name: 'fund1Usdc', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Usdc', internalType: 'uint256', type: 'uint256' },
       {
         name: 'farms',
         internalType: 'contract IMockFarm[]',
@@ -601,6 +627,20 @@ export const degenDriverAbi = [
     outputs: [
       { name: '', internalType: 'contract IDriverClock', type: 'address' },
     ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fund1Usdc',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fund2Usdc',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -1000,6 +1040,14 @@ export const degenDriverAbi = [
     type: 'error',
     inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
     name: 'TreasuryFund__FarmTokenMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'fund1Usdc', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Usdc', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'TreasuryFund__Fund1ShareNotLarger',
   },
   {
     type: 'error',
