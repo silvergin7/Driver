@@ -9,6 +9,11 @@ export const cruiseControlAbi = [
       { name: 'usdc', internalType: 'contract MockUSDC', type: 'address' },
       { name: 'clock', internalType: 'contract IDriverClock', type: 'address' },
       {
+        name: 'schedule',
+        internalType: 'contract RoundSchedule',
+        type: 'address',
+      },
+      {
         name: 'taxSplitter',
         internalType: 'contract TaxSplitter',
         type: 'address',
@@ -79,6 +84,15 @@ export const cruiseControlAbi = [
     name: 'i_pool',
     outputs: [
       { name: '', internalType: 'contract IOfficialPool', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_schedule',
+    outputs: [
+      { name: '', internalType: 'contract RoundSchedule', type: 'address' },
     ],
     stateMutability: 'view',
   },
@@ -348,6 +362,16 @@ export const cruiseControlAbi = [
   { type: 'error', inputs: [], name: 'TreasuryFund__NoFarms' },
   {
     type: 'error',
+    inputs: [{ name: 'pool', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__PoolMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'schedule', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__ScheduleClockMismatch',
+  },
+  {
+    type: 'error',
     inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
     name: 'TreasuryFund__StrategyAlreadyListed',
   },
@@ -375,6 +399,11 @@ export const degenDriverAbi = [
     inputs: [
       { name: 'usdc', internalType: 'contract MockUSDC', type: 'address' },
       { name: 'clock', internalType: 'contract IDriverClock', type: 'address' },
+      {
+        name: 'schedule',
+        internalType: 'contract RoundSchedule',
+        type: 'address',
+      },
       {
         name: 'taxSplitter',
         internalType: 'contract TaxSplitter',
@@ -446,6 +475,15 @@ export const degenDriverAbi = [
     name: 'i_pool',
     outputs: [
       { name: '', internalType: 'contract IOfficialPool', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_schedule',
+    outputs: [
+      { name: '', internalType: 'contract RoundSchedule', type: 'address' },
     ],
     stateMutability: 'view',
   },
@@ -704,6 +742,16 @@ export const degenDriverAbi = [
   },
   { type: 'error', inputs: [], name: 'TreasuryFund__NoActiveFarm' },
   { type: 'error', inputs: [], name: 'TreasuryFund__NoFarms' },
+  {
+    type: 'error',
+    inputs: [{ name: 'pool', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__PoolMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'schedule', internalType: 'address', type: 'address' }],
+    name: 'TreasuryFund__ScheduleClockMismatch',
+  },
   {
     type: 'error',
     inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
@@ -2559,6 +2607,116 @@ export const officialPoolAbi = [
     inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
     name: 'SafeERC20FailedOperation',
   },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// RoundSchedule
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const roundScheduleAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'clock', internalType: 'contract IDriverClock', type: 'address' },
+      { name: 'epoch', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MAX_EPOCH',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'MIN_EPOCH',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'currentRound',
+    outputs: [{ name: 'roundId_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_clock',
+    outputs: [
+      { name: '', internalType: 'contract IDriverClock', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_epoch',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_start',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'latestClosedRound',
+    outputs: [{ name: 'roundId_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'roundId', internalType: 'uint256', type: 'uint256' }],
+    name: 'roundEnd',
+    outputs: [{ name: 'end_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'roundId', internalType: 'uint256', type: 'uint256' }],
+    name: 'roundStart',
+    outputs: [{ name: 'start_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'start',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'epoch',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'RoundScheduleStarted',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'epoch', internalType: 'uint256', type: 'uint256' },
+      { name: 'minEpoch', internalType: 'uint256', type: 'uint256' },
+      { name: 'maxEpoch', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'RoundSchedule__EpochOutOfRange',
+  },
+  { type: 'error', inputs: [], name: 'RoundSchedule__NoClosedRound' },
+  { type: 'error', inputs: [], name: 'RoundSchedule__ZeroAddress' },
 ] as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

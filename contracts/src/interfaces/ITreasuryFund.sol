@@ -5,6 +5,7 @@ import {IDriverClock} from "./IDriverClock.sol";
 import {IMockFarm} from "./IMockFarm.sol";
 import {IOfficialPool} from "./IOfficialPool.sol";
 import {MockUSDC} from "../MockUSDC.sol";
+import {RoundSchedule} from "../RoundSchedule.sol";
 import {TaxSplitter} from "../TaxSplitter.sol";
 
 /// @title Treasury fund
@@ -70,4 +71,8 @@ interface ITreasuryFund {
     /// @notice Returns which splitter bucket this fund releases.
     /// @return fundId_ Fund 1 or Fund 2.
     function i_fundId() external view returns (TaxSplitter.FundId fundId_);
+
+    /// @notice Returns the round schedule this fund harvests against.
+    /// @return schedule_ Shared schedule.
+    function i_schedule() external view returns (RoundSchedule schedule_);
 }

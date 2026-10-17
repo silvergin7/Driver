@@ -10,6 +10,7 @@ const contractNames = [
   "DemoDriverClock",
   "TaxSplitter",
   "OfficialPool",
+  "RoundSchedule",
   "CruiseControl",
   "DegenDriver",
 ] as const;
@@ -127,6 +128,7 @@ export async function syncAnvilAddresses(
     TaxSplitter: requireAddress(found, "TaxSplitter"),
     OfficialPool: requireAddress(found, "OfficialPool"),
     ...farmAddresses,
+    RoundSchedule: requireAddress(found, "RoundSchedule"),
     CruiseControl: requireAddress(found, "CruiseControl"),
     DegenDriver: requireAddress(found, "DegenDriver"),
   };

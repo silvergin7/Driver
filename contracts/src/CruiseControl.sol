@@ -5,6 +5,7 @@ import {IDriverClock} from "./interfaces/IDriverClock.sol";
 import {IMockFarm} from "./interfaces/IMockFarm.sol";
 import {IOfficialPool} from "./interfaces/IOfficialPool.sol";
 import {MockUSDC} from "./MockUSDC.sol";
+import {RoundSchedule} from "./RoundSchedule.sol";
 import {TaxSplitter} from "./TaxSplitter.sol";
 import {TreasuryFund} from "./TreasuryFund.sol";
 
@@ -15,7 +16,8 @@ import {TreasuryFund} from "./TreasuryFund.sol";
 contract CruiseControl is TreasuryFund {
     /// @notice Stores Fund 1's addresses and its farm list.
     /// @param usdc Mock USDC this fund holds. The zero address is rejected.
-    /// @param clock Clock stored for a later harvest. The zero address is rejected.
+    /// @param clock Clock this fund and its farms read. The zero address is rejected.
+    /// @param schedule Shared round schedule. The zero address is rejected.
     /// @param taxSplitter Splitter whose Fund 1 bucket this fund will release. The zero address is rejected.
     /// @param pool Official pool stored for a later buyback. The zero address is rejected.
     /// @param farms Farms the owner may select. The deploy passes Cruise alone.
@@ -23,11 +25,12 @@ contract CruiseControl is TreasuryFund {
     constructor(
         MockUSDC usdc,
         IDriverClock clock,
+        RoundSchedule schedule,
         TaxSplitter taxSplitter,
         IOfficialPool pool,
         IMockFarm[] memory farms,
         address initialOwner
-    ) TreasuryFund(usdc, clock, taxSplitter, pool, TaxSplitter.FundId.Fund1, farms, initialOwner) {}
+    ) TreasuryFund(usdc, clock, schedule, taxSplitter, pool, TaxSplitter.FundId.Fund1, farms, initialOwner) {}
 
     /// @notice Points this fund at one farm from its constructor list.
     /// @dev Calls {_switchFarm}. Only the owner may call this. `nonReentrant` covers the farm calls inside

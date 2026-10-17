@@ -5,6 +5,7 @@ import {IDriverClock} from "./interfaces/IDriverClock.sol";
 import {IMockFarm} from "./interfaces/IMockFarm.sol";
 import {IOfficialPool} from "./interfaces/IOfficialPool.sol";
 import {MockUSDC} from "./MockUSDC.sol";
+import {RoundSchedule} from "./RoundSchedule.sol";
 import {TaxSplitter} from "./TaxSplitter.sol";
 import {TreasuryFund} from "./TreasuryFund.sol";
 
@@ -15,7 +16,8 @@ import {TreasuryFund} from "./TreasuryFund.sol";
 contract DegenDriver is TreasuryFund {
     /// @notice Stores Fund 2's addresses and its farm list.
     /// @param usdc Mock USDC this fund holds. The zero address is rejected.
-    /// @param clock Clock stored for a later harvest. The zero address is rejected.
+    /// @param clock Clock this fund and its farms read. The zero address is rejected.
+    /// @param schedule Shared round schedule. The zero address is rejected.
     /// @param taxSplitter Splitter whose Fund 2 bucket this fund will release. The zero address is rejected.
     /// @param pool Official pool stored for a later buyback. The zero address is rejected.
     /// @param farms Farms a later harvest may select. The deploy passes Highway, Autobahn, and Drift.
@@ -23,9 +25,10 @@ contract DegenDriver is TreasuryFund {
     constructor(
         MockUSDC usdc,
         IDriverClock clock,
+        RoundSchedule schedule,
         TaxSplitter taxSplitter,
         IOfficialPool pool,
         IMockFarm[] memory farms,
         address initialOwner
-    ) TreasuryFund(usdc, clock, taxSplitter, pool, TaxSplitter.FundId.Fund2, farms, initialOwner) {}
+    ) TreasuryFund(usdc, clock, schedule, taxSplitter, pool, TaxSplitter.FundId.Fund2, farms, initialOwner) {}
 }

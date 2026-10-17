@@ -29,11 +29,11 @@ contract OfficialPool is IOfficialPool, ReentrancyGuard, Ownable2Step {
     /// @notice Denominator for {taxBps}. 10_000 is 100 percent.
     uint256 public constant BPS_DENOMINATOR = PoolMath.BPS_DENOMINATOR;
 
-    /// @notice DVR token traded by this pool.
-    DriverToken public immutable i_dvr;
+    /// @inheritdoc IOfficialPool
+    DriverToken public immutable override i_dvr;
 
-    /// @notice Mock USDC traded by this pool.
-    MockUSDC public immutable i_usdc;
+    /// @inheritdoc IOfficialPool
+    MockUSDC public immutable override i_usdc;
 
     /// @notice Splitter that records the USDC tax.
     TaxSplitter public immutable i_taxSplitter;
@@ -179,14 +179,11 @@ contract OfficialPool is IOfficialPool, ReentrancyGuard, Ownable2Step {
         emit TaxBpsUpdated(previousBps, newTaxBps);
     }
 
-    /// @notice Quotes a fixed input at the current reserves and tax.
-    /// @param direction Buy or sell.
-    /// @param amountIn Asset the trader would pay, in base units.
-    /// @return amountOut Asset the trader would receive, in base units.
-    /// @return usdcTax mUSDC tax, in base units.
+    /// @inheritdoc IOfficialPool
     function quoteExactInput(Direction direction, uint256 amountIn)
         external
         view
+        override
         returns (uint256 amountOut, uint256 usdcTax)
     {
         PoolMath.Result memory result =

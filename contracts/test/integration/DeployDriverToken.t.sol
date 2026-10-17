@@ -231,8 +231,9 @@ contract DeployDriverTokenTest is Test {
         assertEq(address(highway), 0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1);
         assertEq(address(autobahn), 0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44);
         assertEq(address(drift), 0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f);
-        assertEq(address(deployed.cruiseControl), 0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9);
-        assertEq(address(deployed.degenDriver), 0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8);
+        assertEq(address(deployed.schedule), 0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9);
+        assertEq(address(deployed.cruiseControl), 0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8);
+        assertEq(address(deployed.degenDriver), 0x851356ae760d987E095750cCeb3bC6014560891C);
         assertEq(deployed.cruiseControl.strategyCount(), 1);
         assertEq(address(deployed.cruiseControl.strategyAt(0)), address(cruise));
         assertEq(deployed.degenDriver.strategyCount(), 3);
@@ -307,7 +308,12 @@ contract DeployDriverTokenTest is Test {
         private
         view
     {
-        assertEq(vm.getNonce(deployer), 48);
+        assertEq(vm.getNonce(deployer), 49);
+        assertEq(address(deployed.schedule.i_clock()), address(deployed.clock));
+        assertEq(deployed.schedule.i_epoch(), helper.EPOCH_LENGTH());
+        assertEq(deployed.schedule.i_start(), block.timestamp);
+        assertEq(address(deployed.cruiseControl.i_schedule()), address(deployed.schedule));
+        assertEq(address(deployed.degenDriver.i_schedule()), address(deployed.schedule));
         assertEq(deployed.token.balanceOf(deployer), helper.COMMUNITY_ALLOCATION() + helper.TEAM_ALLOCATION());
         assertEq(deployed.usdc.balanceOf(deployer), helper.FUND_3_USDC());
         assertEq(deployed.cruiseControl.idle(), 0);

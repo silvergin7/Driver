@@ -65,6 +65,9 @@ contract HelperConfig is Script {
     /// @notice Starting official-pool tax, in basis points. 100 is 1 percent.
     uint256 public constant INITIAL_TAX_BPS = 100;
 
+    /// @notice Length of one harvest and voting round. The same value on every chain.
+    uint256 public constant EPOCH_LENGTH = 30 days;
+
     /// @notice Cruise farm APR, in basis points. 500 is 5 percent. Fund 1 only.
     uint256 public constant CRUISE_APR_BPS = 500;
 

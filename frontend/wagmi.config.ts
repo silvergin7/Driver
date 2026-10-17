@@ -16,6 +16,7 @@ export default defineConfig({
         "TaxSplitter.sol/TaxSplitter.json",
         "OfficialPool.sol/OfficialPool.json",
         "MockFarm.sol/MockFarm.json",
+        "RoundSchedule.sol/RoundSchedule.json",
         "CruiseControl.sol/CruiseControl.json",
         "DegenDriver.sol/DegenDriver.json",
       ],

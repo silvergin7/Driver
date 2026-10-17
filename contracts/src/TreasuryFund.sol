@@ -12,6 +12,7 @@ import {IOfficialPool} from "./interfaces/IOfficialPool.sol";
 import {ITreasuryFund} from "./interfaces/ITreasuryFund.sol";
 import {MockFarm} from "./MockFarm.sol";
 import {MockUSDC} from "./MockUSDC.sol";
+import {RoundSchedule} from "./RoundSchedule.sol";
 import {TaxSplitter} from "./TaxSplitter.sol";
 
 /// @title Treasury fund
@@ -27,6 +28,9 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
 
     /// @inheritdoc ITreasuryFund
     IDriverClock public immutable i_clock;
+
+    /// @inheritdoc ITreasuryFund
+    RoundSchedule public immutable i_schedule;
 
     /// @inheritdoc ITreasuryFund
     TaxSplitter public immutable i_taxSplitter;
@@ -111,12 +115,23 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     /// @param farm Farm that was rejected.
     error TreasuryFund__FarmClockMismatch(address farm);
 
-    /// @notice Stores the token, the clock, the splitter, the pool, the bucket, and the farm list.
-    /// @dev Reverts with {TreasuryFund__ZeroAddress} when `usdc`, `clock`, `taxSplitter`, or `pool` is zero.
+    /// @notice The splitter's pool is not `pool`, or that pool's token is not this fund's mUSDC.
+    /// @param pool Account that was rejected.
+    error TreasuryFund__PoolMismatch(address pool);
+
+    /// @notice That schedule does not read this fund's clock.
+    /// @param schedule Schedule that was rejected.
+    error TreasuryFund__ScheduleClockMismatch(address schedule);
+
+    /// @notice Stores the token, the clock, the schedule, the splitter, the pool, the bucket, and the farm list.
+    /// @dev Reverts with {TreasuryFund__ZeroAddress} when `usdc`, `clock`, `schedule`, `taxSplitter`, or `pool`
+    /// is zero. Reverts with {TreasuryFund__PoolMismatch} unless the splitter's pool is `pool` and that pool's
+    /// mUSDC is `usdc`. Reverts with {TreasuryFund__ScheduleClockMismatch} unless the schedule reads `clock`.
     /// A zero owner reverts in {Ownable}. The farm list is checked by {_listFarms}. A zero `fundId` is not
     /// possible: the child passes {TaxSplitter.FundId}.
     /// @param usdc Mock USDC this fund holds. The zero address is rejected.
-    /// @param clock Clock stored for a later harvest. The zero address is rejected.
+    /// @param clock Clock this fund and its farms read. The zero address is rejected.
+    /// @param schedule Shared round schedule. The zero address is rejected.
     /// @param taxSplitter Splitter whose bucket this fund will release. The zero address is rejected.
     /// @param pool Official pool stored for a later buyback. The zero address is rejected.
     /// @param fundId Splitter bucket. Cruise Control passes Fund 1. Degen Driver passes Fund 2.
@@ -126,6 +141,7 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     constructor(
         MockUSDC usdc,
         IDriverClock clock,
+        RoundSchedule schedule,
         TaxSplitter taxSplitter,
         IOfficialPool pool,
         TaxSplitter.FundId fundId,
@@ -133,13 +149,20 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
         address initialOwner
     ) Ownable(initialOwner) {
         if (
-            address(usdc) == address(0) || address(clock) == address(0) || address(taxSplitter) == address(0)
-                || address(pool) == address(0)
+            address(usdc) == address(0) || address(clock) == address(0) || address(schedule) == address(0)
+                || address(taxSplitter) == address(0) || address(pool) == address(0)
         ) {
             revert TreasuryFund__ZeroAddress();
         }
+        if (taxSplitter.pool() != address(pool) || address(pool.i_usdc()) != address(usdc)) {
+            revert TreasuryFund__PoolMismatch(address(pool));
+        }
+        if (address(schedule.i_clock()) != address(clock)) {
+            revert TreasuryFund__ScheduleClockMismatch(address(schedule));
+        }
         i_usdc = usdc;
         i_clock = clock;
+        i_schedule = schedule;
         i_taxSplitter = taxSplitter;
         i_pool = pool;
         i_fundId = fundId;
