@@ -9,6 +9,7 @@ import {DriverToken} from "../../src/DriverToken.sol";
 import {MockFarm} from "../../src/MockFarm.sol";
 import {MockUSDC} from "../../src/MockUSDC.sol";
 import {OfficialPool} from "../../src/OfficialPool.sol";
+import {RoundSchedule} from "../../src/RoundSchedule.sol";
 import {TaxSplitter} from "../../src/TaxSplitter.sol";
 import {CruiseControlHandler} from "./handlers/CruiseControlHandler.sol";
 
@@ -34,9 +35,12 @@ contract CruiseControlInvariantTest is Test {
         DriverToken token = new DriverToken(owner);
         TaxSplitter splitter = new TaxSplitter(usdc, owner);
         OfficialPool pool = new OfficialPool(token, usdc, splitter, owner, 100);
+        RoundSchedule schedule = new RoundSchedule(clock, 30 days);
+        vm.prank(owner);
+        splitter.setPool(address(pool));
         farmA = new MockFarm(usdc, clock, APR_A, farmOwner);
         farmB = new MockFarm(usdc, clock, APR_B, farmOwner);
-        fund = new CruiseControl(usdc, clock, splitter, pool, _pair(), owner);
+        fund = new CruiseControl(usdc, clock, schedule, splitter, pool, _pair(), owner);
 
         vm.startPrank(farmOwner);
         farmA.addDepositor(address(fund));

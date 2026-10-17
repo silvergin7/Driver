@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
+import {DriverToken} from "../DriverToken.sol";
+import {MockUSDC} from "../MockUSDC.sol";
+
 /// @title Official pool
 /// @notice Swap surface for the DVR/mUSDC pool. A later pool can replace the implementation behind this.
 interface IOfficialPool {
@@ -67,6 +70,24 @@ interface IOfficialPool {
     function swapExactOutput(Direction direction, uint256 amountOut, uint256 maxAmountIn, uint256 deadline)
         external
         returns (uint256 amountIn);
+
+    /// @notice Quotes a fixed input at the current reserves and tax.
+    /// @param direction Buy or sell.
+    /// @param amountIn Asset the trader would pay, in base units.
+    /// @return amountOut Asset the trader would receive, in base units.
+    /// @return usdcTax mUSDC tax, in base units.
+    function quoteExactInput(Direction direction, uint256 amountIn)
+        external
+        view
+        returns (uint256 amountOut, uint256 usdcTax);
+
+    /// @notice Returns the DVR token traded by this pool.
+    /// @return dvr_ DVR token.
+    function i_dvr() external view returns (DriverToken dvr_);
+
+    /// @notice Returns the Mock USDC traded by this pool.
+    /// @return usdc_ Mock USDC.
+    function i_usdc() external view returns (MockUSDC usdc_);
 
     /// @notice Returns the stored DVR reserve.
     /// @return reserveDvr_ DVR counted by the curve, in base units.

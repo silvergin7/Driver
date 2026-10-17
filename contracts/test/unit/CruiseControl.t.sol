@@ -13,6 +13,7 @@ import {DriverToken} from "../../src/DriverToken.sol";
 import {MockFarm} from "../../src/MockFarm.sol";
 import {MockUSDC} from "../../src/MockUSDC.sol";
 import {OfficialPool} from "../../src/OfficialPool.sol";
+import {RoundSchedule} from "../../src/RoundSchedule.sol";
 import {TaxSplitter} from "../../src/TaxSplitter.sol";
 import {TreasuryFund} from "../../src/TreasuryFund.sol";
 
@@ -26,6 +27,7 @@ contract CruiseControlTest is Test {
     OfficialPool internal pool;
     MockFarm internal farmA;
     MockFarm internal farmB;
+    RoundSchedule internal schedule;
     CruiseControl internal fund;
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
@@ -37,9 +39,12 @@ contract CruiseControlTest is Test {
         DriverToken token = new DriverToken(owner);
         splitter = new TaxSplitter(usdc, owner);
         pool = new OfficialPool(token, usdc, splitter, owner, 100);
+        schedule = new RoundSchedule(clock, 30 days);
+        vm.prank(owner);
+        splitter.setPool(address(pool));
         farmA = new MockFarm(usdc, clock, APR, owner);
         farmB = new MockFarm(usdc, clock, APR, owner);
-        fund = new CruiseControl(usdc, clock, splitter, pool, _pair(farmA, farmB), owner);
+        fund = new CruiseControl(usdc, clock, schedule, splitter, pool, _pair(farmA, farmB), owner);
 
         vm.startPrank(owner);
         usdc.mint(owner, 2_000_000 * 10 ** 6);
@@ -52,6 +57,7 @@ contract CruiseControlTest is Test {
     function test_ConstructorStoresConfigAndListsFarms() public view {
         assertEq(address(fund.i_usdc()), address(usdc));
         assertEq(address(fund.i_clock()), address(clock));
+        assertEq(address(fund.i_schedule()), address(schedule));
         assertEq(address(fund.i_taxSplitter()), address(splitter));
         assertEq(address(fund.i_pool()), address(pool));
         assertEq(uint256(fund.i_fundId()), uint256(TaxSplitter.FundId.Fund1));
@@ -75,45 +81,45 @@ contract CruiseControlTest is Test {
         emit TreasuryFund.StrategyListed(address(farmA));
         vm.expectEmit(true, false, false, true);
         emit TreasuryFund.StrategyListed(address(farmB));
-        new CruiseControl(usdc, clock, splitter, pool, _pair(farmA, farmB), owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, _pair(farmA, farmB), owner);
     }
 
     function test_RevertWhen_UsdcIsZeroAddress() public {
         vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
-        new CruiseControl(MockUSDC(address(0)), clock, splitter, pool, _pair(farmA, farmB), owner);
+        new CruiseControl(MockUSDC(address(0)), clock, schedule, splitter, pool, _pair(farmA, farmB), owner);
     }
 
     function test_RevertWhen_ClockIsZeroAddress() public {
         vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
-        new CruiseControl(usdc, IDriverClock(address(0)), splitter, pool, _pair(farmA, farmB), owner);
+        new CruiseControl(usdc, IDriverClock(address(0)), schedule, splitter, pool, _pair(farmA, farmB), owner);
     }
 
     function test_RevertWhen_SplitterIsZeroAddress() public {
         vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
-        new CruiseControl(usdc, clock, TaxSplitter(address(0)), pool, _pair(farmA, farmB), owner);
+        new CruiseControl(usdc, clock, schedule, TaxSplitter(address(0)), pool, _pair(farmA, farmB), owner);
     }
 
     function test_RevertWhen_PoolIsZeroAddress() public {
         vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
-        new CruiseControl(usdc, clock, splitter, IOfficialPool(address(0)), _pair(farmA, farmB), owner);
+        new CruiseControl(usdc, clock, schedule, splitter, IOfficialPool(address(0)), _pair(farmA, farmB), owner);
     }
 
     function test_RevertWhen_OwnerIsZeroAddress() public {
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
-        new CruiseControl(usdc, clock, splitter, pool, _pair(farmA, farmB), address(0));
+        new CruiseControl(usdc, clock, schedule, splitter, pool, _pair(farmA, farmB), address(0));
     }
 
     function test_RevertWhen_FarmListIsEmpty() public {
         IMockFarm[] memory farms = new IMockFarm[](0);
         vm.expectRevert(TreasuryFund.TreasuryFund__NoFarms.selector);
-        new CruiseControl(usdc, clock, splitter, pool, farms, owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, farms, owner);
     }
 
     function test_RevertWhen_FarmIsZeroAddress() public {
         IMockFarm[] memory farms = new IMockFarm[](1);
         farms[0] = IMockFarm(address(0));
         vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
-        new CruiseControl(usdc, clock, splitter, pool, farms, owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, farms, owner);
     }
 
     function test_RevertWhen_FarmIsDuplicated() public {
@@ -123,7 +129,7 @@ contract CruiseControlTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(TreasuryFund.TreasuryFund__StrategyAlreadyListed.selector, address(farmA))
         );
-        new CruiseControl(usdc, clock, splitter, pool, farms, owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, farms, owner);
     }
 
     function test_RevertWhen_FarmTokenMismatches() public {
@@ -132,7 +138,37 @@ contract CruiseControlTest is Test {
         IMockFarm[] memory farms = new IMockFarm[](1);
         farms[0] = bad;
         vm.expectRevert(abi.encodeWithSelector(TreasuryFund.TreasuryFund__FarmTokenMismatch.selector, address(bad)));
-        new CruiseControl(usdc, clock, splitter, pool, farms, owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, farms, owner);
+    }
+
+    function test_RevertWhen_ScheduleIsZeroAddress() public {
+        vm.expectRevert(TreasuryFund.TreasuryFund__ZeroAddress.selector);
+        new CruiseControl(usdc, clock, RoundSchedule(address(0)), splitter, pool, _pair(farmA, farmB), owner);
+    }
+
+    function test_RevertWhen_ScheduleClockMismatches() public {
+        DemoDriverClock other = new DemoDriverClock(owner);
+        RoundSchedule bad = new RoundSchedule(other, 30 days);
+        vm.expectRevert(abi.encodeWithSelector(TreasuryFund.TreasuryFund__ScheduleClockMismatch.selector, address(bad)));
+        new CruiseControl(usdc, clock, bad, splitter, pool, _pair(farmA, farmB), owner);
+    }
+
+    function test_RevertWhen_SplitterPoolMismatches() public {
+        DriverToken token = new DriverToken(owner);
+        OfficialPool other = new OfficialPool(token, usdc, splitter, owner, 100);
+        vm.expectRevert(abi.encodeWithSelector(TreasuryFund.TreasuryFund__PoolMismatch.selector, address(other)));
+        new CruiseControl(usdc, clock, schedule, splitter, other, _pair(farmA, farmB), owner);
+    }
+
+    function test_RevertWhen_PoolTokenMismatches() public {
+        MockUSDC otherUsdc = new MockUSDC(owner);
+        DriverToken token = new DriverToken(owner);
+        TaxSplitter otherSplitter = new TaxSplitter(otherUsdc, owner);
+        OfficialPool otherPool = new OfficialPool(token, otherUsdc, otherSplitter, owner, 100);
+        vm.prank(owner);
+        otherSplitter.setPool(address(otherPool));
+        vm.expectRevert(abi.encodeWithSelector(TreasuryFund.TreasuryFund__PoolMismatch.selector, address(otherPool)));
+        new CruiseControl(usdc, clock, schedule, otherSplitter, otherPool, _pair(farmA, farmB), owner);
     }
 
     function test_RevertWhen_FarmClockMismatches() public {
@@ -141,7 +177,7 @@ contract CruiseControlTest is Test {
         IMockFarm[] memory farms = new IMockFarm[](1);
         farms[0] = bad;
         vm.expectRevert(abi.encodeWithSelector(TreasuryFund.TreasuryFund__FarmClockMismatch.selector, address(bad)));
-        new CruiseControl(usdc, clock, splitter, pool, farms, owner);
+        new CruiseControl(usdc, clock, schedule, splitter, pool, farms, owner);
     }
 
     function test_SupplyCreditsIdleFromCaller() public {

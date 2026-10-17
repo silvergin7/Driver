@@ -72,6 +72,7 @@ contract HelperConfigTest is Test {
         assertEq(helper.FUND_1_USDC(), 15_000 * 10 ** 6);
         assertEq(helper.FUND_2_USDC(), 5_000 * 10 ** 6);
         assertEq(helper.FUND_3_USDC(), 5_000 * 10 ** 6);
+        assertEq(helper.EPOCH_LENGTH(), 30 days);
         assertEq(
             helper.POOL_USDC() + helper.FUND_1_USDC() + helper.FUND_2_USDC() + helper.FUND_3_USDC(), 35_000 * 10 ** 6
         );

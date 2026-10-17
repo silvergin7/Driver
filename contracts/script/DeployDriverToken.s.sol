@@ -14,6 +14,7 @@ import {MockUSDC} from "../src/MockUSDC.sol";
 import {MockUsdcFaucet} from "../src/MockUsdcFaucet.sol";
 import {MockFarm} from "../src/MockFarm.sol";
 import {OfficialPool} from "../src/OfficialPool.sol";
+import {RoundSchedule} from "../src/RoundSchedule.sol";
 import {TaxSplitter} from "../src/TaxSplitter.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 
@@ -33,6 +34,7 @@ contract DeployDriverToken is Script {
         MockFarm highway;
         MockFarm autobahn;
         MockFarm drift;
+        RoundSchedule schedule;
         CruiseControl cruiseControl;
         DegenDriver degenDriver;
     }
@@ -48,8 +50,9 @@ contract DeployDriverToken is Script {
     /// the pool are created after the clock. The starting tax is {HelperConfig.INITIAL_TAX_BPS}. After
     /// {OfficialPool.addLiquidity}, this deploys Cruise, Highway, Autobahn, and Drift, mints the sum of their
     /// reserves to the deployer in one call, then approves and calls {MockFarm.fundRewards} for that exact
-    /// reserve on each farm, in that order. It then deploys {CruiseControl} with Cruise only and
-    /// {DegenDriver} with Highway, Autobahn, and Drift, supplies {HelperConfig.FUND_1_USDC} and
+    /// reserve on each farm, in that order. It then deploys {RoundSchedule} for {HelperConfig.EPOCH_LENGTH},
+    /// {CruiseControl} with Cruise only, and {DegenDriver} with Highway, Autobahn, and Drift, and supplies
+    /// {HelperConfig.FUND_1_USDC} and
     /// {HelperConfig.FUND_2_USDC}, adds the funds as depositors, selects Cruise, and deposits Fund 1.
     /// The splitter's Fund 1 and Fund 2 recipients are the two funds. Fund 3 has no recipient.
     /// @return deployed The deployed contracts.
@@ -124,14 +127,22 @@ contract DeployDriverToken is Script {
         farm.fundRewards(reserve);
     }
 
-    /// @dev Supplies both funds, adds the planned depositors, deposits Fund 1 into Cruise, and sets Fund 1 and Fund 2 recipients.
+    /// @dev Creates the schedule, supplies both funds, adds the planned depositors, deposits Fund 1 into Cruise, and sets Fund 1 and Fund 2 recipients.
     function _seedFunds(Deployed memory deployed, HelperConfig helper, address deployer) private {
+        deployed.schedule = new RoundSchedule(deployed.clock, helper.EPOCH_LENGTH());
         deployed.cruiseControl = new CruiseControl(
-            deployed.usdc, deployed.clock, deployed.splitter, deployed.pool, _cruiseFarms(deployed.cruise), deployer
+            deployed.usdc,
+            deployed.clock,
+            deployed.schedule,
+            deployed.splitter,
+            deployed.pool,
+            _cruiseFarms(deployed.cruise),
+            deployer
         );
         deployed.degenDriver = new DegenDriver(
             deployed.usdc,
             deployed.clock,
+            deployed.schedule,
             deployed.splitter,
             deployed.pool,
             _degenFarms(deployed.highway, deployed.autobahn, deployed.drift),

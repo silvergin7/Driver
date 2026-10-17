@@ -10,6 +10,7 @@ import {DriverToken} from "../../src/DriverToken.sol";
 import {MockFarm} from "../../src/MockFarm.sol";
 import {MockUSDC} from "../../src/MockUSDC.sol";
 import {OfficialPool} from "../../src/OfficialPool.sol";
+import {RoundSchedule} from "../../src/RoundSchedule.sol";
 import {TaxSplitter} from "../../src/TaxSplitter.sol";
 import {TreasuryFund} from "../../src/TreasuryFund.sol";
 
@@ -18,6 +19,7 @@ contract DegenDriverTest is Test {
     MockFarm internal highway;
     MockFarm internal autobahn;
     MockFarm internal drift;
+    RoundSchedule internal schedule;
     DegenDriver internal fund;
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
@@ -28,6 +30,9 @@ contract DegenDriverTest is Test {
         DriverToken token = new DriverToken(owner);
         TaxSplitter splitter = new TaxSplitter(usdc, owner);
         OfficialPool pool = new OfficialPool(token, usdc, splitter, owner, 100);
+        schedule = new RoundSchedule(clock, 30 days);
+        vm.prank(owner);
+        splitter.setPool(address(pool));
         highway = new MockFarm(usdc, clock, 4_000, owner);
         autobahn = new MockFarm(usdc, clock, 8_000, owner);
         drift = new MockFarm(usdc, clock, 16_000, owner);
@@ -36,11 +41,12 @@ contract DegenDriverTest is Test {
         farms[0] = highway;
         farms[1] = autobahn;
         farms[2] = drift;
-        fund = new DegenDriver(usdc, clock, splitter, pool, farms, owner);
+        fund = new DegenDriver(usdc, clock, schedule, splitter, pool, farms, owner);
     }
 
     function test_ConstructorListsTheThreeFarms() public view {
         assertEq(uint256(fund.i_fundId()), uint256(TaxSplitter.FundId.Fund2));
+        assertEq(address(fund.i_schedule()), address(schedule));
         assertEq(fund.strategyCount(), 3);
         assertEq(address(fund.strategyAt(0)), address(highway));
         assertEq(address(fund.strategyAt(1)), address(autobahn));
