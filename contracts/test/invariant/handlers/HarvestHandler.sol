@@ -20,6 +20,10 @@ import {TreasuryFund} from "../../../src/TreasuryFund.sol";
 import {MappedBallot} from "../../mocks/HarvestMocks.sol";
 
 contract HarvestHandler is Test {
+    uint256 internal constant SHARE_1 = 15_000 * 10 ** 6;
+    uint256 internal constant SHARE_2 = 5_000 * 10 ** 6;
+    uint256 internal constant PAIR_CUSHION = 1_000_000 * 10 ** 6;
+
     uint256 internal constant BPS = 10_000;
     uint256 internal constant YEAR = 365 days;
     uint256 internal constant EPOCH = 30 days;
@@ -109,7 +113,8 @@ contract HarvestHandler is Test {
         vm.prank(s_owner);
         s_splitter.setPool(address(s_pool));
         s_farm = new MockFarm(s_usdc, s_clock, APR, s_owner);
-        s_fund = new CruiseControl(s_usdc, s_clock, s_schedule, s_splitter, s_pool, _one(s_farm), s_owner);
+        s_fund =
+            new CruiseControl(s_usdc, s_clock, s_schedule, s_splitter, s_pool, SHARE_1, SHARE_2, _one(s_farm), s_owner);
 
         vm.startPrank(s_owner);
         s_token.mint(s_owner, SEED_DVR);
@@ -154,7 +159,8 @@ contract HarvestHandler is Test {
         (TaxSplitter splitter_, OfficialPool pool_) = _freshPool();
         MockFarm farm_ = new MockFarm(s_usdc, production, APR, s_owner);
         RoundSchedule schedule_ = new RoundSchedule(production, EPOCH);
-        CruiseControl fund_ = new CruiseControl(s_usdc, production, schedule_, splitter_, pool_, _one(farm_), s_owner);
+        CruiseControl fund_ =
+            new CruiseControl(s_usdc, production, schedule_, splitter_, pool_, SHARE_1, SHARE_2, _one(farm_), s_owner);
         vm.startPrank(s_owner);
         farm_.addDepositor(address(fund_));
         s_usdc.approve(address(farm_), type(uint256).max);
@@ -203,7 +209,8 @@ contract HarvestHandler is Test {
         (TaxSplitter splitter_, OfficialPool pool_) = _freshPool();
         MockFarm farm_ = new MockFarm(s_usdc, s_clock, APR, s_owner);
         RoundSchedule schedule_ = new RoundSchedule(s_clock, EPOCH);
-        CruiseControl fund_ = new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, _one(farm_), s_owner);
+        CruiseControl fund_ =
+            new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, SHARE_1, SHARE_2, _one(farm_), s_owner);
         vm.startPrank(s_owner);
         farm_.addDepositor(address(fund_));
         fund_.setStrategy(farm_);
@@ -224,7 +231,8 @@ contract HarvestHandler is Test {
         (TaxSplitter splitter_, OfficialPool pool_) = _freshPool();
         MockFarm farm_ = new MockFarm(s_usdc, s_clock, 10_000, s_owner);
         RoundSchedule schedule_ = new RoundSchedule(s_clock, 1 days);
-        CruiseControl fund_ = new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, _one(farm_), s_owner);
+        CruiseControl fund_ =
+            new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, SHARE_1, SHARE_2, _one(farm_), s_owner);
         vm.startPrank(s_owner);
         farm_.addDepositor(address(fund_));
         s_usdc.approve(address(farm_), type(uint256).max);
@@ -248,7 +256,8 @@ contract HarvestHandler is Test {
         (TaxSplitter splitter_, OfficialPool pool_) = _freshPool();
         MockFarm farm_ = new MockFarm(s_usdc, s_clock, APR, s_owner);
         RoundSchedule schedule_ = new RoundSchedule(s_clock, EPOCH);
-        CruiseControl fund_ = new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, _one(farm_), s_owner);
+        CruiseControl fund_ =
+            new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, SHARE_1, SHARE_2, _one(farm_), s_owner);
         vm.startPrank(s_owner);
         farm_.addDepositor(address(fund_));
         s_usdc.approve(address(farm_), type(uint256).max);
@@ -317,7 +326,10 @@ contract HarvestHandler is Test {
         farms[0] = highway;
         farms[1] = autobahn;
         RoundSchedule schedule_ = new RoundSchedule(s_clock, EPOCH);
-        DegenDriver fund_ = new DegenDriver(s_usdc, s_clock, schedule_, splitter_, pool_, farms, s_owner);
+        CruiseControl cruise_ =
+            new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, SHARE_1, SHARE_2, _one(highway), s_owner);
+        DegenDriver fund_ =
+            new DegenDriver(s_usdc, s_clock, schedule_, splitter_, pool_, cruise_, SHARE_1, SHARE_2, farms, s_owner);
         MappedBallot ballot = new MappedBallot();
         ballot.setWinner(0, highway);
         ballot.setWinner(1, autobahn);
@@ -330,6 +342,9 @@ contract HarvestHandler is Test {
         autobahn.fundRewards(10_000_000 * 10 ** 6);
         s_usdc.approve(address(fund_), 5_000 * 10 ** 6);
         fund_.supply(5_000 * 10 ** 6);
+        s_usdc.approve(address(cruise_), PAIR_CUSHION);
+        cruise_.supply(PAIR_CUSHION);
+        cruise_.setFund2(fund_);
         fund_.setBallot(ballot);
         splitter_.setRecipient(TaxSplitter.FundId.Fund2, address(fund_));
         s_usdc.approve(address(pool_), 100 * 10 ** 6);
@@ -392,7 +407,8 @@ contract HarvestHandler is Test {
         (TaxSplitter splitter_, OfficialPool pool_) = _freshPool();
         MockFarm farm_ = new MockFarm(s_usdc, s_clock, APR, s_owner);
         RoundSchedule schedule_ = new RoundSchedule(s_clock, EPOCH);
-        CruiseControl fund_ = new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, _one(farm_), s_owner);
+        CruiseControl fund_ =
+            new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, SHARE_1, SHARE_2, _one(farm_), s_owner);
         uint256 principal = 1_000_000 * 10 ** 6;
         vm.startPrank(s_owner);
         farm_.addDepositor(address(fund_));
@@ -578,7 +594,7 @@ contract HarvestHandler is Test {
         farms[0] = first;
         farms[1] = second;
         RoundSchedule schedule_ = new RoundSchedule(s_clock, EPOCH);
-        parked = new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, farms, s_owner);
+        parked = new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, SHARE_1, SHARE_2, farms, s_owner);
         vm.startPrank(s_owner);
         first.addDepositor(address(parked));
         second.addDepositor(address(parked));
@@ -656,10 +672,17 @@ contract HarvestHandler is Test {
         farms[0] = highway;
         farms[1] = autobahn;
         farms[2] = drift;
-        fund_ = new DegenDriver(s_usdc, s_clock, s_schedule, s_splitter, s_pool, farms, s_owner);
+        CruiseControl cruise_ = new CruiseControl(
+            s_usdc, s_clock, s_schedule, s_splitter, s_pool, SHARE_1, SHARE_2, _one(highway), s_owner
+        );
+        fund_ =
+            new DegenDriver(s_usdc, s_clock, s_schedule, s_splitter, s_pool, cruise_, SHARE_1, SHARE_2, farms, s_owner);
         vm.startPrank(s_owner);
         s_usdc.approve(address(fund_), 5_000 * 10 ** 6);
         fund_.supply(5_000 * 10 ** 6);
+        s_usdc.approve(address(cruise_), PAIR_CUSHION);
+        cruise_.supply(PAIR_CUSHION);
+        cruise_.setFund2(fund_);
         vm.stopPrank();
     }
 

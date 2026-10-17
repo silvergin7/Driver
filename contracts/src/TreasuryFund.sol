@@ -41,6 +41,12 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     /// @inheritdoc ITreasuryFund
     TaxSplitter.FundId public immutable i_fundId;
 
+    /// @inheritdoc ITreasuryFund
+    uint256 public immutable i_fund1Usdc;
+
+    /// @inheritdoc ITreasuryFund
+    uint256 public immutable i_fund2Usdc;
+
     /// @notice mUSDC pulled by {supply} and not yet deposited.
     uint256 private s_idle;
 
@@ -117,6 +123,11 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     /// @notice The amount was zero.
     error TreasuryFund__ZeroAmount();
 
+    /// @notice Fund 1's starting share was not strictly larger than Fund 2's.
+    /// @param fund1Usdc Fund 1's share, in mUSDC base units.
+    /// @param fund2Usdc Fund 2's share, in mUSDC base units.
+    error TreasuryFund__Fund1ShareNotLarger(uint256 fund1Usdc, uint256 fund2Usdc);
+
     /// @notice The constructor farm list was empty.
     error TreasuryFund__NoFarms();
 
@@ -165,16 +176,21 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
 
     /// @notice Stores the token, the clock, the schedule, the splitter, the pool, the bucket, and the farm list.
     /// @dev Reverts with {TreasuryFund__ZeroAddress} when `usdc`, `clock`, `schedule`, `taxSplitter`, or `pool`
-    /// is zero. Reverts with {TreasuryFund__PoolMismatch} unless the splitter's pool is `pool` and that pool's
-    /// mUSDC is `usdc`. Reverts with {TreasuryFund__ScheduleClockMismatch} unless the schedule reads `clock`.
-    /// A zero owner reverts in {Ownable}. The farm list is checked by {_listFarms}. A zero `fundId` is not
-    /// possible: the child passes {TaxSplitter.FundId}.
+    /// is zero. Reverts with {TreasuryFund__ZeroAmount} when `fund1Usdc` or `fund2Usdc` is zero, and with
+    /// {TreasuryFund__Fund1ShareNotLarger} when `fund1Usdc` is not strictly larger than `fund2Usdc`. Reverts
+    /// with {TreasuryFund__PoolMismatch} unless the splitter's pool is `pool` and that pool's mUSDC is `usdc`.
+    /// Reverts with {TreasuryFund__ScheduleClockMismatch} unless the schedule reads `clock`. A zero owner
+    /// reverts in {Ownable}. The farm list is checked by {_listFarms}. A zero `fundId` is not possible: the
+    /// child passes {TaxSplitter.FundId}.
     /// @param usdc Mock USDC this fund holds. The zero address is rejected.
     /// @param clock Clock this fund and its farms read. The zero address is rejected.
     /// @param schedule Shared round schedule. The zero address is rejected.
     /// @param taxSplitter Splitter whose bucket this fund will release. The zero address is rejected.
     /// @param pool Official pool stored for a later buyback. The zero address is rejected.
     /// @param fundId Splitter bucket. Cruise Control passes Fund 1. Degen Driver passes Fund 2.
+    /// @param fund1Usdc Fund 1's starting share, in mUSDC base units. Zero is rejected, and it must be
+    /// strictly larger than `fund2Usdc`.
+    /// @param fund2Usdc Fund 2's starting share, in mUSDC base units. Zero is rejected.
     /// @param farms Farms this fund may use. The list must be non-empty, and each entry must be non-zero,
     /// unique, and use `usdc` and `clock`.
     /// @param initialOwner Account allowed to supply and deposit. The zero address is rejected.
@@ -185,6 +201,8 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
         TaxSplitter taxSplitter,
         IOfficialPool pool,
         TaxSplitter.FundId fundId,
+        uint256 fund1Usdc,
+        uint256 fund2Usdc,
         IMockFarm[] memory farms,
         address initialOwner
     ) Ownable(initialOwner) {
@@ -193,6 +211,12 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
                 || address(taxSplitter) == address(0) || address(pool) == address(0)
         ) {
             revert TreasuryFund__ZeroAddress();
+        }
+        if (fund1Usdc == 0 || fund2Usdc == 0) {
+            revert TreasuryFund__ZeroAmount();
+        }
+        if (fund1Usdc <= fund2Usdc) {
+            revert TreasuryFund__Fund1ShareNotLarger(fund1Usdc, fund2Usdc);
         }
         if (taxSplitter.pool() != address(pool) || address(pool.i_usdc()) != address(usdc)) {
             revert TreasuryFund__PoolMismatch(address(pool));
@@ -206,6 +230,8 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
         i_taxSplitter = taxSplitter;
         i_pool = pool;
         i_fundId = fundId;
+        i_fund1Usdc = fund1Usdc;
+        i_fund2Usdc = fund2Usdc;
         _listFarms(farms);
     }
 
@@ -349,7 +375,7 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
 
     /// @inheritdoc ITreasuryFund
     function value() external view returns (uint256 value_) {
-        value_ = s_idle + _principal();
+        value_ = _value();
     }
 
     /// @inheritdoc ITreasuryFund
@@ -522,8 +548,56 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     /// @dev Fund 2 applies `expectedFarm` here. Fund 1 does not. `expectedFarm` is the farm {_farmAfterRound} returned.
     function _applyClosedRound(uint256, IMockFarm) internal virtual {}
 
-    /// @dev A later rebalance runs here, after idle has been deployed, inside this harvest.
+    /// @dev Degen Driver rebalances here, after idle has been deployed, inside this harvest.
     function _afterHarvest(uint256) internal virtual {}
+
+    /// @dev Returns idle plus principal on the active farm.
+    function _value() internal view returns (uint256 value_) {
+        value_ = s_idle + _principal();
+    }
+
+    /// @dev Reduces idle by up to `amount` and returns how much of `amount` idle covered.
+    function _takeFromIdle(uint256 amount) internal returns (uint256 taken) {
+        uint256 idle_ = s_idle;
+        taken = idle_ < amount ? idle_ : amount;
+        if (taken != 0) {
+            s_idle = idle_ - taken;
+        }
+    }
+
+    /// @dev Floor of the mUSDC `payerValue` must send so the two values match `payerShare` and `receiverShare`.
+    /// Returns zero when the receiver is already at or above its share. The subtraction runs only after that
+    /// comparison, so it cannot underflow.
+    function _amountToMove(uint256 payerShare, uint256 payerValue, uint256 receiverShare, uint256 receiverValue)
+        internal
+        pure
+        returns (uint256 amount)
+    {
+        uint256 owed = receiverShare * payerValue;
+        uint256 held = payerShare * receiverValue;
+        if (owed <= held) {
+            return 0;
+        }
+        amount = (owed - held) / (payerShare + receiverShare);
+    }
+
+    /// @dev Credits idle, or fixes the deposit amount, before pulling `amount` and depositing it.
+    function _acceptCapital(uint256 amount) internal {
+        if (amount == 0) {
+            revert TreasuryFund__ZeroAmount();
+        }
+        IMockFarm farm = s_activeFarm;
+        if (address(farm) == address(0)) {
+            s_idle += amount;
+            IERC20(i_usdc).safeTransferFrom(msg.sender, address(this), amount);
+            emit CapitalSupplied(msg.sender, amount, s_idle);
+            return;
+        }
+        uint256 depositAmount = amount;
+        IERC20(i_usdc).safeTransferFrom(msg.sender, address(this), amount);
+        _depositAmount(farm, depositAmount);
+        emit CapitalDeployed(address(farm), depositAmount, s_idle);
+    }
 
     /// @dev Returns the active farm. The zero address means no farm has been selected.
     function _activeFarm() internal view returns (IMockFarm farm_) {

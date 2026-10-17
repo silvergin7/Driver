@@ -14,6 +14,9 @@ import {TaxSplitter} from "../../src/TaxSplitter.sol";
 import {CruiseControlHandler} from "./handlers/CruiseControlHandler.sol";
 
 contract CruiseControlInvariantTest is Test {
+    uint256 internal constant SHARE_1 = 15_000 * 10 ** 6;
+    uint256 internal constant SHARE_2 = 5_000 * 10 ** 6;
+
     uint256 internal constant APR_A = 500;
     uint256 internal constant APR_B = 4_000;
     uint256 internal constant RESERVE = 1_000_000 * 10 ** 6;
@@ -40,7 +43,7 @@ contract CruiseControlInvariantTest is Test {
         splitter.setPool(address(pool));
         farmA = new MockFarm(usdc, clock, APR_A, farmOwner);
         farmB = new MockFarm(usdc, clock, APR_B, farmOwner);
-        fund = new CruiseControl(usdc, clock, schedule, splitter, pool, _pair(), owner);
+        fund = new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, _pair(), owner);
 
         vm.startPrank(farmOwner);
         farmA.addDepositor(address(fund));

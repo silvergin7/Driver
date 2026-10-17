@@ -15,6 +15,9 @@ import {TaxSplitter} from "../../src/TaxSplitter.sol";
 import {TreasuryFund} from "../../src/TreasuryFund.sol";
 
 contract CruiseControlFuzzTest is Test {
+    uint256 internal constant SHARE_1 = 15_000 * 10 ** 6;
+    uint256 internal constant SHARE_2 = 5_000 * 10 ** 6;
+
     uint256 internal constant APR = 500;
     uint256 internal constant MAX_AMOUNT = 1e15;
     uint256 internal constant MAX_ELAPSED = 365 days;
@@ -39,7 +42,7 @@ contract CruiseControlFuzzTest is Test {
         splitter.setPool(address(pool));
         farmA = new MockFarm(usdc, clock, APR, owner);
         farmB = new MockFarm(usdc, clock, APR, owner);
-        fund = new CruiseControl(usdc, clock, schedule, splitter, pool, _pair(), owner);
+        fund = new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, _pair(), owner);
 
         vm.startPrank(owner);
         usdc.mint(owner, 10 * MAX_AMOUNT);

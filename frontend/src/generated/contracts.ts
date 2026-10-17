@@ -19,6 +19,8 @@ export const cruiseControlAbi = [
         type: 'address',
       },
       { name: 'pool', internalType: 'contract IOfficialPool', type: 'address' },
+      { name: 'fund1Usdc', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Usdc', internalType: 'uint256', type: 'uint256' },
       {
         name: 'farms',
         internalType: 'contract IMockFarm[]',
@@ -32,6 +34,13 @@ export const cruiseControlAbi = [
     type: 'function',
     inputs: [],
     name: 'acceptOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'acceptRebalance',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -56,6 +65,15 @@ export const cruiseControlAbi = [
     inputs: [],
     name: 'dvrBoughtBack',
     outputs: [{ name: 'burned_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'fund2',
+    outputs: [
+      { name: 'fund2_', internalType: 'contract DegenDriver', type: 'address' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -91,6 +109,20 @@ export const cruiseControlAbi = [
     outputs: [
       { name: '', internalType: 'contract IDriverClock', type: 'address' },
     ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fund1Usdc',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fund2Usdc',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -227,6 +259,15 @@ export const cruiseControlAbi = [
   {
     type: 'function',
     inputs: [
+      { name: 'fund2_', internalType: 'contract DegenDriver', type: 'address' },
+    ],
+    name: 'setFund2',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: 'newFarm', internalType: 'contract IMockFarm', type: 'address' },
     ],
     name: 'setStrategy',
@@ -253,6 +294,27 @@ export const cruiseControlAbi = [
     type: 'function',
     inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
     name: 'supply',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'topUpCap',
+    outputs: [
+      { name: 'fund1Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'cap', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'reason', internalType: 'string', type: 'string' },
+    ],
+    name: 'topUpFund2',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -309,6 +371,50 @@ export const cruiseControlAbi = [
       },
     ],
     name: 'CapitalSupplied',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'fund2',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Fund2Set',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'fund1Value',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'fund2Value',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'reason',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+    ],
+    name: 'Fund2ToppedUp',
   },
   {
     type: 'event',
@@ -436,6 +542,27 @@ export const cruiseControlAbi = [
     ],
     name: 'StrategySet',
   },
+  { type: 'error', inputs: [], name: 'CruiseControl__EmptyReason' },
+  { type: 'error', inputs: [], name: 'CruiseControl__Fund2AlreadySet' },
+  {
+    type: 'error',
+    inputs: [{ name: 'fund2', internalType: 'address', type: 'address' }],
+    name: 'CruiseControl__Fund2Mismatch',
+  },
+  { type: 'error', inputs: [], name: 'CruiseControl__Fund2NotSet' },
+  {
+    type: 'error',
+    inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
+    name: 'CruiseControl__NotFund2',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'cap', internalType: 'uint256', type: 'uint256' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'CruiseControl__TopUpAboveCap',
+  },
   { type: 'error', inputs: [], name: 'OfficialPool__InsufficientReserves' },
   {
     type: 'error',
@@ -463,6 +590,14 @@ export const cruiseControlAbi = [
     type: 'error',
     inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
     name: 'TreasuryFund__FarmTokenMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'fund1Usdc', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Usdc', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'TreasuryFund__Fund1ShareNotLarger',
   },
   {
     type: 'error',
@@ -530,6 +665,13 @@ export const degenDriverAbi = [
       },
       { name: 'pool', internalType: 'contract IOfficialPool', type: 'address' },
       {
+        name: 'fund1',
+        internalType: 'contract CruiseControl',
+        type: 'address',
+      },
+      { name: 'fund1Usdc', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Usdc', internalType: 'uint256', type: 'uint256' },
+      {
         name: 'farms',
         internalType: 'contract IMockFarm[]',
         type: 'address[]',
@@ -542,6 +684,13 @@ export const degenDriverAbi = [
     type: 'function',
     inputs: [],
     name: 'acceptOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'acceptTopUp',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -601,6 +750,29 @@ export const degenDriverAbi = [
     outputs: [
       { name: '', internalType: 'contract IDriverClock', type: 'address' },
     ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fund1',
+    outputs: [
+      { name: '', internalType: 'contract CruiseControl', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fund1Usdc',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fund2Usdc',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -695,6 +867,19 @@ export const degenDriverAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'lastRebalance',
+    outputs: [
+      { name: 'executed', internalType: 'bool', type: 'bool' },
+      { name: 'roundId', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund1Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'owner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
@@ -725,6 +910,17 @@ export const degenDriverAbi = [
     inputs: [],
     name: 'principal',
     outputs: [{ name: 'principal_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'rebalanceAmount',
+    outputs: [
+      { name: 'fund1Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -928,6 +1124,37 @@ export const degenDriverAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
+      {
+        name: 'roundId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'fund1Value',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'fund2Value',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Rebalanced',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
       { name: 'farm', internalType: 'address', type: 'address', indexed: true },
     ],
     name: 'StrategyListed',
@@ -966,6 +1193,11 @@ export const degenDriverAbi = [
   { type: 'error', inputs: [], name: 'DegenDriver__BallotAlreadySet' },
   {
     type: 'error',
+    inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
+    name: 'DegenDriver__NotFund1',
+  },
+  {
+    type: 'error',
     inputs: [
       { name: 'expected', internalType: 'address', type: 'address' },
       { name: 'actual', internalType: 'address', type: 'address' },
@@ -1000,6 +1232,14 @@ export const degenDriverAbi = [
     type: 'error',
     inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
     name: 'TreasuryFund__FarmTokenMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'fund1Usdc', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Usdc', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'TreasuryFund__Fund1ShareNotLarger',
   },
   {
     type: 'error',
