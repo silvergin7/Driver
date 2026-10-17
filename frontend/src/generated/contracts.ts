@@ -39,6 +39,13 @@ export const cruiseControlAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'acceptRebalance',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     inputs: [],
     name: 'activeFarm',
     outputs: [
@@ -489,6 +496,11 @@ export const cruiseControlAbi = [
     inputs: [{ name: 'fund2', internalType: 'address', type: 'address' }],
     name: 'CruiseControl__Fund2Mismatch',
   },
+  {
+    type: 'error',
+    inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
+    name: 'CruiseControl__NotFund2',
+  },
   { type: 'error', inputs: [], name: 'OfficialPool__InsufficientReserves' },
   {
     type: 'error',
@@ -786,6 +798,19 @@ export const degenDriverAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'lastRebalance',
+    outputs: [
+      { name: 'executed', internalType: 'bool', type: 'bool' },
+      { name: 'roundId', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund1Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'owner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
@@ -816,6 +841,17 @@ export const degenDriverAbi = [
     inputs: [],
     name: 'principal',
     outputs: [{ name: 'principal_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'rebalanceAmount',
+    outputs: [
+      { name: 'fund1Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -1014,6 +1050,37 @@ export const degenDriverAbi = [
       },
     ],
     name: 'OwnershipTransferred',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'roundId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'fund1Value',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'fund2Value',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Rebalanced',
   },
   {
     type: 'event',

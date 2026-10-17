@@ -375,7 +375,7 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
 
     /// @inheritdoc ITreasuryFund
     function value() external view returns (uint256 value_) {
-        value_ = s_idle + _principal();
+        value_ = _value();
     }
 
     /// @inheritdoc ITreasuryFund
@@ -548,8 +548,56 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     /// @dev Fund 2 applies `expectedFarm` here. Fund 1 does not. `expectedFarm` is the farm {_farmAfterRound} returned.
     function _applyClosedRound(uint256, IMockFarm) internal virtual {}
 
-    /// @dev A later rebalance runs here, after idle has been deployed, inside this harvest.
+    /// @dev Degen Driver rebalances here, after idle has been deployed, inside this harvest.
     function _afterHarvest(uint256) internal virtual {}
+
+    /// @dev Returns idle plus principal on the active farm.
+    function _value() internal view returns (uint256 value_) {
+        value_ = s_idle + _principal();
+    }
+
+    /// @dev Reduces idle by up to `amount` and returns how much of `amount` idle covered.
+    function _takeFromIdle(uint256 amount) internal returns (uint256 taken) {
+        uint256 idle_ = s_idle;
+        taken = idle_ < amount ? idle_ : amount;
+        if (taken != 0) {
+            s_idle = idle_ - taken;
+        }
+    }
+
+    /// @dev Floor of the mUSDC `payerValue` must send so the two values match `payerShare` and `receiverShare`.
+    /// Returns zero when the receiver is already at or above its share. The subtraction runs only after that
+    /// comparison, so it cannot underflow.
+    function _amountToMove(uint256 payerShare, uint256 payerValue, uint256 receiverShare, uint256 receiverValue)
+        internal
+        pure
+        returns (uint256 amount)
+    {
+        uint256 owed = receiverShare * payerValue;
+        uint256 held = payerShare * receiverValue;
+        if (owed <= held) {
+            return 0;
+        }
+        amount = (owed - held) / (payerShare + receiverShare);
+    }
+
+    /// @dev Credits idle, or fixes the deposit amount, before pulling `amount` and depositing it.
+    function _acceptCapital(uint256 amount) internal {
+        if (amount == 0) {
+            revert TreasuryFund__ZeroAmount();
+        }
+        IMockFarm farm = s_activeFarm;
+        if (address(farm) == address(0)) {
+            s_idle += amount;
+            IERC20(i_usdc).safeTransferFrom(msg.sender, address(this), amount);
+            emit CapitalSupplied(msg.sender, amount, s_idle);
+            return;
+        }
+        uint256 depositAmount = amount;
+        IERC20(i_usdc).safeTransferFrom(msg.sender, address(this), amount);
+        _depositAmount(farm, depositAmount);
+        emit CapitalDeployed(address(farm), depositAmount, s_idle);
+    }
 
     /// @dev Returns the active farm. The zero address means no farm has been selected.
     function _activeFarm() internal view returns (IMockFarm farm_) {

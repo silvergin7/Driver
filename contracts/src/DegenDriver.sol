@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IDriverClock} from "./interfaces/IDriverClock.sol";
 import {IMockFarm} from "./interfaces/IMockFarm.sol";
 import {IOfficialPool} from "./interfaces/IOfficialPool.sol";
@@ -17,15 +19,39 @@ import {TreasuryFund} from "./TreasuryFund.sol";
 /// round's farm. The ballot is set once. Voting reads the constructor list and does not switch the farm.
 /// The splitter bucket is Fund 2.
 contract DegenDriver is TreasuryFund {
+    using SafeERC20 for IERC20;
+
+    /// @notice One rebalance, including a move of zero.
+    struct Rebalance {
+        uint256 roundId;
+        uint256 fund1Value;
+        uint256 fund2Value;
+        uint256 amount;
+    }
+
     /// @notice Fund 1. Set at construction and never replaced.
     CruiseControl public immutable i_fund1;
 
     /// @notice Ballot whose closed-round farm {harvest} applies.
     IStrategyBallot private s_ballot;
 
+    /// @notice True after the first rebalance. Round 0 is a real id, so zero storage cannot mark it.
+    bool private s_hasRebalanced;
+
+    /// @notice Latest rebalance, including a move of zero.
+    Rebalance private s_lastRebalance;
+
     /// @notice Emitted when the owner sets the ballot.
     /// @param ballot Ballot stored for later harvests.
     event BallotSet(address indexed ballot);
+
+    /// @notice Emitted when a harvest checks the starting ratio.
+    /// @param roundId Closed round the harvest applied.
+    /// @param fund1Value Fund 1's value before any move, in mUSDC base units.
+    /// @param fund2Value Fund 2's value before any move, in mUSDC base units.
+    /// @param amount mUSDC moved from Fund 2 to Fund 1, in base units. Zero when Fund 1 was already at or
+    /// above its share, or when the floor of the shortfall is zero.
+    event Rebalanced(uint256 indexed roundId, uint256 fund1Value, uint256 fund2Value, uint256 amount);
 
     /// @notice An address argument was zero.
     error DegenDriver__ZeroAddress();
@@ -99,6 +125,36 @@ contract DegenDriver is TreasuryFund {
         emit BallotSet(address(ballot_));
     }
 
+    /// @notice Returns the move a harvest would make from the current values.
+    /// @return fund1Value Fund 1's value, in mUSDC base units.
+    /// @return fund2Value Fund 2's value, in mUSDC base units.
+    /// @return amount mUSDC that would move, in base units.
+    function rebalanceAmount() external view returns (uint256 fund1Value, uint256 fund2Value, uint256 amount) {
+        fund1Value = i_fund1.value();
+        fund2Value = _value();
+        amount = _amountToMove(i_fund2Usdc, fund2Value, i_fund1Usdc, fund1Value);
+    }
+
+    /// @notice Returns the latest rebalance.
+    /// @dev `executed` is false before the first harvest. Round 0 is a real id, so the bool is the sentinel.
+    /// The values are the ones from before the move.
+    /// @return executed True after at least one rebalance.
+    /// @return roundId Closed round stored by that rebalance.
+    /// @return fund1Value Fund 1's value before the move, in mUSDC base units.
+    /// @return fund2Value Fund 2's value before the move, in mUSDC base units.
+    /// @return amount mUSDC moved, in base units.
+    function lastRebalance()
+        external
+        view
+        returns (bool executed, uint256 roundId, uint256 fund1Value, uint256 fund2Value, uint256 amount)
+    {
+        executed = s_hasRebalanced;
+        roundId = s_lastRebalance.roundId;
+        fund1Value = s_lastRebalance.fund1Value;
+        fund2Value = s_lastRebalance.fund2Value;
+        amount = s_lastRebalance.amount;
+    }
+
     /// @dev The ballot is read before {harvest} moves tokens. Address zero, or the farm already active, keeps
     /// the current farm.
     function _farmAfterRound(uint256 roundId) internal view override returns (IMockFarm farm_) {
@@ -117,6 +173,37 @@ contract DegenDriver is TreasuryFund {
             return;
         }
         _switchFarm(chosen_);
+    }
+
+    /// @dev Moves mUSDC to Fund 1 when Fund 1 is below its starting share. Idle is debited and the snapshot is
+    /// stored before the farm withdraw and the Fund 1 call. The event is emitted after those calls.
+    /// A zero move stores and emits without calling Fund 1. Step 5 has already deposited this fund's idle when
+    /// a farm is active, so that path withdraws the whole amount.
+    function _afterHarvest(uint256 roundId) internal override {
+        uint256 fund1Value = i_fund1.value();
+        uint256 fund2Value = _value();
+        uint256 amount = _amountToMove(i_fund2Usdc, fund2Value, i_fund1Usdc, fund1Value);
+        if (amount == 0) {
+            _rememberRebalance(roundId, fund1Value, fund2Value, 0);
+            emit Rebalanced(roundId, fund1Value, fund2Value, 0);
+            return;
+        }
+        uint256 fromIdle = _takeFromIdle(amount);
+        uint256 fromFarm = amount - fromIdle;
+        _rememberRebalance(roundId, fund1Value, fund2Value, amount);
+        if (fromFarm != 0) {
+            _activeFarm().withdraw(fromFarm);
+        }
+        IERC20(i_usdc).forceApprove(address(i_fund1), amount);
+        i_fund1.acceptRebalance(amount);
+        IERC20(i_usdc).forceApprove(address(i_fund1), 0);
+        emit Rebalanced(roundId, fund1Value, fund2Value, amount);
+    }
+
+    /// @dev Stores the pre-move values. Called before any farm or Fund 1 call.
+    function _rememberRebalance(uint256 roundId, uint256 fund1Value, uint256 fund2Value, uint256 amount) private {
+        s_hasRebalanced = true;
+        s_lastRebalance = Rebalance({roundId: roundId, fund1Value: fund1Value, fund2Value: fund2Value, amount: amount});
     }
 
     /// @dev Address zero from the ballot, or the farm already active, keeps the current farm.

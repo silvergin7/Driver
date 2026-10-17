@@ -25,6 +25,10 @@ contract CruiseControl is TreasuryFund {
     /// @notice Fund 2 was already stored.
     error CruiseControl__Fund2AlreadySet();
 
+    /// @notice The caller is not the stored Fund 2.
+    /// @param caller Account that called the function.
+    error CruiseControl__NotFund2(address caller);
+
     /// @notice Fund 2 does not point back at this fund, or it does not share this fund's token, clock,
     /// schedule, or starting shares.
     /// @param fund2 Account that was rejected.
@@ -96,6 +100,19 @@ contract CruiseControl is TreasuryFund {
         }
         s_fund2 = fund2_;
         emit Fund2Set(address(fund2_));
+    }
+
+    /// @notice Pulls a rebalance payment from Fund 2 and puts it to work.
+    /// @dev Reverts with {CruiseControl__NotFund2} when the caller is not the stored Fund 2, and with
+    /// {TreasuryFund__ZeroAmount} when `amount` is zero. Idle is credited before the pull when no farm is
+    /// active. Otherwise the deposit amount is fixed before the pull and the farm deposit. Only Fund 2 may
+    /// call this.
+    /// @param amount mUSDC to pull, in base units. Must be greater than zero.
+    function acceptRebalance(uint256 amount) external nonReentrant {
+        if (msg.sender != address(s_fund2)) {
+            revert CruiseControl__NotFund2(msg.sender);
+        }
+        _acceptCapital(amount);
     }
 
     /// @notice Points this fund at one farm from its constructor list.

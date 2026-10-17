@@ -32,6 +32,7 @@ import {
 contract HarvestTest is Test {
     uint256 internal constant SHARE_1 = 15_000 * 10 ** 6;
     uint256 internal constant SHARE_2 = 5_000 * 10 ** 6;
+    uint256 internal constant PAIR_CUSHION = 1_000_000 * 10 ** 6;
 
     uint256 internal constant SEED_DVR = 500_000 * 10 ** 18;
     uint256 internal constant SEED_USDC = 10_000 * 10 ** 6;
@@ -789,6 +790,9 @@ contract HarvestTest is Test {
         farms[2] = drift;
         degen = new DegenDriver(usdc, clock, schedule, splitter, pool, cruise, SHARE_1, SHARE_2, farms, owner);
         vm.startPrank(owner);
+        usdc.approve(address(cruise), PAIR_CUSHION);
+        cruise.supply(PAIR_CUSHION);
+        cruise.setFund2(degen);
         highway.addDepositor(address(degen));
         autobahn.addDepositor(address(degen));
         drift.addDepositor(address(degen));

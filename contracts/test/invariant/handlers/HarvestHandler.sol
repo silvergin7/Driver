@@ -22,6 +22,7 @@ import {MappedBallot} from "../../mocks/HarvestMocks.sol";
 contract HarvestHandler is Test {
     uint256 internal constant SHARE_1 = 15_000 * 10 ** 6;
     uint256 internal constant SHARE_2 = 5_000 * 10 ** 6;
+    uint256 internal constant PAIR_CUSHION = 1_000_000 * 10 ** 6;
 
     uint256 internal constant BPS = 10_000;
     uint256 internal constant YEAR = 365 days;
@@ -341,6 +342,9 @@ contract HarvestHandler is Test {
         autobahn.fundRewards(10_000_000 * 10 ** 6);
         s_usdc.approve(address(fund_), 5_000 * 10 ** 6);
         fund_.supply(5_000 * 10 ** 6);
+        s_usdc.approve(address(cruise_), PAIR_CUSHION);
+        cruise_.supply(PAIR_CUSHION);
+        cruise_.setFund2(fund_);
         fund_.setBallot(ballot);
         splitter_.setRecipient(TaxSplitter.FundId.Fund2, address(fund_));
         s_usdc.approve(address(pool_), 100 * 10 ** 6);
@@ -676,6 +680,9 @@ contract HarvestHandler is Test {
         vm.startPrank(s_owner);
         s_usdc.approve(address(fund_), 5_000 * 10 ** 6);
         fund_.supply(5_000 * 10 ** 6);
+        s_usdc.approve(address(cruise_), PAIR_CUSHION);
+        cruise_.supply(PAIR_CUSHION);
+        cruise_.setFund2(fund_);
         vm.stopPrank();
     }
 
