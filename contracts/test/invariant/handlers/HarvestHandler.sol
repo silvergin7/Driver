@@ -325,8 +325,10 @@ contract HarvestHandler is Test {
         farms[0] = highway;
         farms[1] = autobahn;
         RoundSchedule schedule_ = new RoundSchedule(s_clock, EPOCH);
+        CruiseControl cruise_ =
+            new CruiseControl(s_usdc, s_clock, schedule_, splitter_, pool_, SHARE_1, SHARE_2, _one(highway), s_owner);
         DegenDriver fund_ =
-            new DegenDriver(s_usdc, s_clock, schedule_, splitter_, pool_, SHARE_1, SHARE_2, farms, s_owner);
+            new DegenDriver(s_usdc, s_clock, schedule_, splitter_, pool_, cruise_, SHARE_1, SHARE_2, farms, s_owner);
         MappedBallot ballot = new MappedBallot();
         ballot.setWinner(0, highway);
         ballot.setWinner(1, autobahn);
@@ -666,7 +668,11 @@ contract HarvestHandler is Test {
         farms[0] = highway;
         farms[1] = autobahn;
         farms[2] = drift;
-        fund_ = new DegenDriver(s_usdc, s_clock, s_schedule, s_splitter, s_pool, SHARE_1, SHARE_2, farms, s_owner);
+        CruiseControl cruise_ = new CruiseControl(
+            s_usdc, s_clock, s_schedule, s_splitter, s_pool, SHARE_1, SHARE_2, _one(highway), s_owner
+        );
+        fund_ =
+            new DegenDriver(s_usdc, s_clock, s_schedule, s_splitter, s_pool, cruise_, SHARE_1, SHARE_2, farms, s_owner);
         vm.startPrank(s_owner);
         s_usdc.approve(address(fund_), 5_000 * 10 ** 6);
         fund_.supply(5_000 * 10 ** 6);

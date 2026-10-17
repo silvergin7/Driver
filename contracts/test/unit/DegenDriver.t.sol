@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IMockFarm} from "../../src/interfaces/IMockFarm.sol";
+import {CruiseControl} from "../../src/CruiseControl.sol";
 import {DemoDriverClock} from "../../src/DemoDriverClock.sol";
 import {DegenDriver} from "../../src/DegenDriver.sol";
 import {DriverToken} from "../../src/DriverToken.sol";
@@ -19,6 +20,7 @@ contract DegenDriverTest is Test {
     uint256 internal constant SHARE_2 = 5_000 * 10 ** 6;
 
     MockUSDC internal usdc;
+    CruiseControl internal cruise;
     MockFarm internal highway;
     MockFarm internal autobahn;
     MockFarm internal drift;
@@ -40,11 +42,14 @@ contract DegenDriverTest is Test {
         autobahn = new MockFarm(usdc, clock, 8_000, owner);
         drift = new MockFarm(usdc, clock, 16_000, owner);
 
+        IMockFarm[] memory cruiseFarms = new IMockFarm[](1);
+        cruiseFarms[0] = highway;
+        cruise = new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, cruiseFarms, owner);
         IMockFarm[] memory farms = new IMockFarm[](3);
         farms[0] = highway;
         farms[1] = autobahn;
         farms[2] = drift;
-        fund = new DegenDriver(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, owner);
+        fund = new DegenDriver(usdc, clock, schedule, splitter, pool, cruise, SHARE_1, SHARE_2, farms, owner);
     }
 
     function test_ConstructorListsTheThreeFarms() public view {
@@ -62,6 +67,7 @@ contract DegenDriverTest is Test {
         assertEq(fund.value(), 0);
         assertEq(fund.i_fund1Usdc(), SHARE_1);
         assertEq(fund.i_fund2Usdc(), SHARE_2);
+        assertEq(address(fund.i_fund1()), address(cruise));
     }
 
     function test_RevertWhen_DepositHasNoActiveFarm() public {

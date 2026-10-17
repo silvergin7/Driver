@@ -5,6 +5,7 @@ import {IDriverClock} from "./interfaces/IDriverClock.sol";
 import {IMockFarm} from "./interfaces/IMockFarm.sol";
 import {IOfficialPool} from "./interfaces/IOfficialPool.sol";
 import {IStrategyBallot} from "./interfaces/IStrategyBallot.sol";
+import {CruiseControl} from "./CruiseControl.sol";
 import {MockUSDC} from "./MockUSDC.sol";
 import {RoundSchedule} from "./RoundSchedule.sol";
 import {TaxSplitter} from "./TaxSplitter.sol";
@@ -16,6 +17,9 @@ import {TreasuryFund} from "./TreasuryFund.sol";
 /// round's farm. The ballot is set once. Voting reads the constructor list and does not switch the farm.
 /// The splitter bucket is Fund 2.
 contract DegenDriver is TreasuryFund {
+    /// @notice Fund 1. Set at construction and never replaced.
+    CruiseControl public immutable i_fund1;
+
     /// @notice Ballot whose closed-round farm {harvest} applies.
     IStrategyBallot private s_ballot;
 
@@ -35,11 +39,14 @@ contract DegenDriver is TreasuryFund {
     error DegenDriver__WinnerChanged(address expected, address actual);
 
     /// @notice Stores Fund 2's addresses and its farm list.
+    /// @dev Reverts with {DegenDriver__ZeroAddress} when `fund1` is zero. The shared-token, clock, schedule,
+    /// and share checks run in {CruiseControl.setFund2}.
     /// @param usdc Mock USDC this fund holds. The zero address is rejected.
     /// @param clock Clock this fund and its farms read. The zero address is rejected.
     /// @param schedule Shared round schedule. The zero address is rejected.
     /// @param taxSplitter Splitter whose Fund 2 bucket this fund will release. The zero address is rejected.
     /// @param pool Official pool stored for a later buyback. The zero address is rejected.
+    /// @param fund1 Fund 1. The zero address is rejected.
     /// @param fund1Usdc Fund 1's starting share, in mUSDC base units. Zero is rejected, and it must be
     /// strictly larger than `fund2Usdc`.
     /// @param fund2Usdc Fund 2's starting share, in mUSDC base units. Zero is rejected.
@@ -51,6 +58,7 @@ contract DegenDriver is TreasuryFund {
         RoundSchedule schedule,
         TaxSplitter taxSplitter,
         IOfficialPool pool,
+        CruiseControl fund1,
         uint256 fund1Usdc,
         uint256 fund2Usdc,
         IMockFarm[] memory farms,
@@ -68,7 +76,12 @@ contract DegenDriver is TreasuryFund {
             farms,
             initialOwner
         )
-    {}
+    {
+        if (address(fund1) == address(0)) {
+            revert DegenDriver__ZeroAddress();
+        }
+        i_fund1 = fund1;
+    }
 
     /// @notice Stores the ballot harvest reads. A second call reverts.
     /// @dev Reverts with {DegenDriver__ZeroAddress} when `ballot_` is zero, and with

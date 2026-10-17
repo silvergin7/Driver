@@ -62,6 +62,15 @@ export const cruiseControlAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'fund2',
+    outputs: [
+      { name: 'fund2_', internalType: 'contract DegenDriver', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [{ name: 'minDvrOut', internalType: 'uint256', type: 'uint256' }],
     name: 'harvest',
     outputs: [],
@@ -243,6 +252,15 @@ export const cruiseControlAbi = [
   {
     type: 'function',
     inputs: [
+      { name: 'fund2_', internalType: 'contract DegenDriver', type: 'address' },
+    ],
+    name: 'setFund2',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: 'newFarm', internalType: 'contract IMockFarm', type: 'address' },
     ],
     name: 'setStrategy',
@@ -325,6 +343,19 @@ export const cruiseControlAbi = [
       },
     ],
     name: 'CapitalSupplied',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'fund2',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'Fund2Set',
   },
   {
     type: 'event',
@@ -452,6 +483,12 @@ export const cruiseControlAbi = [
     ],
     name: 'StrategySet',
   },
+  { type: 'error', inputs: [], name: 'CruiseControl__Fund2AlreadySet' },
+  {
+    type: 'error',
+    inputs: [{ name: 'fund2', internalType: 'address', type: 'address' }],
+    name: 'CruiseControl__Fund2Mismatch',
+  },
   { type: 'error', inputs: [], name: 'OfficialPool__InsufficientReserves' },
   {
     type: 'error',
@@ -553,6 +590,11 @@ export const degenDriverAbi = [
         type: 'address',
       },
       { name: 'pool', internalType: 'contract IOfficialPool', type: 'address' },
+      {
+        name: 'fund1',
+        internalType: 'contract CruiseControl',
+        type: 'address',
+      },
       { name: 'fund1Usdc', internalType: 'uint256', type: 'uint256' },
       { name: 'fund2Usdc', internalType: 'uint256', type: 'uint256' },
       {
@@ -626,6 +668,15 @@ export const degenDriverAbi = [
     name: 'i_clock',
     outputs: [
       { name: '', internalType: 'contract IDriverClock', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fund1',
+    outputs: [
+      { name: '', internalType: 'contract CruiseControl', type: 'address' },
     ],
     stateMutability: 'view',
   },

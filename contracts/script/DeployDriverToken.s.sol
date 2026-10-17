@@ -52,10 +52,11 @@ contract DeployDriverToken is Script {
     /// reserves to the deployer in one call, then approves and calls {MockFarm.fundRewards} for that exact
     /// reserve on each farm, in that order. It then deploys {RoundSchedule} for {HelperConfig.EPOCH_LENGTH},
     /// {CruiseControl} with Cruise only, and {DegenDriver} with Highway, Autobahn, and Drift. Both funds
-    /// receive {HelperConfig.FUND_1_USDC} and {HelperConfig.FUND_2_USDC} as their starting shares. It supplies
-    /// {HelperConfig.FUND_1_USDC} and
-    /// {HelperConfig.FUND_2_USDC}, adds the funds as depositors, selects Cruise, and deposits Fund 1.
-    /// The splitter's Fund 1 and Fund 2 recipients are the two funds. Fund 3 has no recipient.
+    /// receive {HelperConfig.FUND_1_USDC} and {HelperConfig.FUND_2_USDC} as their starting shares. Degen Driver
+    /// is constructed with Cruise Control. It supplies {HelperConfig.FUND_1_USDC} and {HelperConfig.FUND_2_USDC},
+    /// adds the funds as depositors, selects Cruise, and deposits Fund 1. The splitter's Fund 1 and Fund 2
+    /// recipients are the two funds. Fund 3 has no recipient. {CruiseControl.setFund2} runs last. Nothing
+    /// rebalances.
     /// @return deployed The deployed contracts.
     function run() external returns (Deployed memory deployed) {
         HelperConfig helper = new HelperConfig();
@@ -128,7 +129,7 @@ contract DeployDriverToken is Script {
         farm.fundRewards(reserve);
     }
 
-    /// @dev Creates the schedule, supplies both funds, adds the planned depositors, deposits Fund 1 into Cruise, and sets Fund 1 and Fund 2 recipients.
+    /// @dev Creates the schedule, supplies both funds, adds the planned depositors, deposits Fund 1 into Cruise, sets Fund 1 and Fund 2 recipients, and stores Fund 2 on Fund 1.
     function _seedFunds(Deployed memory deployed, HelperConfig helper, address deployer) private {
         deployed.schedule = new RoundSchedule(deployed.clock, helper.EPOCH_LENGTH());
         deployed.cruiseControl = new CruiseControl(
@@ -148,6 +149,7 @@ contract DeployDriverToken is Script {
             deployed.schedule,
             deployed.splitter,
             deployed.pool,
+            deployed.cruiseControl,
             helper.FUND_1_USDC(),
             helper.FUND_2_USDC(),
             _degenFarms(deployed.highway, deployed.autobahn, deployed.drift),
@@ -165,6 +167,7 @@ contract DeployDriverToken is Script {
         deployed.cruiseControl.deposit(helper.FUND_1_USDC());
         deployed.splitter.setRecipient(TaxSplitter.FundId.Fund1, address(deployed.cruiseControl));
         deployed.splitter.setRecipient(TaxSplitter.FundId.Fund2, address(deployed.degenDriver));
+        deployed.cruiseControl.setFund2(deployed.degenDriver);
     }
 
     /// @dev One-entry list for {CruiseControl}. The entry is Cruise.

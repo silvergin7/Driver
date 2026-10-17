@@ -779,11 +779,15 @@ contract HarvestTest is Test {
         MockFarm highway = new MockFarm(usdc, clock, 4_000, owner);
         MockFarm autobahn = new MockFarm(usdc, clock, 8_000, owner);
         MockFarm drift = new MockFarm(usdc, clock, 16_000, owner);
+        IMockFarm[] memory cruiseFarms = new IMockFarm[](1);
+        cruiseFarms[0] = highway;
+        CruiseControl cruise =
+            new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, cruiseFarms, owner);
         IMockFarm[] memory farms = new IMockFarm[](3);
         farms[0] = highway;
         farms[1] = autobahn;
         farms[2] = drift;
-        degen = new DegenDriver(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, owner);
+        degen = new DegenDriver(usdc, clock, schedule, splitter, pool, cruise, SHARE_1, SHARE_2, farms, owner);
         vm.startPrank(owner);
         highway.addDepositor(address(degen));
         autobahn.addDepositor(address(degen));

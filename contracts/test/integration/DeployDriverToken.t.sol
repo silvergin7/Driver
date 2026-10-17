@@ -308,7 +308,7 @@ contract DeployDriverTokenTest is Test {
         private
         view
     {
-        assertEq(vm.getNonce(deployer), 49);
+        assertEq(vm.getNonce(deployer), 50);
         assertEq(address(deployed.schedule.i_clock()), address(deployed.clock));
         assertEq(deployed.schedule.i_epoch(), helper.EPOCH_LENGTH());
         assertEq(deployed.schedule.i_start(), block.timestamp);
@@ -318,6 +318,10 @@ contract DeployDriverTokenTest is Test {
         assertEq(deployed.cruiseControl.i_fund2Usdc(), helper.FUND_2_USDC());
         assertEq(deployed.degenDriver.i_fund1Usdc(), helper.FUND_1_USDC());
         assertEq(deployed.degenDriver.i_fund2Usdc(), helper.FUND_2_USDC());
+        assertEq(address(deployed.degenDriver.i_fund1()), address(deployed.cruiseControl));
+        assertEq(address(deployed.cruiseControl.fund2()), address(deployed.degenDriver));
+        assertEq(deployed.usdc.allowance(address(deployed.cruiseControl), address(deployed.degenDriver)), 0);
+        assertEq(deployed.usdc.allowance(address(deployed.degenDriver), address(deployed.cruiseControl)), 0);
         assertEq(deployed.token.balanceOf(deployer), helper.COMMUNITY_ALLOCATION() + helper.TEAM_ALLOCATION());
         assertEq(deployed.usdc.balanceOf(deployer), helper.FUND_3_USDC());
         assertEq(deployed.cruiseControl.idle(), 0);
