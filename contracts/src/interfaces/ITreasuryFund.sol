@@ -12,6 +12,17 @@ import {TaxSplitter} from "../TaxSplitter.sol";
 /// @notice Views for one treasury fund. Harvest, rebalance, and voting read this interface.
 /// @dev The farm list is fixed in the fund's constructor. This interface has no function that sets the active farm.
 interface ITreasuryFund {
+    /// @notice Amounts from the latest harvest. Every field is zero before the first harvest.
+    struct Harvest {
+        uint256 roundId;
+        uint256 taxReleased;
+        uint256 rewards;
+        uint256 compounded;
+        uint256 buybackSpent;
+        uint256 dvrBurned;
+        uint256 pendingBuyback;
+    }
+
     /// @notice Returns mUSDC waiting to be deposited.
     /// @return idle_ Idle balance, in base units.
     function idle() external view returns (uint256 idle_);
@@ -37,6 +48,34 @@ interface ITreasuryFund {
     /// @dev This is the farm's uncapped accrued view. It is not capped by the reward reserve.
     /// @return rewards_ Unpaid mUSDC, in base units. Zero when no farm is active.
     function pendingRewards() external view returns (uint256 rewards_);
+
+    /// @notice Returns the closed round the next harvest will apply, or the open round when none is ready.
+    /// @dev `ready_` is false while round 0 is open and after the latest closed round has already been harvested.
+    /// `roundId_` is that closed round when `ready_` is true, and {RoundSchedule.currentRound} otherwise.
+    /// @return ready_ True when {harvest} can apply a closed round.
+    /// @return roundId_ The round {harvest} will store, or the open round when `ready_` is false.
+    function harvestableRound() external view returns (bool ready_, uint256 roundId_);
+
+    /// @notice Returns the last round this fund harvested.
+    /// @dev `harvested_` is false before the first harvest. Round 0 is a real id, so the bool is the sentinel.
+    /// @return harvested_ True after at least one harvest.
+    /// @return roundId_ The stored round. Zero when `harvested_` is false.
+    function lastHarvestedRound() external view returns (bool harvested_, uint256 roundId_);
+
+    /// @notice Returns DVR this fund has bought and burned.
+    /// @dev This total only increases when a harvest burns buyback output. User burns are not included.
+    /// @return burned_ Cumulative DVR burned by this fund, in base units.
+    function dvrBoughtBack() external view returns (uint256 burned_);
+
+    /// @notice Returns mUSDC waiting for a later buyback.
+    /// @dev A buyback half of zero does not change this. A half that the pool rejects as zero input or zero
+    /// output is added here and is not swapped.
+    /// @return pending_ Deferred mUSDC, in base units.
+    function pendingBuyback() external view returns (uint256 pending_);
+
+    /// @notice Returns the amounts stored by the latest harvest.
+    /// @return harvest_ Latest harvest. Every field is zero before the first harvest.
+    function lastHarvest() external view returns (Harvest memory harvest_);
 
     /// @notice Returns whether `farm` was passed to the constructor.
     /// @param farm Account to query.

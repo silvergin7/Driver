@@ -54,6 +54,30 @@ export const cruiseControlAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'dvrBoughtBack',
+    outputs: [{ name: 'burned_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'minDvrOut', internalType: 'uint256', type: 'uint256' }],
+    name: 'harvest',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'harvestableRound',
+    outputs: [
+      { name: 'ready_', internalType: 'bool', type: 'bool' },
+      { name: 'roundId_', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'heldRewards',
     outputs: [
       { name: 'heldRewards_', internalType: 'uint256', type: 'uint256' },
@@ -129,8 +153,47 @@ export const cruiseControlAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'lastHarvest',
+    outputs: [
+      {
+        name: 'harvest_',
+        internalType: 'struct ITreasuryFund.Harvest',
+        type: 'tuple',
+        components: [
+          { name: 'roundId', internalType: 'uint256', type: 'uint256' },
+          { name: 'taxReleased', internalType: 'uint256', type: 'uint256' },
+          { name: 'rewards', internalType: 'uint256', type: 'uint256' },
+          { name: 'compounded', internalType: 'uint256', type: 'uint256' },
+          { name: 'buybackSpent', internalType: 'uint256', type: 'uint256' },
+          { name: 'dvrBurned', internalType: 'uint256', type: 'uint256' },
+          { name: 'pendingBuyback', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'lastHarvestedRound',
+    outputs: [
+      { name: 'harvested_', internalType: 'bool', type: 'bool' },
+      { name: 'roundId_', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'owner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingBuyback',
+    outputs: [{ name: 'pending_', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -252,6 +315,55 @@ export const cruiseControlAbi = [
     anonymous: false,
     inputs: [
       {
+        name: 'roundId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'taxReleased',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'rewards',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'compounded',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'buybackSpent',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'dvrBurned',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'pendingBuyback',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Harvested',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
         name: 'previousOwner',
         internalType: 'address',
         type: 'address',
@@ -324,6 +436,7 @@ export const cruiseControlAbi = [
     ],
     name: 'StrategySet',
   },
+  { type: 'error', inputs: [], name: 'OfficialPool__InsufficientReserves' },
   {
     type: 'error',
     inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
@@ -340,6 +453,7 @@ export const cruiseControlAbi = [
     inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
     name: 'SafeERC20FailedOperation',
   },
+  { type: 'error', inputs: [], name: 'TreasuryFund__BuybackQuoteRejected' },
   {
     type: 'error',
     inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
@@ -364,6 +478,11 @@ export const cruiseControlAbi = [
     type: 'error',
     inputs: [{ name: 'pool', internalType: 'address', type: 'address' }],
     name: 'TreasuryFund__PoolMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'roundId', internalType: 'uint256', type: 'uint256' }],
+    name: 'TreasuryFund__RoundAlreadyHarvested',
   },
   {
     type: 'error',
@@ -445,6 +564,30 @@ export const degenDriverAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'dvrBoughtBack',
+    outputs: [{ name: 'burned_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'minDvrOut', internalType: 'uint256', type: 'uint256' }],
+    name: 'harvest',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'harvestableRound',
+    outputs: [
+      { name: 'ready_', internalType: 'bool', type: 'bool' },
+      { name: 'roundId_', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'heldRewards',
     outputs: [
       { name: 'heldRewards_', internalType: 'uint256', type: 'uint256' },
@@ -520,8 +663,47 @@ export const degenDriverAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'lastHarvest',
+    outputs: [
+      {
+        name: 'harvest_',
+        internalType: 'struct ITreasuryFund.Harvest',
+        type: 'tuple',
+        components: [
+          { name: 'roundId', internalType: 'uint256', type: 'uint256' },
+          { name: 'taxReleased', internalType: 'uint256', type: 'uint256' },
+          { name: 'rewards', internalType: 'uint256', type: 'uint256' },
+          { name: 'compounded', internalType: 'uint256', type: 'uint256' },
+          { name: 'buybackSpent', internalType: 'uint256', type: 'uint256' },
+          { name: 'dvrBurned', internalType: 'uint256', type: 'uint256' },
+          { name: 'pendingBuyback', internalType: 'uint256', type: 'uint256' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'lastHarvestedRound',
+    outputs: [
+      { name: 'harvested_', internalType: 'bool', type: 'bool' },
+      { name: 'roundId_', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'owner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'pendingBuyback',
+    outputs: [{ name: 'pending_', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
   },
   {
@@ -549,6 +731,19 @@ export const degenDriverAbi = [
     type: 'function',
     inputs: [],
     name: 'renounceOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      {
+        name: 'ballot_',
+        internalType: 'contract IStrategyBallot',
+        type: 'address',
+      },
+    ],
+    name: 'setBallot',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -593,6 +788,19 @@ export const degenDriverAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
+      {
+        name: 'ballot',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'BallotSet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
       { name: 'farm', internalType: 'address', type: 'address', indexed: true },
       {
         name: 'amount',
@@ -628,6 +836,55 @@ export const degenDriverAbi = [
       },
     ],
     name: 'CapitalSupplied',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'roundId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'taxReleased',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'rewards',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'compounded',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'buybackSpent',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'dvrBurned',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'pendingBuyback',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Harvested',
   },
   {
     type: 'event',
@@ -706,6 +963,17 @@ export const degenDriverAbi = [
     ],
     name: 'StrategySet',
   },
+  { type: 'error', inputs: [], name: 'DegenDriver__BallotAlreadySet' },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'expected', internalType: 'address', type: 'address' },
+      { name: 'actual', internalType: 'address', type: 'address' },
+    ],
+    name: 'DegenDriver__WinnerChanged',
+  },
+  { type: 'error', inputs: [], name: 'DegenDriver__ZeroAddress' },
+  { type: 'error', inputs: [], name: 'OfficialPool__InsufficientReserves' },
   {
     type: 'error',
     inputs: [{ name: 'owner', internalType: 'address', type: 'address' }],
@@ -722,6 +990,7 @@ export const degenDriverAbi = [
     inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
     name: 'SafeERC20FailedOperation',
   },
+  { type: 'error', inputs: [], name: 'TreasuryFund__BuybackQuoteRejected' },
   {
     type: 'error',
     inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
@@ -746,6 +1015,11 @@ export const degenDriverAbi = [
     type: 'error',
     inputs: [{ name: 'pool', internalType: 'address', type: 'address' }],
     name: 'TreasuryFund__PoolMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [{ name: 'roundId', internalType: 'uint256', type: 'uint256' }],
+    name: 'TreasuryFund__RoundAlreadyHarvested',
   },
   {
     type: 'error',

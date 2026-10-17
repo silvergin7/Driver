@@ -53,6 +53,21 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     mapping(address farm => bool allowed) private s_allowed;
     IMockFarm[] private s_farms;
 
+    /// @notice True after the first harvest. Round 0 is a real id, so zero storage cannot mark it.
+    bool private s_hasHarvested;
+
+    /// @notice Latest round this fund has harvested.
+    uint256 private s_lastHarvestedRound;
+
+    /// @notice mUSDC a buyback skipped because the pool would take nothing or return nothing.
+    uint256 private s_pendingBuyback;
+
+    /// @notice DVR this fund has bought and burned.
+    uint256 private s_dvrBoughtBack;
+
+    /// @notice Amounts from the latest harvest.
+    Harvest private s_lastHarvest;
+
     /// @notice Emitted when the owner pulls mUSDC into this fund.
     /// @param from Account that paid.
     /// @param amount mUSDC pulled, in base units.
@@ -76,6 +91,24 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     /// @param rewardsClaimed Amount {IMockFarm.claim} returned, in base units.
     event StrategySet(
         address indexed previousFarm, address indexed newFarm, uint256 principalMoved, uint256 rewardsClaimed
+    );
+
+    /// @notice Emitted when a closed round is harvested.
+    /// @param roundId Closed round this call applied.
+    /// @param taxReleased mUSDC released from this fund's splitter bucket, in base units.
+    /// @param rewards Farm rewards taken into this harvest, in base units.
+    /// @param compounded Half of `rewards` put back to work, in base units. This half keeps the odd unit.
+    /// @param buybackSpent mUSDC swapped for DVR, in base units. Zero when the buyback was skipped.
+    /// @param dvrBurned DVR bought and burned, in base units.
+    /// @param pendingBuyback mUSDC still waiting for a later buyback, in base units.
+    event Harvested(
+        uint256 indexed roundId,
+        uint256 taxReleased,
+        uint256 rewards,
+        uint256 compounded,
+        uint256 buybackSpent,
+        uint256 dvrBurned,
+        uint256 pendingBuyback
     );
 
     /// @notice An address argument was zero.
@@ -122,6 +155,13 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     /// @notice That schedule does not read this fund's clock.
     /// @param schedule Schedule that was rejected.
     error TreasuryFund__ScheduleClockMismatch(address schedule);
+
+    /// @notice That closed round was already harvested, or an older round was requested after a newer one.
+    /// @param roundId Closed round the call tried to apply.
+    error TreasuryFund__RoundAlreadyHarvested(uint256 roundId);
+
+    /// @notice The pool's buy quote failed for a reason other than a zero input or a zero output.
+    error TreasuryFund__BuybackQuoteRejected();
 
     /// @notice Stores the token, the clock, the schedule, the splitter, the pool, the bucket, and the farm list.
     /// @dev Reverts with {TreasuryFund__ZeroAddress} when `usdc`, `clock`, `schedule`, `taxSplitter`, or `pool`
@@ -205,6 +245,88 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
         emit CapitalDeployed(address(farm), amount, s_idle);
     }
 
+    /// @notice Harvests one closed round: releases tax, splits rewards, buys and burns DVR, then deploys idle.
+    /// @dev Reverts with {Ownable.OwnableUnauthorizedAccount} when the caller is not the owner, with
+    /// {RoundSchedule.RoundSchedule__NoClosedRound} while round 0 is open, and with
+    /// {TreasuryFund__RoundAlreadyHarvested} when the latest closed round is already stored. The round and
+    /// the idle balance are stored before any token call. Degen Driver reads its ballot here, and reads it
+    /// again when the round is applied; a different farm reverts in the child. `minDvrOut` may be zero. It
+    /// is passed to the buy only when this harvest's buyback half is non-zero and the quote returns an
+    /// output. A half of zero does not quote and does not change the deferred buyback. A quote that reverts
+    /// with {IOfficialPool.OfficialPool__ZeroAmount} or {IOfficialPool.OfficialPool__ZeroOutput} puts that
+    /// spend back into the deferred buyback and does not read `minDvrOut`.
+    /// {IOfficialPool.OfficialPool__InsufficientReserves} from the quote is raised again. Any other quote
+    /// revert raises {TreasuryFund__BuybackQuoteRejected}. The buy deadline is `block.timestamp`.
+    ///
+    /// Order: release this fund's accrued tax, or skip an empty bucket. Add the active farm's
+    /// {IMockFarm.claim} return to rewards that were already moved out of storage. That credit follows an
+    /// external call, because the amount is the return value. The compound half is deposited into the
+    /// active farm. When no farm was active, that half was already added to idle. The buyback half is
+    /// swapped and the DVR output is burned. Degen Driver may then switch farm. Idle mUSDC already counted
+    /// above is deposited when a farm is active. {_afterHarvest} runs last, before {Harvested}.
+    /// @param minDvrOut Minimum DVR the buy must return, in base units.
+    function harvest(uint256 minDvrOut) external nonReentrant onlyOwner {
+        uint256 roundId = i_schedule.latestClosedRound();
+        if (s_hasHarvested && roundId <= s_lastHarvestedRound) {
+            revert TreasuryFund__RoundAlreadyHarvested(roundId);
+        }
+        s_hasHarvested = true;
+        s_lastHarvestedRound = roundId;
+
+        uint256 idle_ = s_idle + i_taxSplitter.accrued(i_fundId);
+        uint256 taxReleased = idle_ - s_idle;
+        uint256 rewards = s_heldRewards;
+        s_heldRewards = 0;
+        IMockFarm farm = s_activeFarm;
+        uint256 buybackHalf = 0;
+        uint256 compounded = 0;
+        if (address(farm) == address(0)) {
+            buybackHalf = rewards / 2;
+            compounded = rewards - buybackHalf;
+            idle_ += compounded;
+        }
+        IMockFarm endFarm = _farmAfterRound(roundId);
+        uint256 deployAmount = 0;
+        if (address(endFarm) == address(0)) {
+            s_idle = idle_;
+        } else {
+            s_idle = 0;
+            deployAmount = idle_;
+        }
+
+        if (taxReleased != 0) {
+            i_taxSplitter.release(i_fundId);
+        }
+        if (address(farm) != address(0)) {
+            rewards += farm.claim();
+            buybackHalf = rewards / 2;
+            compounded = rewards - buybackHalf;
+            if (compounded != 0) {
+                _depositAmount(farm, compounded);
+                emit CapitalDeployed(address(farm), compounded, s_idle);
+            }
+        }
+        (uint256 buybackSpent, uint256 dvrBurned) = _buyback(buybackHalf, minDvrOut);
+        _applyClosedRound(roundId, endFarm);
+        if (deployAmount != 0) {
+            _depositAmount(s_activeFarm, deployAmount);
+            emit CapitalDeployed(address(s_activeFarm), deployAmount, 0);
+        }
+        _afterHarvest(roundId);
+
+        uint256 pending = s_pendingBuyback;
+        s_lastHarvest = Harvest({
+            roundId: roundId,
+            taxReleased: taxReleased,
+            rewards: rewards,
+            compounded: compounded,
+            buybackSpent: buybackSpent,
+            dvrBurned: dvrBurned,
+            pendingBuyback: pending
+        });
+        emit Harvested(roundId, taxReleased, rewards, compounded, buybackSpent, dvrBurned, pending);
+    }
+
     /// @inheritdoc ITreasuryFund
     function idle() external view returns (uint256 idle_) {
         idle_ = s_idle;
@@ -237,6 +359,37 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
             return 0;
         }
         rewards_ = farm.accrued(address(this));
+    }
+
+    /// @inheritdoc ITreasuryFund
+    function harvestableRound() external view returns (bool ready_, uint256 roundId_) {
+        uint256 openRound = i_schedule.currentRound();
+        if (openRound == 0 || (s_hasHarvested && s_lastHarvestedRound >= openRound - 1)) {
+            return (false, openRound);
+        }
+        ready_ = true;
+        roundId_ = openRound - 1;
+    }
+
+    /// @inheritdoc ITreasuryFund
+    function lastHarvestedRound() external view returns (bool harvested_, uint256 roundId_) {
+        harvested_ = s_hasHarvested;
+        roundId_ = s_lastHarvestedRound;
+    }
+
+    /// @inheritdoc ITreasuryFund
+    function dvrBoughtBack() external view returns (uint256 burned_) {
+        burned_ = s_dvrBoughtBack;
+    }
+
+    /// @inheritdoc ITreasuryFund
+    function pendingBuyback() external view returns (uint256 pending_) {
+        pending_ = s_pendingBuyback;
+    }
+
+    /// @inheritdoc ITreasuryFund
+    function lastHarvest() external view returns (Harvest memory harvest_) {
+        harvest_ = s_lastHarvest;
     }
 
     /// @inheritdoc ITreasuryFund
@@ -331,5 +484,74 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
             return 0;
         }
         principal_ = farm.principalOf(address(this));
+    }
+
+    /// @dev Swaps `half` plus any deferred buyback for DVR and burns the output. A zero half does nothing.
+    /// @return spent_ mUSDC swapped. Zero when the buy was skipped.
+    /// @return burned_ DVR burned. Zero when the buy was skipped.
+    function _buyback(uint256 half, uint256 minDvrOut) private returns (uint256 spent_, uint256 burned_) {
+        if (half == 0) {
+            return (0, 0);
+        }
+        uint256 spend = half + s_pendingBuyback;
+        s_pendingBuyback = 0;
+        if (_quoteDefers(spend)) {
+            s_pendingBuyback = spend;
+            return (0, 0);
+        }
+        IERC20(i_usdc).forceApprove(address(i_pool), spend);
+        burned_ = i_pool.swapExactInput(IOfficialPool.Direction.Buy, spend, minDvrOut, block.timestamp);
+        IERC20(i_usdc).forceApprove(address(i_pool), 0);
+        i_pool.i_dvr().burn(burned_);
+        s_dvrBoughtBack += burned_;
+        spent_ = spend;
+    }
+
+    /// @dev Deposits `amount` into `farm` and clears that approval. `amount` is greater than zero.
+    function _depositAmount(IMockFarm farm, uint256 amount) private {
+        IERC20(i_usdc).forceApprove(address(farm), amount);
+        farm.deposit(amount);
+        IERC20(i_usdc).forceApprove(address(farm), 0);
+    }
+
+    /// @dev Returns the farm that will be active once `roundId` is applied. Fund 1 returns the current farm.
+    function _farmAfterRound(uint256) internal view virtual returns (IMockFarm farm_) {
+        farm_ = s_activeFarm;
+    }
+
+    /// @dev Fund 2 applies `expectedFarm` here. Fund 1 does not. `expectedFarm` is the farm {_farmAfterRound} returned.
+    function _applyClosedRound(uint256, IMockFarm) internal virtual {}
+
+    /// @dev A later rebalance runs here, after idle has been deployed, inside this harvest.
+    function _afterHarvest(uint256) internal virtual {}
+
+    /// @dev Returns the active farm. The zero address means no farm has been selected.
+    function _activeFarm() internal view returns (IMockFarm farm_) {
+        farm_ = s_activeFarm;
+    }
+
+    /// @dev Returns true when a buy of `spend` should be deferred. Other quote reverts propagate.
+    function _quoteDefers(uint256 spend) private view returns (bool) {
+        try i_pool.quoteExactInput(IOfficialPool.Direction.Buy, spend) returns (uint256 amountOut, uint256 usdcTax) {
+            if (amountOut == 0 || usdcTax > spend) {
+                return true;
+            }
+            return false;
+        } catch (bytes memory reason) {
+            bytes32 reasonHash = keccak256(reason);
+            if (
+                reasonHash == keccak256(abi.encodeWithSelector(IOfficialPool.OfficialPool__ZeroAmount.selector))
+                    || reasonHash == keccak256(abi.encodeWithSelector(IOfficialPool.OfficialPool__ZeroOutput.selector))
+            ) {
+                return true;
+            }
+            if (
+                reasonHash
+                    == keccak256(abi.encodeWithSelector(IOfficialPool.OfficialPool__InsufficientReserves.selector))
+            ) {
+                revert IOfficialPool.OfficialPool__InsufficientReserves();
+            }
+            revert TreasuryFund__BuybackQuoteRejected();
+        }
     }
 }
