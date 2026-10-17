@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IDriverClock} from "./interfaces/IDriverClock.sol";
 import {IMockFarm} from "./interfaces/IMockFarm.sol";
 import {IOfficialPool} from "./interfaces/IOfficialPool.sol";
@@ -15,12 +17,21 @@ import {TreasuryFund} from "./TreasuryFund.sol";
 /// @dev A later safe farm is a longer constructor list on a later deploy. This contract has no function
 /// that appends a farm. The splitter bucket is Fund 1.
 contract CruiseControl is TreasuryFund {
+    using SafeERC20 for IERC20;
+
     /// @notice Fund 2. Zero until {setFund2}. The setter runs once.
     DegenDriver private s_fund2;
 
     /// @notice Emitted when the owner stores Fund 2.
     /// @param fund2 Fund 2 stored for the top-up.
     event Fund2Set(address indexed fund2);
+
+    /// @notice Emitted when the owner moves mUSDC from this fund to Fund 2.
+    /// @param amount mUSDC moved, in base units.
+    /// @param fund1Value This fund's value before the move, in mUSDC base units.
+    /// @param fund2Value Fund 2's value before the move, in mUSDC base units.
+    /// @param reason Reason supplied by the owner. It is not stored.
+    event Fund2ToppedUp(uint256 amount, uint256 fund1Value, uint256 fund2Value, string reason);
 
     /// @notice Fund 2 was already stored.
     error CruiseControl__Fund2AlreadySet();
@@ -33,6 +44,17 @@ contract CruiseControl is TreasuryFund {
     /// schedule, or starting shares.
     /// @param fund2 Account that was rejected.
     error CruiseControl__Fund2Mismatch(address fund2);
+
+    /// @notice {setFund2} has not been called.
+    error CruiseControl__Fund2NotSet();
+
+    /// @notice The top-up reason was an empty string.
+    error CruiseControl__EmptyReason();
+
+    /// @notice The top-up is above the amount that restores Fund 2's starting share.
+    /// @param cap Largest amount this call could move, in mUSDC base units.
+    /// @param amount Amount the caller tried to move, in mUSDC base units.
+    error CruiseControl__TopUpAboveCap(uint256 cap, uint256 amount);
 
     /// @notice Stores Fund 1's addresses and its farm list.
     /// @param usdc Mock USDC this fund holds. The zero address is rejected.
@@ -121,6 +143,58 @@ contract CruiseControl is TreasuryFund {
     /// @param newFarm Listed farm. The zero address is rejected.
     function setStrategy(IMockFarm newFarm) external nonReentrant onlyOwner {
         _switchFarm(newFarm);
+    }
+
+    /// @notice Moves `amount` of mUSDC to Fund 2, up to Fund 2's starting share.
+    /// @dev Reverts with {CruiseControl__Fund2NotSet} before Fund 2 is stored, with
+    /// {CruiseControl__EmptyReason} when `reason` is an empty string, with {TreasuryFund__ZeroAmount}
+    /// when `amount` is zero, and with {CruiseControl__TopUpAboveCap} when `amount` is above the cap.
+    /// A whitespace reason is accepted. This call is not tied to a round. Idle is debited before the
+    /// farm withdraw and the Fund 2 call. The event carries the values from before the move. Only the
+    /// owner may call this. `nonReentrant` covers the farm and Fund 2 calls.
+    /// @param amount mUSDC to move, in base units. Must be greater than zero and no more than the cap.
+    /// @param reason Reason recorded in the event. An empty string is rejected.
+    function topUpFund2(uint256 amount, string calldata reason) external nonReentrant onlyOwner {
+        DegenDriver fund2_ = s_fund2;
+        if (address(fund2_) == address(0)) {
+            revert CruiseControl__Fund2NotSet();
+        }
+        if (bytes(reason).length == 0) {
+            revert CruiseControl__EmptyReason();
+        }
+        if (amount == 0) {
+            revert TreasuryFund__ZeroAmount();
+        }
+        uint256 fund1Value = _value();
+        uint256 fund2Value = fund2_.value();
+        uint256 cap = _amountToMove(i_fund1Usdc, fund1Value, i_fund2Usdc, fund2Value);
+        if (amount > cap) {
+            revert CruiseControl__TopUpAboveCap(cap, amount);
+        }
+        uint256 fromIdle = _takeFromIdle(amount);
+        uint256 fromFarm = amount - fromIdle;
+        if (fromFarm != 0) {
+            _activeFarm().withdraw(fromFarm);
+        }
+        IERC20(i_usdc).forceApprove(address(fund2_), amount);
+        fund2_.acceptTopUp(amount);
+        IERC20(i_usdc).forceApprove(address(fund2_), 0);
+        emit Fund2ToppedUp(amount, fund1Value, fund2Value, reason);
+    }
+
+    /// @notice Returns the largest top-up the current values allow.
+    /// @dev Reverts with {CruiseControl__Fund2NotSet} before {setFund2}.
+    /// @return fund1Value This fund's value, in mUSDC base units.
+    /// @return fund2Value Fund 2's value, in mUSDC base units.
+    /// @return cap Largest top-up, in mUSDC base units. Zero when Fund 2 is already at or above its share.
+    function topUpCap() external view returns (uint256 fund1Value, uint256 fund2Value, uint256 cap) {
+        DegenDriver fund2_ = s_fund2;
+        if (address(fund2_) == address(0)) {
+            revert CruiseControl__Fund2NotSet();
+        }
+        fund1Value = _value();
+        fund2Value = fund2_.value();
+        cap = _amountToMove(i_fund1Usdc, fund1Value, i_fund2Usdc, fund2Value);
     }
 
     /// @notice Returns the stored Fund 2.

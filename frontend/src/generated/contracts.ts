@@ -299,6 +299,27 @@ export const cruiseControlAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'topUpCap',
+    outputs: [
+      { name: 'fund1Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'fund2Value', internalType: 'uint256', type: 'uint256' },
+      { name: 'cap', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'reason', internalType: 'string', type: 'string' },
+    ],
+    name: 'topUpFund2',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     inputs: [{ name: 'newOwner', internalType: 'address', type: 'address' }],
     name: 'transferOwnership',
     outputs: [],
@@ -363,6 +384,37 @@ export const cruiseControlAbi = [
       },
     ],
     name: 'Fund2Set',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'fund1Value',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'fund2Value',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'reason',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+    ],
+    name: 'Fund2ToppedUp',
   },
   {
     type: 'event',
@@ -490,16 +542,26 @@ export const cruiseControlAbi = [
     ],
     name: 'StrategySet',
   },
+  { type: 'error', inputs: [], name: 'CruiseControl__EmptyReason' },
   { type: 'error', inputs: [], name: 'CruiseControl__Fund2AlreadySet' },
   {
     type: 'error',
     inputs: [{ name: 'fund2', internalType: 'address', type: 'address' }],
     name: 'CruiseControl__Fund2Mismatch',
   },
+  { type: 'error', inputs: [], name: 'CruiseControl__Fund2NotSet' },
   {
     type: 'error',
     inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
     name: 'CruiseControl__NotFund2',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'cap', internalType: 'uint256', type: 'uint256' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'CruiseControl__TopUpAboveCap',
   },
   { type: 'error', inputs: [], name: 'OfficialPool__InsufficientReserves' },
   {
@@ -622,6 +684,13 @@ export const degenDriverAbi = [
     type: 'function',
     inputs: [],
     name: 'acceptOwnership',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'acceptTopUp',
     outputs: [],
     stateMutability: 'nonpayable',
   },
@@ -1122,6 +1191,11 @@ export const degenDriverAbi = [
     name: 'StrategySet',
   },
   { type: 'error', inputs: [], name: 'DegenDriver__BallotAlreadySet' },
+  {
+    type: 'error',
+    inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
+    name: 'DegenDriver__NotFund1',
+  },
   {
     type: 'error',
     inputs: [

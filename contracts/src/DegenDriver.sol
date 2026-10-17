@@ -59,6 +59,10 @@ contract DegenDriver is TreasuryFund {
     /// @notice The ballot was already set.
     error DegenDriver__BallotAlreadySet();
 
+    /// @notice The caller is not Fund 1.
+    /// @param caller Account that called the function.
+    error DegenDriver__NotFund1(address caller);
+
     /// @notice The ballot's farm changed between the two reads in one harvest.
     /// @param expected Farm read before the token calls.
     /// @param actual Farm read when the round was applied.
@@ -123,6 +127,19 @@ contract DegenDriver is TreasuryFund {
         }
         s_ballot = ballot_;
         emit BallotSet(address(ballot_));
+    }
+
+    /// @notice Pulls a top-up from Fund 1 and puts it to work.
+    /// @dev Reverts with {DegenDriver__NotFund1} when the caller is not Fund 1, and with
+    /// {TreasuryFund__ZeroAmount} when `amount` is zero. Idle is credited before the pull when no farm is
+    /// active. Otherwise the deposit amount is fixed before the pull and the farm deposit. Only Fund 1 may
+    /// call this.
+    /// @param amount mUSDC to pull, in base units. Must be greater than zero.
+    function acceptTopUp(uint256 amount) external nonReentrant {
+        if (msg.sender != address(i_fund1)) {
+            revert DegenDriver__NotFund1(msg.sender);
+        }
+        _acceptCapital(amount);
     }
 
     /// @notice Returns the move a harvest would make from the current values.
