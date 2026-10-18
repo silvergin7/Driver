@@ -454,7 +454,7 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
 
     /// @inheritdoc ITreasuryFund
     function isStrategy(address farm) external view returns (bool allowed_) {
-        allowed_ = s_allowed[farm];
+        allowed_ = _isStrategy(farm);
     }
 
     /// @inheritdoc ITreasuryFund
@@ -704,6 +704,11 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     /// @dev Returns the active farm. The zero address means no farm has been selected.
     function _activeFarm() internal view returns (IMockFarm farm_) {
         farm_ = s_activeFarm;
+    }
+
+    /// @dev Returns true when `farm` is still on this fund's list.
+    function _isStrategy(address farm) internal view returns (bool allowed_) {
+        allowed_ = s_allowed[farm];
     }
 
     /// @dev Returns true when a buy of `spend` should be deferred. Other quote reverts propagate.

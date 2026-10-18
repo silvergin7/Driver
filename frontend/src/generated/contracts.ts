@@ -1303,6 +1303,25 @@ export const degenDriverAbi = [
     ],
     name: 'StrategySet',
   },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'roundId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'winner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'WinnerIgnored',
+  },
   { type: 'error', inputs: [], name: 'DegenDriver__BallotAlreadySet' },
   {
     type: 'error',

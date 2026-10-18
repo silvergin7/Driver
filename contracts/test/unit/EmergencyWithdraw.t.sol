@@ -618,6 +618,103 @@ contract EmergencyWithdrawTest is Test {
         assertEq(dust.heldRewards(), 0);
     }
 
+    function test_DelistedWinnerKeepsTheCurrentFarm() public {
+        (DegenDriver degen, MockFarm drift,, MappedBallot ballot) = _exitedDrift();
+        ballot.setWinner(1, drift);
+
+        vm.prank(owner);
+        clock.advanceTime(30 days);
+        vm.recordLogs();
+        vm.prank(owner);
+        degen.harvest(0);
+
+        _assertWinnerIgnored(address(degen), address(drift));
+        assertEq(address(degen.activeFarm()), address(0));
+        assertEq(degen.idle(), SHARE_2);
+        assertEq(degen.principal(), 0);
+        assertEq(degen.value(), SHARE_2);
+        assertFalse(degen.isStrategy(address(drift)));
+        assertTrue(drift.paused());
+    }
+
+    function test_NeverListedWinnerKeepsTheCurrentFarm() public {
+        (DegenDriver degen,, MockFarm cruiseFarm, MappedBallot ballot) = _exitedDrift();
+        ballot.setWinner(1, cruiseFarm);
+
+        vm.prank(owner);
+        clock.advanceTime(30 days);
+        vm.recordLogs();
+        vm.prank(owner);
+        degen.harvest(0);
+
+        _assertWinnerIgnored(address(degen), address(cruiseFarm));
+        assertEq(address(degen.activeFarm()), address(0));
+        assertEq(degen.idle(), SHARE_2);
+        assertEq(degen.principal(), 0);
+        assertEq(degen.value(), SHARE_2);
+        assertFalse(degen.isStrategy(address(cruiseFarm)));
+    }
+
+    function _exitedDrift()
+        private
+        returns (DegenDriver degen, MockFarm drift, MockFarm cruiseFarm, MappedBallot ballot)
+    {
+        MockFarm highway = _farm(4_000);
+        MockFarm autobahn = _farm(8_000);
+        drift = _farm(16_000);
+        IMockFarm[] memory farms = new IMockFarm[](3);
+        farms[0] = highway;
+        farms[1] = autobahn;
+        farms[2] = drift;
+        cruiseFarm = _farm(500);
+        CruiseControl cruise = _cruise(cruiseFarm);
+        degen = _degen(cruise, farms);
+        vm.startPrank(owner);
+        highway.addDepositor(address(degen));
+        autobahn.addDepositor(address(degen));
+        drift.addDepositor(address(degen));
+        usdc.approve(address(cruise), SHARE_1);
+        cruise.supply(SHARE_1);
+        cruise.setStrategy(cruiseFarm);
+        cruise.deposit(SHARE_1);
+        usdc.approve(address(degen), SHARE_2);
+        degen.supply(SHARE_2);
+        cruise.setFund2(degen);
+        ballot = new MappedBallot();
+        ballot.setWinner(0, drift);
+        degen.setBallot(ballot);
+        clock.advanceTime(30 days);
+        vm.recordLogs();
+        degen.harvest(0);
+        assertFalse(_hasTopic(vm.getRecordedLogs(), keccak256("WinnerIgnored(uint256,address)")));
+        assertEq(address(degen.activeFarm()), address(drift));
+        degen.emergencyWithdraw("drift");
+        vm.stopPrank();
+
+        assertEq(degen.idle(), SHARE_2);
+        assertEq(address(degen.activeFarm()), address(0));
+        assertFalse(degen.isStrategy(address(drift)));
+    }
+
+    function _assertWinnerIgnored(address fund, address winner) private view {
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 signature = keccak256("WinnerIgnored(uint256,address)");
+        uint256 found = 0;
+        uint256 count = logs.length;
+        for (uint256 i = 0; i < count; i++) {
+            if (logs[i].topics[0] != signature) {
+                continue;
+            }
+            found++;
+            assertEq(logs[i].emitter, fund);
+            assertEq(logs[i].topics.length, 3);
+            assertEq(logs[i].topics[1], bytes32(uint256(1)));
+            assertEq(logs[i].topics[2], bytes32(uint256(uint160(winner))));
+            assertEq(logs[i].data.length, 0);
+        }
+        assertEq(found, 1);
+    }
+
     function _cruiseReady(uint256 apr) private returns (CruiseControl cruise, MockFarm farm) {
         farm = _farm(apr);
         cruise = _cruise(farm);
