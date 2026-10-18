@@ -8,12 +8,11 @@ import {MockUSDC} from "../../src/MockUSDC.sol";
 import {TaxSplitter} from "../../src/TaxSplitter.sol";
 import {ProtocolHandler} from "./handlers/ProtocolHandler.sol";
 
-/// forge-config: default.invariant.depth = 100
-contract ProtocolInvariantTest is Test {
+abstract contract ProtocolInvariantBase is Test {
     ProtocolHandler internal handler;
 
-    function setUp() public {
-        handler = new ProtocolHandler();
+    function _bind(ProtocolHandler created) internal {
+        handler = created;
         assertEq(handler.s_dvrClaims(), 0);
         assertEq(handler.s_usdcClaims(), 0);
         assertEq(handler.s_buys(), 0);
@@ -26,6 +25,11 @@ contract ProtocolInvariantTest is Test {
         assertEq(handler.s_topUp(), 0);
         assertEq(handler.s_tieKept(), 0);
         assertEq(handler.s_unlockAfterVote(), 0);
+        assertEq(handler.s_exit1(), 0);
+        assertEq(handler.s_exit2(), 0);
+        assertEq(handler.s_ignored(), 0);
+        assertEq(handler.s_harvestAfterExit(), 0);
+        assertEq(handler.s_exitedCount(), 0);
 
         excludeContract(address(handler.token()));
         excludeContract(address(handler.dvrFaucet()));
@@ -44,21 +48,6 @@ contract ProtocolInvariantTest is Test {
         excludeContract(address(handler.driverVote()));
         excludeContract(handler.script());
         targetContract(address(handler));
-
-        bytes4[] memory selectors = new bytes4[](12);
-        selectors[0] = handler.claimDvr.selector;
-        selectors[1] = handler.claimUsdc.selector;
-        selectors[2] = handler.buy.selector;
-        selectors[3] = handler.sell.selector;
-        selectors[4] = handler.harvest1.selector;
-        selectors[5] = handler.harvest2.selector;
-        selectors[6] = handler.topUp.selector;
-        selectors[7] = handler.lock.selector;
-        selectors[8] = handler.vote.selector;
-        selectors[9] = handler.unlock.selector;
-        selectors[10] = handler.skipTime.selector;
-        selectors[11] = handler.warp.selector;
-        targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
     }
 
     function invariant_TotalMintedStaysAtTheCap() public view {
@@ -146,7 +135,7 @@ contract ProtocolInvariantTest is Test {
         assertEq(handler.clock().currentTime(), block.timestamp + handler.s_ghostOffset());
     }
 
-    function afterInvariant() public view {
+    function afterInvariant() public view virtual {
         assertGt(handler.s_dvrClaims(), 0);
         assertGt(handler.s_usdcClaims(), 0);
         assertGt(handler.s_buys(), 0);
@@ -189,5 +178,26 @@ contract ProtocolInvariantTest is Test {
         sum += token.balanceOf(address(handler.dvrFaucet()));
         sum += token.balanceOf(address(handler.usdcFaucet()));
         sum += token.balanceOf(address(handler.driverVote()));
+    }
+}
+
+/// forge-config: default.invariant.depth = 100
+contract ProtocolInvariantTest is ProtocolInvariantBase {
+    function setUp() public {
+        _bind(new ProtocolHandler(false));
+        bytes4[] memory selectors = new bytes4[](12);
+        selectors[0] = handler.claimDvr.selector;
+        selectors[1] = handler.claimUsdc.selector;
+        selectors[2] = handler.buy.selector;
+        selectors[3] = handler.sell.selector;
+        selectors[4] = handler.harvest1.selector;
+        selectors[5] = handler.harvest2.selector;
+        selectors[6] = handler.topUp.selector;
+        selectors[7] = handler.lock.selector;
+        selectors[8] = handler.vote.selector;
+        selectors[9] = handler.unlock.selector;
+        selectors[10] = handler.skipTime.selector;
+        selectors[11] = handler.warp.selector;
+        targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
     }
 }

@@ -91,6 +91,13 @@ contract ProtocolHandler is Test {
     uint256 public s_topUp;
     uint256 public s_tieKept;
     uint256 public s_unlockAfterVote;
+    uint256 public s_exit1;
+    uint256 public s_exit2;
+    uint256 public s_ignored;
+    uint256 public s_harvestAfterExit;
+    bool public s_exits;
+    address[4] public s_exited;
+    uint256 public s_exitedCount;
 
     uint256[3] internal s_list;
     uint256 internal s_listCount;
@@ -120,6 +127,8 @@ contract ProtocolHandler is Test {
     error ProtocolHandler__CapMismatch(uint256 actual, uint256 expected);
     error ProtocolHandler__UnlockMissed();
     error ProtocolHandler__TieMissed();
+    error ProtocolHandler__ExitMissed();
+    error ProtocolHandler__IgnoredMissed();
     error ProtocolHandler__UnexpectedSuccess();
     error ProtocolHandler__KDecreased(uint256 beforeProduct, uint256 afterProduct);
 
@@ -132,7 +141,8 @@ contract ProtocolHandler is Test {
         bool ok;
     }
 
-    constructor() {
+    constructor(bool exits) {
+        s_exits = exits;
         DeployDriverToken deployScript = new DeployDriverToken();
         s_script = address(deployScript);
         s_deployed = deployScript.run();
@@ -297,6 +307,16 @@ contract ProtocolHandler is Test {
         vm.warp(block.timestamp + bound(secondsForward, 1, 2 days));
     }
 
+    function exit1() external {
+        _enter();
+        _exitExternal(true);
+    }
+
+    function exit2() external {
+        _enter();
+        _exitExternal(false);
+    }
+
     function token() external view returns (DriverToken) {
         return s_deployed.token;
     }
@@ -415,6 +435,7 @@ contract ProtocolHandler is Test {
         s_topUp += 1;
 
         _keepTie();
+        if (s_exits) _exitCampaign();
 
         if (s_choice[_round()][0] != address(0) || s_lock[0] < UNLOCK_FORCED) revert ProtocolHandler__UnlockMissed();
         _unlock(0, UNLOCK_FORCED);
@@ -593,7 +614,7 @@ contract ProtocolHandler is Test {
         vm.prank(s_actor[actor]);
         if (!quote.ok) {
             try s_deployed.pool.swapExactInput(IOfficialPool.Direction.Buy, amount, 0, block.timestamp) returns (
-                uint256 ignored
+                uint256
             ) {
                 revert ProtocolHandler__UnexpectedSuccess();
             } catch (bytes memory reason) {
@@ -617,7 +638,7 @@ contract ProtocolHandler is Test {
         vm.prank(s_actor[actor]);
         if (!quote.ok) {
             try s_deployed.pool.swapExactInput(IOfficialPool.Direction.Sell, amount, 0, block.timestamp) returns (
-                uint256 ignored
+                uint256
             ) {
                 revert ProtocolHandler__UnexpectedSuccess();
             } catch (bytes memory reason) {
@@ -721,6 +742,107 @@ contract ProtocolHandler is Test {
             revert ProtocolHandler__TieMissed();
         }
         s_tieKept += 1;
+    }
+
+    function _exitCampaign() internal {
+        uint256 votedRound = _round();
+        _vote(0, s_farm[DRIFT]);
+        _exitForced(false);
+        s_exit2 += 1;
+        _exitForced(true);
+        s_exit1 += 1;
+
+        _skip(EPOCH);
+        uint256 closed = _round() - 1;
+        if (closed != votedRound || s_active2 != NONE || s_tally[closed][s_farm[DRIFT]] == 0) {
+            revert ProtocolHandler__IgnoredMissed();
+        }
+        if (address(s_deployed.degenDriver.activeFarm()) != address(0)) revert ProtocolHandler__IgnoredMissed();
+        if (s_deployed.vote.tally(closed, s_farm[DRIFT]) == 0) revert ProtocolHandler__IgnoredMissed();
+        _harvestFund(false);
+        if (s_active2 != NONE || address(s_deployed.degenDriver.activeFarm()) != address(0)) {
+            revert ProtocolHandler__IgnoredMissed();
+        }
+        if (s_deployed.degenDriver.isStrategy(s_farm[DRIFT]) || !s_deployed.drift.paused()) {
+            revert ProtocolHandler__IgnoredMissed();
+        }
+        s_ignored += 1;
+        s_harvestAfterExit += 1;
+        _harvestFund(true);
+        s_harvestAfterExit += 1;
+    }
+
+    function _exitForced(bool fund1) internal {
+        uint256 active = fund1 ? s_active1 : s_active2;
+        if (active == NONE || s_principal[active] == 0) revert ProtocolHandler__ExitMissed();
+        address farm = s_farm[active];
+        _exit(fund1);
+        if (fund1) {
+            if (address(s_deployed.cruiseControl.activeFarm()) != address(0)) revert ProtocolHandler__ExitMissed();
+            if (s_deployed.cruiseControl.isStrategy(farm) || !MockFarm(farm).paused()) {
+                revert ProtocolHandler__ExitMissed();
+            }
+        } else if (
+            address(s_deployed.degenDriver.activeFarm()) != address(0) || s_deployed.degenDriver.isStrategy(farm)
+                || !MockFarm(farm).paused()
+        ) {
+            revert ProtocolHandler__ExitMissed();
+        }
+    }
+
+    function _exitExternal(bool fund1) internal {
+        uint256 active = fund1 ? s_active1 : s_active2;
+        if (active != NONE) {
+            _exit(fund1);
+            return;
+        }
+        vm.prank(s_owner);
+        if (fund1) {
+            try s_deployed.cruiseControl.emergencyWithdraw("exit") {
+                revert ProtocolHandler__UnexpectedSuccess();
+            } catch (bytes memory reason) {
+                if (_selector(reason) != TreasuryFund.TreasuryFund__NoActiveFarm.selector) _bubble(reason);
+            }
+        } else {
+            try s_deployed.degenDriver.emergencyWithdraw("exit") {
+                revert ProtocolHandler__UnexpectedSuccess();
+            } catch (bytes memory reason) {
+                if (_selector(reason) != TreasuryFund.TreasuryFund__NoActiveFarm.selector) _bubble(reason);
+            }
+        }
+    }
+
+    function _exit(bool fund1) internal {
+        uint256 active = fund1 ? s_active1 : s_active2;
+        uint256 amount = s_principal[active];
+        s_principal[active] = 0;
+        s_accrued[active] = 0;
+        if (fund1) {
+            s_active1 = NONE;
+            s_idle1 += amount;
+        } else {
+            s_active2 = NONE;
+            s_idle2 += amount;
+        }
+        _delist(active);
+        s_exited[s_exitedCount] = s_farm[active];
+        s_exitedCount += 1;
+        _sync(fund1);
+        vm.prank(s_owner);
+        if (fund1) s_deployed.cruiseControl.emergencyWithdraw("exit");
+        else s_deployed.degenDriver.emergencyWithdraw("exit");
+    }
+
+    function _delist(uint256 index) internal {
+        uint256 count = s_listCount;
+        for (uint256 i = 0; i < count; i++) {
+            if (s_list[i] != index) continue;
+            for (uint256 j = i; j + 1 < count; j++) {
+                s_list[j] = s_list[j + 1];
+            }
+            s_listCount = count - 1;
+            return;
+        }
     }
 
     function _claim(uint256 index) internal returns (uint256 paid) {
