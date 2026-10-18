@@ -19,7 +19,8 @@ import {TaxSplitter} from "./TaxSplitter.sol";
 /// @notice Shared accounting for Cruise Control and Degen Driver.
 /// @dev Idle mUSDC and claimed farm rewards are separate ledgers. Value is idle plus principal on the active
 /// farm. mUSDC sent here directly is not credited and cannot be deployed. The constructor farm list is the
-/// only list. No function sends mUSDC to a wallet or to an address argument.
+/// only list. No function sends mUSDC to a wallet or to an address argument. {emergencyWithdraw} returns the
+/// active farm's principal to this contract and removes that farm from the list.
 abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     using SafeERC20 for IERC20;
 
@@ -74,6 +75,15 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     /// @notice Amounts from the latest harvest.
     Harvest private s_lastHarvest;
 
+    /// @notice Farm removed by the latest emergency exit. Zero when there has not been one.
+    address private s_lastExitStrategy;
+
+    /// @notice Principal returned by the latest emergency exit, in base units.
+    uint256 private s_lastExitAmount;
+
+    /// @notice Reason supplied for the latest emergency exit. It is empty when there has not been one.
+    string private s_lastExitReason;
+
     /// @notice Emitted when the owner pulls mUSDC into this fund.
     /// @param from Account that paid.
     /// @param amount mUSDC pulled, in base units.
@@ -116,6 +126,17 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
         uint256 dvrBurned,
         uint256 pendingBuyback
     );
+
+    /// @notice Emitted when the owner pulls this fund's principal out of the active farm.
+    /// @param fund This fund.
+    /// @param strategy Farm the principal left.
+    /// @param amount Principal returned to this fund, in base units. Zero when that farm held none.
+    /// @param reason Reason supplied by the owner.
+    event EmergencyWithdrawn(address indexed fund, address indexed strategy, uint256 amount, string reason);
+
+    /// @notice Emitted when a farm is removed from the strategy list.
+    /// @param farm Farm removed from the list.
+    event StrategyDelisted(address indexed farm);
 
     /// @notice An address argument was zero.
     error TreasuryFund__ZeroAddress();
@@ -173,6 +194,14 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
 
     /// @notice The pool's buy quote failed for a reason other than a zero input or a zero output.
     error TreasuryFund__BuybackQuoteRejected();
+
+    /// @notice The emergency-exit reason was an empty string.
+    error TreasuryFund__EmptyReason();
+
+    /// @notice The farm returned a different principal from the amount read before the call.
+    /// @param expected Principal read from the farm before the call, in base units.
+    /// @param returned Amount {IMockFarm.emergencyWithdraw} returned, in base units.
+    error TreasuryFund__PrincipalMismatch(uint256 expected, uint256 returned);
 
     /// @notice Stores the token, the clock, the schedule, the splitter, the pool, the bucket, and the farm list.
     /// @dev Reverts with {TreasuryFund__ZeroAddress} when `usdc`, `clock`, `schedule`, `taxSplitter`, or `pool`
@@ -354,6 +383,11 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
     }
 
     /// @inheritdoc ITreasuryFund
+    function emergencyWithdraw(string calldata reason) external nonReentrant onlyOwner {
+        _exitActiveFarm(reason);
+    }
+
+    /// @inheritdoc ITreasuryFund
     function idle() external view returns (uint256 idle_) {
         idle_ = s_idle;
     }
@@ -433,6 +467,13 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
         farm_ = s_farms[index];
     }
 
+    /// @inheritdoc ITreasuryFund
+    function lastEmergencyExit() external view returns (address strategy, uint256 amount, string memory reason) {
+        strategy = s_lastExitStrategy;
+        amount = s_lastExitAmount;
+        reason = s_lastExitReason;
+    }
+
     /// @notice Moves principal to `newFarm` and stores rewards the outgoing farm actually paid.
     /// @dev The caller must be `nonReentrant`. {CruiseControl.setStrategy} is. A later harvest that calls
     /// this must be `nonReentrant` itself and must not rely on a second guard here: {ReentrancyGuard} does
@@ -473,6 +514,67 @@ abstract contract TreasuryFund is ITreasuryFund, ReentrancyGuard, Ownable2Step {
         }
 
         emit StrategySet(address(previous), address(newFarm), principalMoved, rewardsClaimed);
+    }
+
+    /// @dev `reason` is memory so a later caller can pass a string literal. The external caller is
+    /// `nonReentrant`. This function has no guard of its own, because the guard does not nest.
+    ///
+    /// Order: reject an empty reason, then no active farm. Read that farm's principal before any write, then
+    /// whether it is already paused. Clear the active farm, remove it from the list, add the principal to
+    /// idle, and store the exit. When the principal is not zero, call {IMockFarm.emergencyWithdraw}. That
+    /// call does not read the clock and does not claim. A different return reverts
+    /// {TreasuryFund__PrincipalMismatch} and rolls the exit back. When the farm was not already paused,
+    /// pause it. {EmergencyWithdrawn} follows those calls.
+    /// @param reason Reason stored and emitted. An empty string is rejected.
+    function _exitActiveFarm(string memory reason) internal {
+        if (bytes(reason).length == 0) {
+            revert TreasuryFund__EmptyReason();
+        }
+        IMockFarm farm = s_activeFarm;
+        if (address(farm) == address(0)) {
+            revert TreasuryFund__NoActiveFarm();
+        }
+        uint256 amount = farm.principalOf(address(this));
+        bool alreadyPaused = farm.paused();
+
+        s_activeFarm = IMockFarm(address(0));
+        _delist(farm);
+        s_idle += amount;
+        s_lastExitStrategy = address(farm);
+        s_lastExitAmount = amount;
+        s_lastExitReason = reason;
+
+        if (amount != 0) {
+            uint256 returned = farm.emergencyWithdraw();
+            if (returned != amount) {
+                revert TreasuryFund__PrincipalMismatch(amount, returned);
+            }
+        }
+        if (!alreadyPaused) {
+            farm.pause();
+        }
+        emit EmergencyWithdrawn(address(this), address(farm), amount, reason);
+    }
+
+    /// @dev Clears the allow-list flag and shifts later entries down, so the remaining order is the original
+    /// registration order. Reverts with {TreasuryFund__StrategyNotAllowed} when `farm` is not in the list.
+    /// @param farm Farm to remove.
+    function _delist(IMockFarm farm) internal {
+        address farmAddress = address(farm);
+        uint256 count = s_farms.length;
+        for (uint256 i = 0; i < count; i++) {
+            if (address(s_farms[i]) != farmAddress) {
+                continue;
+            }
+            s_allowed[farmAddress] = false;
+            for (uint256 j = i; j + 1 < count; j++) {
+                s_farms[j] = s_farms[j + 1];
+            }
+            s_farms.pop();
+            emit StrategyDelisted(farmAddress);
+            return;
+        }
+        revert TreasuryFund__StrategyNotAllowed(farmAddress);
     }
 
     /// @dev Reverts with {TreasuryFund__NoFarms} when `farms` is empty. Each entry reverts with

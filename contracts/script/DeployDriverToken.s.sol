@@ -56,7 +56,7 @@ contract DeployDriverToken is Script {
     /// is constructed with Cruise Control. It supplies {HelperConfig.FUND_1_USDC} and {HelperConfig.FUND_2_USDC},
     /// adds the funds as depositors, selects Cruise, and deposits Fund 1. The splitter's Fund 1 and Fund 2
     /// recipients are the two funds. Fund 3 has no recipient. {CruiseControl.setFund2} runs last. Nothing
-    /// rebalances. Nothing is paused.
+    /// rebalances. Nothing is paused. Nothing is exited.
     /// @return deployed The deployed contracts.
     function run() external returns (Deployed memory deployed) {
         HelperConfig helper = new HelperConfig();
