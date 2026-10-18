@@ -6,6 +6,7 @@ import {IDriverClock} from "../src/interfaces/IDriverClock.sol";
 import {IMockFarm} from "../src/interfaces/IMockFarm.sol";
 import {CruiseControl} from "../src/CruiseControl.sol";
 import {DegenDriver} from "../src/DegenDriver.sol";
+import {DriverVote} from "../src/DriverVote.sol";
 import {DriverClock} from "../src/DriverClock.sol";
 import {DemoDriverClock} from "../src/DemoDriverClock.sol";
 import {DriverToken} from "../src/DriverToken.sol";
@@ -19,7 +20,7 @@ import {TaxSplitter} from "../src/TaxSplitter.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 /// @title DeployDriverToken
-/// @notice Deploys DriverToken, the faucets, the clock, the tax splitter, the official pool, the four mock farms, and the two funds.
+/// @notice Deploys DriverToken, the faucets, the clock, the tax splitter, the official pool, the four mock farms, the two funds, and the vote.
 contract DeployDriverToken is Script {
     /// @notice Contracts created by {run}.
     struct Deployed {
@@ -37,6 +38,7 @@ contract DeployDriverToken is Script {
         RoundSchedule schedule;
         CruiseControl cruiseControl;
         DegenDriver degenDriver;
+        DriverVote vote;
     }
 
     /// @notice The DVR faucet allocation transfer returned false.
@@ -55,8 +57,9 @@ contract DeployDriverToken is Script {
     /// receive {HelperConfig.FUND_1_USDC} and {HelperConfig.FUND_2_USDC} as their starting shares. Degen Driver
     /// is constructed with Cruise Control. It supplies {HelperConfig.FUND_1_USDC} and {HelperConfig.FUND_2_USDC},
     /// adds the funds as depositors, selects Cruise, and deposits Fund 1. The splitter's Fund 1 and Fund 2
-    /// recipients are the two funds. Fund 3 has no recipient. {CruiseControl.setFund2} runs last. Nothing
-    /// rebalances. Nothing is paused. Nothing is exited.
+    /// recipients are the two funds. Fund 3 has no recipient. {CruiseControl.setFund2} runs, then this deploys
+    /// {DriverVote} and stores it with {DegenDriver.setBallot}. Nothing is locked. Nothing rebalances.
+    /// Nothing is paused. Nothing is exited.
     /// @return deployed The deployed contracts.
     function run() external returns (Deployed memory deployed) {
         HelperConfig helper = new HelperConfig();
@@ -168,6 +171,8 @@ contract DeployDriverToken is Script {
         deployed.splitter.setRecipient(TaxSplitter.FundId.Fund1, address(deployed.cruiseControl));
         deployed.splitter.setRecipient(TaxSplitter.FundId.Fund2, address(deployed.degenDriver));
         deployed.cruiseControl.setFund2(deployed.degenDriver);
+        deployed.vote = new DriverVote(deployed.token, deployed.schedule, deployed.degenDriver);
+        deployed.degenDriver.setBallot(deployed.vote);
     }
 
     /// @dev One-entry list for {CruiseControl}. The entry is Cruise.
