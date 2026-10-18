@@ -351,6 +351,35 @@ contract EmergencyWithdrawTest is Test {
         assertEq(cruise.idle(), 0);
     }
 
+    function test_ExitOfTheFirstFarmKeepsTheLaterOrder() public {
+        MockFarm highway = _farm(4_000);
+        MockFarm autobahn = _farm(8_000);
+        MockFarm drift = _farm(16_000);
+        IMockFarm[] memory farms = new IMockFarm[](3);
+        farms[0] = highway;
+        farms[1] = autobahn;
+        farms[2] = drift;
+        CruiseControl fund = new CruiseControl(usdc, clock, schedule, splitter, pool, SHARE_1, SHARE_2, farms, owner);
+
+        vm.startPrank(owner);
+        highway.addDepositor(address(fund));
+        autobahn.addDepositor(address(fund));
+        drift.addDepositor(address(fund));
+        fund.setStrategy(highway);
+        fund.emergencyWithdraw("order");
+        vm.stopPrank();
+
+        assertEq(fund.strategyCount(), 2);
+        assertEq(address(fund.strategyAt(0)), address(autobahn));
+        assertEq(address(fund.strategyAt(1)), address(drift));
+        assertFalse(fund.isStrategy(address(highway)));
+        assertTrue(fund.isStrategy(address(autobahn)));
+        assertTrue(fund.isStrategy(address(drift)));
+        assertTrue(highway.paused());
+        assertFalse(autobahn.paused());
+        assertFalse(drift.paused());
+    }
+
     function test_ExitAfterASwitchLeavesTheOldFarmListed() public {
         MockFarm highway = _farm(4_000);
         MockFarm autobahn = _farm(8_000);
