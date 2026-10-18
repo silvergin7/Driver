@@ -83,6 +83,9 @@ contract EmergencyHandler is Test {
     uint256 public s_unauthorized;
     uint256 public s_direct;
     uint256 public s_both;
+    uint256 public s_mainExit1;
+    uint256 public s_mainExit2;
+    uint256 public s_harvestAfterMainExit;
 
     address internal s_stranger = makeAddr("emergencyStranger");
 
@@ -173,7 +176,9 @@ contract EmergencyHandler is Test {
 
     function harvest() external {
         _campaign();
+        _ensureCampaignExits();
         _harvest();
+        s_harvestAfterMainExit += 1;
     }
 
     function topUp(uint256 amount) external {
@@ -215,12 +220,12 @@ contract EmergencyHandler is Test {
 
     function exit1() external {
         _campaign();
-        _exit(s_cruise, true);
+        _ensureCampaignExits();
     }
 
     function exit2() external {
         _campaign();
-        _exit(s_degen, false);
+        _ensureCampaignExits();
     }
 
     function runForcedCases() external {
@@ -262,6 +267,79 @@ contract EmergencyHandler is Test {
         s_ghostSum += amount;
         s_degen.supply(amount);
         _check();
+    }
+
+    function _ensureCampaignExits() private {
+        _ensureMainExit1();
+        _ensureMainExit2();
+        if (s_harvestAfterMainExit == 0) {
+            _harvest();
+            s_harvestAfterMainExit += 1;
+        }
+    }
+
+    function _ensureMainExit1() private {
+        if (s_mainExit1 != 0) {
+            return;
+        }
+        if (s_exited1) {
+            revert EmergencyHandler__ForcedMissed();
+        }
+        if (!s_farm1) {
+            if (s_idle1 == 0) {
+                _supply1(1);
+            }
+            s_cruise.setStrategy(s_cruiseFarm);
+            s_farm1 = true;
+        }
+        if (s_principal1 == 0) {
+            if (s_idle1 == 0) {
+                _supply1(1);
+            }
+            uint256 amount = s_idle1;
+            s_idle1 = 0;
+            s_principal1 += amount;
+            s_cruise.deposit(amount);
+        }
+        if (s_principal1 == 0) {
+            revert EmergencyHandler__ForcedMissed();
+        }
+        _exit(s_cruise, true);
+        if (s_principal1 != 0 || !s_exited1) {
+            revert EmergencyHandler__ForcedMissed();
+        }
+        s_mainExit1 += 1;
+    }
+
+    function _ensureMainExit2() private {
+        if (s_mainExit2 != 0) {
+            return;
+        }
+        if (s_exited2) {
+            revert EmergencyHandler__ForcedMissed();
+        }
+        if (!s_farm2) {
+            if (s_idle2 == 0) {
+                _supply2(1);
+            }
+            _harvest();
+        } else if (s_principal2 == 0) {
+            if (s_idle2 == 0) {
+                _supply2(1);
+            }
+            uint256 amount = s_idle2;
+            s_idle2 = 0;
+            s_principal2 = amount;
+            s_degen.deposit(amount);
+        }
+        if (s_principal2 == 0 || !s_farm2) {
+            revert EmergencyHandler__ForcedMissed();
+        }
+        _exit(s_degen, false);
+        if (s_principal2 != 0 || !s_exited2) {
+            revert EmergencyHandler__ForcedMissed();
+        }
+        s_mainExit2 += 1;
     }
 
     function _harvest() private {

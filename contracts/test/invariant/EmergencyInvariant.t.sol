@@ -70,5 +70,8 @@ contract EmergencyInvariantTest is Test {
         assertGt(handler.s_direct(), 0);
         assertGt(handler.s_both(), 0);
         assertGt(handler.s_returnCredits(), 0);
+        assertGt(handler.s_mainExit1(), 0);
+        assertGt(handler.s_mainExit2(), 0);
+        assertGt(handler.s_harvestAfterMainExit(), 0);
     }
 }
