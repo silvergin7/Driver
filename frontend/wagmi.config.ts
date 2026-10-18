@@ -19,6 +19,7 @@ export default defineConfig({
         "RoundSchedule.sol/RoundSchedule.json",
         "CruiseControl.sol/CruiseControl.json",
         "DegenDriver.sol/DegenDriver.json",
+        "DriverVote.sol/DriverVote.json",
       ],
       includeBroadcasts: false,
       forge: {

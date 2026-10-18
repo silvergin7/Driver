@@ -766,6 +766,19 @@ export const degenDriverAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'ballot',
+    outputs: [
+      {
+        name: 'ballot_',
+        internalType: 'contract IStrategyBallot',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
     name: 'deposit',
     outputs: [],
@@ -2042,6 +2055,260 @@ export const driverTokenAbi = [
     type: 'error',
     inputs: [{ name: 'account', internalType: 'address', type: 'address' }],
     name: 'OwnableUnauthorizedAccount',
+  },
+] as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// DriverVote
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+export const driverVoteAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'token', internalType: 'contract DriverToken', type: 'address' },
+      {
+        name: 'schedule',
+        internalType: 'contract RoundSchedule',
+        type: 'address',
+      },
+      { name: 'fund', internalType: 'contract ITreasuryFund', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'counted',
+    outputs: [{ name: 'counted_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_fund',
+    outputs: [
+      { name: '', internalType: 'contract ITreasuryFund', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_schedule',
+    outputs: [
+      { name: '', internalType: 'contract RoundSchedule', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'i_token',
+    outputs: [
+      { name: '', internalType: 'contract DriverToken', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'roundId', internalType: 'uint256', type: 'uint256' }],
+    name: 'leader',
+    outputs: [
+      { name: 'leader_', internalType: 'contract IMockFarm', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'lock',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'holder', internalType: 'address', type: 'address' }],
+    name: 'locked',
+    outputs: [{ name: 'locked_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'openRoundEnd',
+    outputs: [{ name: 'end_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'openTally',
+    outputs: [{ name: 'weight_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'roundId', internalType: 'uint256', type: 'uint256' },
+      { name: 'farm', internalType: 'address', type: 'address' },
+    ],
+    name: 'tally',
+    outputs: [{ name: 'weight_', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'amount', internalType: 'uint256', type: 'uint256' }],
+    name: 'unlock',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'holder', internalType: 'address', type: 'address' }],
+    name: 'unlockStatus',
+    outputs: [
+      { name: 'canUnlock', internalType: 'bool', type: 'bool' },
+      { name: 'unlocksAt', internalType: 'uint256', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'farm', internalType: 'contract IMockFarm', type: 'address' },
+    ],
+    name: 'vote',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'roundId', internalType: 'uint256', type: 'uint256' },
+      { name: 'holder', internalType: 'address', type: 'address' },
+    ],
+    name: 'voteOf',
+    outputs: [{ name: 'farm_', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'roundId', internalType: 'uint256', type: 'uint256' }],
+    name: 'winner',
+    outputs: [
+      { name: 'winner_', internalType: 'contract IMockFarm', type: 'address' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'holder',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'locked',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Locked',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'holder',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'locked',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Unlocked',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'holder',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'roundId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      { name: 'farm', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'weight',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'VoteCast',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'locked', internalType: 'uint256', type: 'uint256' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'DriverVote__InsufficientLock',
+  },
+  { type: 'error', inputs: [], name: 'DriverVote__NotFund2' },
+  { type: 'error', inputs: [], name: 'DriverVote__NothingLocked' },
+  { type: 'error', inputs: [], name: 'DriverVote__ScheduleMismatch' },
+  {
+    type: 'error',
+    inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
+    name: 'DriverVote__StrategyNotAllowed',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'roundId', internalType: 'uint256', type: 'uint256' },
+      { name: 'unlocksAt', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'DriverVote__Voted',
+  },
+  { type: 'error', inputs: [], name: 'DriverVote__ZeroAddress' },
+  { type: 'error', inputs: [], name: 'DriverVote__ZeroAmount' },
+  { type: 'error', inputs: [], name: 'ReentrancyGuardReentrantCall' },
+  {
+    type: 'error',
+    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
+    name: 'SafeERC20FailedOperation',
   },
 ] as const
 

@@ -158,6 +158,12 @@ contract DegenDriver is TreasuryFund {
         amount = _amountToMove(i_fund2Usdc, fund2Value, i_fund1Usdc, fund1Value);
     }
 
+    /// @notice Returns the ballot harvest reads.
+    /// @return ballot_ Stored ballot. The zero address means none was set.
+    function ballot() external view returns (IStrategyBallot ballot_) {
+        ballot_ = s_ballot;
+    }
+
     /// @notice Returns the latest rebalance.
     /// @dev `executed` is false before the first harvest. Round 0 is a real id, so the bool is the sentinel.
     /// The values are the ones from before the move.
