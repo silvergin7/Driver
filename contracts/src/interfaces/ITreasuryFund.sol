@@ -10,7 +10,8 @@ import {TaxSplitter} from "../TaxSplitter.sol";
 
 /// @title Treasury fund
 /// @notice Views for one treasury fund. Harvest, rebalance, and voting read this interface.
-/// @dev The farm list is fixed in the fund's constructor. This interface has no function that sets the active farm.
+/// @dev The farm list is fixed in the fund's constructor. This interface has no function that sets the active
+/// farm. {emergencyWithdraw} clears it.
 interface ITreasuryFund {
     /// @notice Amounts from the latest harvest. Every field is zero before the first harvest.
     struct Harvest {
@@ -22,6 +23,14 @@ interface ITreasuryFund {
         uint256 dvrBurned;
         uint256 pendingBuyback;
     }
+
+    /// @notice Pulls this fund's principal out of the active farm and pauses that farm.
+    /// @dev Reverts with {TreasuryFund.TreasuryFund__EmptyReason} when `reason` is empty, and with
+    /// {TreasuryFund.TreasuryFund__NoActiveFarm} when no farm is active. A whitespace reason is accepted.
+    /// This call does not wait for a round. The principal returns to this contract. Only the owner may call
+    /// this.
+    /// @param reason Reason recorded for the exit. An empty string is rejected.
+    function emergencyWithdraw(string calldata reason) external;
 
     /// @notice Returns mUSDC waiting to be deposited.
     /// @return idle_ Idle balance, in base units.
@@ -124,4 +133,11 @@ interface ITreasuryFund {
     /// @dev This is the deploy amount passed into the constructor, not this fund's live balance.
     /// @return share_ Share in mUSDC base units.
     function i_fund2Usdc() external view returns (uint256 share_);
+
+    /// @notice Returns the latest emergency exit.
+    /// @dev `strategy` is the zero address when this fund has not exited.
+    /// @return strategy Farm the principal left. The zero address means there has not been an exit.
+    /// @return amount Principal returned, in base units.
+    /// @return reason Reason supplied for that exit.
+    function lastEmergencyExit() external view returns (address strategy, uint256 amount, string memory reason);
 }

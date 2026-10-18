@@ -31,33 +31,42 @@ interface IMockFarm {
 
     /// @notice Adds `amount` of mUSDC principal for the caller.
     /// @dev Reverts with {MockFarm__CallerNotDepositor} when the caller is not a depositor, and with
-    /// {MockFarm__ZeroAmount} when `amount` is zero. Pending rewards on the existing principal are stored
-    /// first. The new amount does not earn for that past time.
+    /// {MockFarm__ZeroAmount} when `amount` is zero, and with `EnforcedPause` when the farm is paused.
+    /// Pending rewards on the existing principal are stored first. The new amount does not earn for that past time.
     /// @param amount mUSDC to deposit, in base units. Must be greater than zero.
     function deposit(uint256 amount) external;
 
     /// @notice Stores accrued rewards, then returns `amount` of principal.
     /// @dev Rewards are stored and are not paid or forfeited. The checkpoint uses the principal from before
     /// this call. The token transfer is last. Reverts with {MockFarm__CallerNotDepositor} when the caller
-    /// is not a depositor, with {MockFarm__ZeroAmount} when `amount` is zero, and with
-    /// {MockFarm__InsufficientPrincipal} when `amount` exceeds principal.
+    /// is not a depositor, with {MockFarm__ZeroAmount} when `amount` is zero, with
+    /// {MockFarm__InsufficientPrincipal} when `amount` exceeds principal, and with `EnforcedPause` when the
+    /// farm is paused.
     /// @param amount Principal to return, in base units. Must be greater than zero.
     function withdraw(uint256 amount) external;
 
     /// @notice Returns the caller's full principal and clears stored rewards.
     /// @dev Does not read the clock and does not run the reward formula. Stored rewards stay in the reserve.
-    /// `forfeited` is that stored amount. Unstored rewards are not computed. Reverts with
-    /// {MockFarm__CallerNotDepositor} when the caller is not a depositor, and with {MockFarm__ZeroAmount}
-    /// when the caller has no principal. A zero principal does not clear stored rewards.
+    /// `forfeited` is that stored amount. Unstored rewards are not computed. This is not blocked while the
+    /// farm is paused. Reverts with {MockFarm__CallerNotDepositor} when the caller is not a depositor, and
+    /// with {MockFarm__ZeroAmount} when the caller has no principal. A zero principal does not clear stored
+    /// rewards.
     /// @return principal mUSDC returned, in base units.
     function emergencyWithdraw() external returns (uint256 principal);
 
     /// @notice Pays stored and pending rewards from the reserve.
     /// @dev A depositor who is owed nothing receives 0 and this does not revert. When the reserve is shorter
     /// than the amount owed, the reserve is paid and the rest stays stored. This does not revert for a short
-    /// reserve and does not reduce principal. Reverts with {MockFarm__CallerNotDepositor} for any other caller.
+    /// reserve and does not reduce principal. Reverts with {MockFarm__CallerNotDepositor} for any other caller,
+    /// and with `EnforcedPause` when the farm is paused.
     /// @return paid mUSDC transferred, in base units. Zero when nothing is owed or the reserve is empty.
     function claim() external returns (uint256 paid);
+
+    /// @notice Stops deposits, withdrawals, claims, reward funding, and new depositors.
+    /// @dev Reverts with {MockFarm__CallerNotDepositor} when the caller is not a depositor, and with
+    /// `EnforcedPause` when the farm is already paused. {emergencyWithdraw} stays available. There is no
+    /// function that clears the pause.
+    function pause() external;
 
     /// @notice Returns stored rewards plus pending rewards for `account`.
     /// @dev The result is stored plus pending. It is not capped by the reserve. Does not revert when `account`
@@ -89,4 +98,8 @@ interface IMockFarm {
     /// @param account Account to query.
     /// @return isDepositor_ True when `account` has been added.
     function isDepositor(address account) external view returns (bool isDepositor_);
+
+    /// @notice Returns whether the farm is paused.
+    /// @return paused_ True after {pause}.
+    function paused() external view returns (bool paused_);
 }

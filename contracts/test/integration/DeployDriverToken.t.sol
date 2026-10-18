@@ -299,6 +299,7 @@ contract DeployDriverTokenTest is Test {
         assertEq(address(farm.i_clock()), address(clock));
         assertEq(farm.owner(), deployer);
         assertEq(farm.rewardReserve(), reserve);
+        assertFalse(farm.paused());
         assertFalse(farm.isDepositor(deployer));
         assertFalse(farm.isDepositor(address(0)));
         assertEq(usdc.allowance(deployer, address(farm)), 0);
@@ -334,6 +335,15 @@ contract DeployDriverTokenTest is Test {
         assertEq(deployed.degenDriver.principal(), 0);
         assertEq(deployed.degenDriver.value(), helper.FUND_2_USDC());
         assertEq(address(deployed.degenDriver.activeFarm()), address(0));
+        (address cruiseExit, uint256 cruiseAmount, string memory cruiseReason) =
+            deployed.cruiseControl.lastEmergencyExit();
+        assertEq(cruiseExit, address(0));
+        assertEq(cruiseAmount, 0);
+        assertEq(bytes(cruiseReason).length, 0);
+        (address degenExit, uint256 degenAmount, string memory degenReason) = deployed.degenDriver.lastEmergencyExit();
+        assertEq(degenExit, address(0));
+        assertEq(degenAmount, 0);
+        assertEq(bytes(degenReason).length, 0);
         assertEq(deployed.highway.totalPrincipal(), 0);
         assertEq(deployed.autobahn.totalPrincipal(), 0);
         assertEq(deployed.drift.totalPrincipal(), 0);

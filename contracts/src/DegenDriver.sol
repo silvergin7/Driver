@@ -16,8 +16,9 @@ import {TreasuryFund} from "./TreasuryFund.sol";
 /// @title Degen Driver
 /// @notice Fund 2. Its active farm stays unset until a harvest applies a vote.
 /// @dev This contract does not expose a strategy setter. {harvest} calls {_switchFarm} with the closed
-/// round's farm. The ballot is set once. Voting reads the constructor list and does not switch the farm.
-/// The splitter bucket is Fund 2.
+/// round's farm when that farm is still listed. A winner that is not listed keeps the current farm, and
+/// {WinnerIgnored} is emitted. The ballot is set once. Voting reads the constructor list and does not
+/// switch the farm. The splitter bucket is Fund 2.
 contract DegenDriver is TreasuryFund {
     using SafeERC20 for IERC20;
 
@@ -52,6 +53,11 @@ contract DegenDriver is TreasuryFund {
     /// @param amount mUSDC moved from Fund 2 to Fund 1, in base units. Zero when Fund 1 was already at or
     /// above its share, or when the floor of the shortfall is zero.
     event Rebalanced(uint256 indexed roundId, uint256 fund1Value, uint256 fund2Value, uint256 amount);
+
+    /// @notice Emitted when a closed round names a farm that is not on this fund's list.
+    /// @param roundId Closed round the harvest applied.
+    /// @param winner Farm the ballot returned. It was not listed, so the current farm stayed.
+    event WinnerIgnored(uint256 indexed roundId, address indexed winner);
 
     /// @notice An address argument was zero.
     error DegenDriver__ZeroAddress();
@@ -172,24 +178,28 @@ contract DegenDriver is TreasuryFund {
         amount = s_lastRebalance.amount;
     }
 
-    /// @dev The ballot is read before {harvest} moves tokens. Address zero, or the farm already active, keeps
-    /// the current farm.
+    /// @dev The ballot is read before {harvest} moves tokens. Address zero, the farm already active, or a farm
+    /// that is not listed keeps the current farm.
     function _farmAfterRound(uint256 roundId) internal view override returns (IMockFarm farm_) {
         farm_ = _chosenFarm(roundId);
     }
 
     /// @dev Reads the ballot again and reverts with {DegenDriver__WinnerChanged} when the farm differs from
-    /// `expectedFarm`. A matching new farm goes through {_switchFarm}. A reverting {IStrategyBallot.winner}
-    /// reverts this harvest.
+    /// `expectedFarm`. A matching new farm goes through {_switchFarm}. A non-zero winner that is not the
+    /// active farm and is not listed emits {WinnerIgnored} and leaves the current farm in place. A reverting
+    /// {IStrategyBallot.winner} reverts this harvest.
     function _applyClosedRound(uint256 roundId, IMockFarm expectedFarm) internal override {
         IMockFarm chosen_ = _chosenFarm(roundId);
         if (address(chosen_) != address(expectedFarm)) {
             revert DegenDriver__WinnerChanged(address(expectedFarm), address(chosen_));
         }
-        if (address(chosen_) == address(_activeFarm())) {
-            return;
+        address ignored_ = _ignoredWinner(roundId);
+        if (address(chosen_) != address(_activeFarm())) {
+            _switchFarm(chosen_);
         }
-        _switchFarm(chosen_);
+        if (ignored_ != address(0)) {
+            emit WinnerIgnored(roundId, ignored_);
+        }
     }
 
     /// @dev Moves mUSDC to Fund 1 when Fund 1 is below its starting share. Idle is debited and the snapshot is
@@ -223,7 +233,7 @@ contract DegenDriver is TreasuryFund {
         s_lastRebalance = Rebalance({roundId: roundId, fund1Value: fund1Value, fund2Value: fund2Value, amount: amount});
     }
 
-    /// @dev Address zero from the ballot, or the farm already active, keeps the current farm.
+    /// @dev Address zero, the farm already active, or a farm that is not listed keeps the current farm.
     function _chosenFarm(uint256 roundId) private view returns (IMockFarm farm_) {
         farm_ = _activeFarm();
         IStrategyBallot ballot_ = s_ballot;
@@ -231,9 +241,22 @@ contract DegenDriver is TreasuryFund {
             return farm_;
         }
         IMockFarm winner_ = ballot_.winner(roundId);
-        if (address(winner_) == address(0) || address(winner_) == address(farm_)) {
+        if (address(winner_) == address(0) || address(winner_) == address(farm_) || !_isStrategy(address(winner_))) {
             return farm_;
         }
         return winner_;
+    }
+
+    /// @dev The raw winner when it must be ignored: non-zero, not the active farm, and not listed. Address zero
+    /// means this round does not emit {WinnerIgnored}.
+    function _ignoredWinner(uint256 roundId) private view returns (address winner_) {
+        IStrategyBallot ballot_ = s_ballot;
+        if (address(ballot_) == address(0)) {
+            return address(0);
+        }
+        winner_ = address(ballot_.winner(roundId));
+        if (winner_ == address(0) || winner_ == address(_activeFarm()) || _isStrategy(winner_)) {
+            return address(0);
+        }
     }
 }

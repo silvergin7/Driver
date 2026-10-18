@@ -702,7 +702,7 @@ contract HarvestTest is Test {
         assertEq(degen.lastHarvest().roundId, 1);
     }
 
-    function test_UnlistedWinnerRollsTheHarvestBack() public {
+    function test_UnlistedWinnerKeepsTheFundIdle() public {
         DegenDriver degen = _degenWithIdle();
         MockFarm outsider = new MockFarm(usdc, clock, APR, owner);
         MappedBallot ballot = new MappedBallot();
@@ -712,17 +712,31 @@ contract HarvestTest is Test {
         _skip(30 days);
         uint256 idleBefore = degen.idle();
 
+        vm.recordLogs();
         vm.prank(owner);
-        vm.expectRevert(
-            abi.encodeWithSelector(TreasuryFund.TreasuryFund__StrategyNotAllowed.selector, address(outsider))
-        );
         degen.harvest(0);
 
-        (bool ready, uint256 roundId) = degen.harvestableRound();
-        assertTrue(ready);
-        assertEq(roundId, 0);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 signature = keccak256("WinnerIgnored(uint256,address)");
+        uint256 found = 0;
+        uint256 count = logs.length;
+        for (uint256 i = 0; i < count; i++) {
+            if (logs[i].topics[0] != signature) {
+                continue;
+            }
+            found++;
+            assertEq(logs[i].emitter, address(degen));
+            assertEq(logs[i].topics[1], bytes32(uint256(0)));
+            assertEq(logs[i].topics[2], bytes32(uint256(uint160(address(outsider)))));
+            assertEq(logs[i].data.length, 0);
+        }
+        assertEq(found, 1);
+        (bool ready,) = degen.harvestableRound();
+        assertFalse(ready);
+        assertEq(degen.lastHarvest().roundId, 0);
         assertEq(degen.idle(), idleBefore);
         assertEq(address(degen.activeFarm()), address(0));
+        assertFalse(degen.isStrategy(address(outsider)));
     }
 
     function test_RevertingWinnerRollsTheHarvestBack() public {

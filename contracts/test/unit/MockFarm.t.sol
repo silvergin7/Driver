@@ -4,6 +4,7 @@ pragma solidity 0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {stdError} from "forge-std/StdError.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IDriverClock} from "../../src/interfaces/IDriverClock.sol";
 import {IMockFarm} from "../../src/interfaces/IMockFarm.sol";
 import {DemoDriverClock} from "../../src/DemoDriverClock.sol";
@@ -45,6 +46,7 @@ contract MockFarmTest is Test {
         assertEq(farm.totalPrincipal(), 0);
         assertEq(farm.rewardReserve(), 0);
         assertFalse(farm.isDepositor(alice));
+        assertFalse(farm.paused());
     }
 
     function test_RevertWhen_UsdcIsZeroAddress() public {
@@ -516,6 +518,86 @@ contract MockFarmTest is Test {
 
         assertEq(timed.accrued(alice), 0);
         assertEq(timed.principalOf(alice), CRUISE_PRINCIPAL);
+    }
+
+    function test_PauseStopsTheFarmAndLeavesEmergencyWithdraw() public {
+        _fund(1_000 * 10 ** 6);
+        _deposit(farm, alice, CRUISE_PRINCIPAL);
+        vm.warp(block.timestamp + 30 days);
+        vm.prank(alice);
+        farm.withdraw(1);
+        uint256 principalLeft = CRUISE_PRINCIPAL - 1;
+        uint256 reserveBefore = farm.rewardReserve();
+
+        vm.expectEmit(address(farm));
+        emit Pausable.Paused(alice);
+        vm.prank(alice);
+        farm.pause();
+
+        assertTrue(farm.paused());
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(alice);
+        farm.deposit(1);
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(alice);
+        farm.withdraw(1);
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(alice);
+        farm.claim();
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(owner);
+        farm.fundRewards(1);
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(owner);
+        farm.addDepositor(bob);
+
+        uint256 balanceBefore = usdc.balanceOf(alice);
+        vm.expectEmit(address(farm));
+        emit IMockFarm.EmergencyWithdrawn(alice, principalLeft, CRUISE_30_DAYS);
+        vm.prank(alice);
+        uint256 returned = farm.emergencyWithdraw();
+
+        assertEq(returned, principalLeft);
+        assertEq(farm.principalOf(alice), 0);
+        assertEq(farm.accrued(alice), 0);
+        assertEq(farm.rewardReserve(), reserveBefore);
+        assertEq(usdc.balanceOf(alice), balanceBefore + principalLeft);
+        assertTrue(farm.paused());
+    }
+
+    function test_RevertWhen_PauseCallerIsNotDepositor() public {
+        vm.expectRevert(abi.encodeWithSelector(IMockFarm.MockFarm__CallerNotDepositor.selector, owner));
+        vm.prank(owner);
+        farm.pause();
+
+        vm.expectRevert(abi.encodeWithSelector(IMockFarm.MockFarm__CallerNotDepositor.selector, alice));
+        vm.prank(alice);
+        farm.pause();
+        assertFalse(farm.paused());
+    }
+
+    function test_RevertWhen_PauseIsCalledTwice() public {
+        vm.prank(owner);
+        farm.addDepositor(alice);
+        vm.prank(alice);
+        farm.pause();
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(alice);
+        farm.pause();
+        assertTrue(farm.paused());
+    }
+
+    function test_UnpauseIsNotAFunction() public {
+        (bool ok, bytes memory data) = address(farm).call(abi.encodeWithSignature("unpause()"));
+        assertFalse(ok);
+        assertEq(data.length, 0);
+        assertFalse(farm.paused());
     }
 
     function test_DirectTransferIsNotReserveOrPrincipal() public {

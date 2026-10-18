@@ -69,6 +69,13 @@ export const cruiseControlAbi = [
   },
   {
     type: 'function',
+    inputs: [{ name: 'reason', internalType: 'string', type: 'string' }],
+    name: 'emergencyWithdraw',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     inputs: [],
     name: 'fund2',
     outputs: [
@@ -180,6 +187,17 @@ export const cruiseControlAbi = [
     inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
     name: 'isStrategy',
     outputs: [{ name: 'allowed_', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'lastEmergencyExit',
+    outputs: [
+      { name: 'strategy', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'reason', internalType: 'string', type: 'string' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -376,6 +394,32 @@ export const cruiseControlAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
+      { name: 'fund', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'strategy',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'reason',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+    ],
+    name: 'EmergencyWithdrawn',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
       {
         name: 'fund2',
         internalType: 'address',
@@ -509,6 +553,14 @@ export const cruiseControlAbi = [
     inputs: [
       { name: 'farm', internalType: 'address', type: 'address', indexed: true },
     ],
+    name: 'StrategyDelisted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'farm', internalType: 'address', type: 'address', indexed: true },
+    ],
     name: 'StrategyListed',
   },
   {
@@ -581,6 +633,7 @@ export const cruiseControlAbi = [
     name: 'SafeERC20FailedOperation',
   },
   { type: 'error', inputs: [], name: 'TreasuryFund__BuybackQuoteRejected' },
+  { type: 'error', inputs: [], name: 'TreasuryFund__EmptyReason' },
   {
     type: 'error',
     inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
@@ -613,6 +666,14 @@ export const cruiseControlAbi = [
     type: 'error',
     inputs: [{ name: 'pool', internalType: 'address', type: 'address' }],
     name: 'TreasuryFund__PoolMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'expected', internalType: 'uint256', type: 'uint256' },
+      { name: 'returned', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'TreasuryFund__PrincipalMismatch',
   },
   {
     type: 'error',
@@ -716,6 +777,13 @@ export const degenDriverAbi = [
     name: 'dvrBoughtBack',
     outputs: [{ name: 'burned_', internalType: 'uint256', type: 'uint256' }],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [{ name: 'reason', internalType: 'string', type: 'string' }],
+    name: 'emergencyWithdraw',
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -830,6 +898,17 @@ export const degenDriverAbi = [
     inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
     name: 'isStrategy',
     outputs: [{ name: 'allowed_', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'lastEmergencyExit',
+    outputs: [
+      { name: 'strategy', internalType: 'address', type: 'address' },
+      { name: 'amount', internalType: 'uint256', type: 'uint256' },
+      { name: 'reason', internalType: 'string', type: 'string' },
+    ],
     stateMutability: 'view',
   },
   {
@@ -1037,6 +1116,32 @@ export const degenDriverAbi = [
     type: 'event',
     anonymous: false,
     inputs: [
+      { name: 'fund', internalType: 'address', type: 'address', indexed: true },
+      {
+        name: 'strategy',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'amount',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'reason',
+        internalType: 'string',
+        type: 'string',
+        indexed: false,
+      },
+    ],
+    name: 'EmergencyWithdrawn',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
       {
         name: 'roundId',
         internalType: 'uint256',
@@ -1157,6 +1262,14 @@ export const degenDriverAbi = [
     inputs: [
       { name: 'farm', internalType: 'address', type: 'address', indexed: true },
     ],
+    name: 'StrategyDelisted',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { name: 'farm', internalType: 'address', type: 'address', indexed: true },
+    ],
     name: 'StrategyListed',
   },
   {
@@ -1189,6 +1302,25 @@ export const degenDriverAbi = [
       },
     ],
     name: 'StrategySet',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'roundId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'winner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+    ],
+    name: 'WinnerIgnored',
   },
   { type: 'error', inputs: [], name: 'DegenDriver__BallotAlreadySet' },
   {
@@ -1223,6 +1355,7 @@ export const degenDriverAbi = [
     name: 'SafeERC20FailedOperation',
   },
   { type: 'error', inputs: [], name: 'TreasuryFund__BuybackQuoteRejected' },
+  { type: 'error', inputs: [], name: 'TreasuryFund__EmptyReason' },
   {
     type: 'error',
     inputs: [{ name: 'farm', internalType: 'address', type: 'address' }],
@@ -1255,6 +1388,14 @@ export const degenDriverAbi = [
     type: 'error',
     inputs: [{ name: 'pool', internalType: 'address', type: 'address' }],
     name: 'TreasuryFund__PoolMismatch',
+  },
+  {
+    type: 'error',
+    inputs: [
+      { name: 'expected', internalType: 'uint256', type: 'uint256' },
+      { name: 'returned', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'TreasuryFund__PrincipalMismatch',
   },
   {
     type: 'error',
@@ -2029,6 +2170,20 @@ export const mockFarmAbi = [
   {
     type: 'function',
     inputs: [],
+    name: 'pause',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'paused',
+    outputs: [{ name: 'paused_', internalType: 'bool', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
     name: 'pendingOwner',
     outputs: [{ name: '', internalType: 'address', type: 'address' }],
     stateMutability: 'view',
@@ -2188,6 +2343,19 @@ export const mockFarmAbi = [
         name: 'account',
         internalType: 'address',
         type: 'address',
+        indexed: false,
+      },
+    ],
+    name: 'Paused',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
         indexed: true,
       },
       {
@@ -2238,6 +2406,19 @@ export const mockFarmAbi = [
         name: 'account',
         internalType: 'address',
         type: 'address',
+        indexed: false,
+      },
+    ],
+    name: 'Unpaused',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'account',
+        internalType: 'address',
+        type: 'address',
         indexed: true,
       },
       {
@@ -2255,6 +2436,8 @@ export const mockFarmAbi = [
     ],
     name: 'Withdrawn',
   },
+  { type: 'error', inputs: [], name: 'EnforcedPause' },
+  { type: 'error', inputs: [], name: 'ExpectedPause' },
   {
     type: 'error',
     inputs: [{ name: 'caller', internalType: 'address', type: 'address' }],
