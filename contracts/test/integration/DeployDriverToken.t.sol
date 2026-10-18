@@ -299,6 +299,7 @@ contract DeployDriverTokenTest is Test {
         assertEq(address(farm.i_clock()), address(clock));
         assertEq(farm.owner(), deployer);
         assertEq(farm.rewardReserve(), reserve);
+        assertFalse(farm.paused());
         assertFalse(farm.isDepositor(deployer));
         assertFalse(farm.isDepositor(address(0)));
         assertEq(usdc.allowance(deployer, address(farm)), 0);

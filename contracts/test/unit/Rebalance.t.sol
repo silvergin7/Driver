@@ -602,6 +602,7 @@ contract RebalanceFarm is IMockFarm {
     Hook private s_hook;
     TreasuryFund private s_target;
     mapping(address account => uint256 amount) private s_principal;
+    bool private s_paused;
 
     /// @notice Stores the token and the clock the fund constructor reads.
     /// @param usdc Mock USDC reported by this farm.
@@ -686,5 +687,16 @@ contract RebalanceFarm is IMockFarm {
     /// @return isDepositor_ False.
     function isDepositor(address) external pure returns (bool isDepositor_) {
         isDepositor_ = false;
+    }
+
+    /// @notice Records that the farm was paused.
+    function pause() external {
+        s_paused = true;
+    }
+
+    /// @notice Returns whether {pause} was called.
+    /// @return paused_ True after {pause}.
+    function paused() external view returns (bool paused_) {
+        paused_ = s_paused;
     }
 }

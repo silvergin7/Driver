@@ -7,6 +7,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IDriverClock} from "./interfaces/IDriverClock.sol";
 import {IMockFarm} from "./interfaces/IMockFarm.sol";
@@ -16,8 +17,9 @@ import {MockUSDC} from "./MockUSDC.sol";
 /// @notice Linear mUSDC farm. Rewards come from a pre-funded reserve and principal is tracked per account.
 /// @dev Time comes from {IDriverClock.currentTime}. This contract does not read `block.timestamp`. Reward
 /// math rounds down. Principal and the reward reserve are separate ledgers. mUSDC sent here directly is not
-/// credited to either ledger.
-contract MockFarm is IMockFarm, ReentrancyGuard, Ownable2Step {
+/// credited to either ledger. A depositor can pause the farm. Deposit, withdraw, claim, funding, and new
+/// depositors then stop. {emergencyWithdraw} does not.
+contract MockFarm is IMockFarm, ReentrancyGuard, Ownable2Step, Pausable {
     using SafeERC20 for IERC20;
 
     /// @notice Denominator for {i_aprBps}. 10_000 is 100 percent.
@@ -102,7 +104,7 @@ contract MockFarm is IMockFarm, ReentrancyGuard, Ownable2Step {
     }
 
     /// @inheritdoc IMockFarm
-    function deposit(uint256 amount) external nonReentrant onlyDepositor {
+    function deposit(uint256 amount) external nonReentrant onlyDepositor whenNotPaused {
         if (amount == 0) {
             revert MockFarm__ZeroAmount();
         }
@@ -116,7 +118,7 @@ contract MockFarm is IMockFarm, ReentrancyGuard, Ownable2Step {
     }
 
     /// @inheritdoc IMockFarm
-    function withdraw(uint256 amount) external nonReentrant onlyDepositor {
+    function withdraw(uint256 amount) external nonReentrant onlyDepositor whenNotPaused {
         if (amount == 0) {
             revert MockFarm__ZeroAmount();
         }
@@ -149,7 +151,7 @@ contract MockFarm is IMockFarm, ReentrancyGuard, Ownable2Step {
     }
 
     /// @inheritdoc IMockFarm
-    function claim() external nonReentrant onlyDepositor returns (uint256 paid) {
+    function claim() external nonReentrant onlyDepositor whenNotPaused returns (uint256 paid) {
         uint256 owed = _checkpoint(msg.sender);
         if (owed == 0) {
             return 0;
@@ -168,9 +170,10 @@ contract MockFarm is IMockFarm, ReentrancyGuard, Ownable2Step {
 
     /// @notice Adds an account that may deposit, withdraw, and claim.
     /// @dev Reverts with {MockFarm__ZeroAddress} when `depositor` is zero, and with
-    /// {MockFarm__DepositorAlreadyAdded} when that account was already added. A depositor cannot be removed.
+    /// {MockFarm__DepositorAlreadyAdded} when that account was already added, and with `EnforcedPause` when
+    /// the farm is paused. A depositor cannot be removed.
     /// @param depositor Account to add. The zero address is rejected.
-    function addDepositor(address depositor) external nonReentrant onlyOwner {
+    function addDepositor(address depositor) external nonReentrant onlyOwner whenNotPaused {
         if (depositor == address(0)) {
             revert MockFarm__ZeroAddress();
         }
@@ -182,10 +185,10 @@ contract MockFarm is IMockFarm, ReentrancyGuard, Ownable2Step {
     }
 
     /// @notice Moves `amount` of mUSDC from the owner into the reward reserve.
-    /// @dev Reverts with {MockFarm__ZeroAmount} when `amount` is zero. The reserve is increased before the
-    /// transfer. Only the owner may call this.
+    /// @dev Reverts with {MockFarm__ZeroAmount} when `amount` is zero, and with `EnforcedPause` when the farm
+    /// is paused. The reserve is increased before the transfer. Only the owner may call this.
     /// @param amount mUSDC to add, in base units. Must be greater than zero.
-    function fundRewards(uint256 amount) external nonReentrant onlyOwner {
+    function fundRewards(uint256 amount) external nonReentrant onlyOwner whenNotPaused {
         if (amount == 0) {
             revert MockFarm__ZeroAmount();
         }
@@ -193,6 +196,11 @@ contract MockFarm is IMockFarm, ReentrancyGuard, Ownable2Step {
         s_rewardReserve += amount;
         IERC20(i_usdc).safeTransferFrom(msg.sender, address(this), amount);
         emit RewardsFunded(msg.sender, amount, s_rewardReserve);
+    }
+
+    /// @inheritdoc IMockFarm
+    function pause() external nonReentrant onlyDepositor {
+        _pause();
     }
 
     /// @inheritdoc IMockFarm
@@ -234,6 +242,11 @@ contract MockFarm is IMockFarm, ReentrancyGuard, Ownable2Step {
     /// @inheritdoc IMockFarm
     function isDepositor(address account) external view returns (bool isDepositor_) {
         isDepositor_ = s_isDepositor[account];
+    }
+
+    /// @inheritdoc IMockFarm
+    function paused() public view override(IMockFarm, Pausable) returns (bool paused_) {
+        paused_ = super.paused();
     }
 
     /// @dev Stores pending rewards for `account` and moves its checkpoint to {IDriverClock.currentTime}.

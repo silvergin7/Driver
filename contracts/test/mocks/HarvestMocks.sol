@@ -17,6 +17,7 @@ contract FixedFarm is IMockFarm {
     TreasuryFund private s_fund;
     uint256 private s_claim;
     bool private s_reenter;
+    bool private s_paused;
 
     /// @notice Stores the token and the clock the fund constructor reads.
     /// @param usdc Mock USDC reported by this farm.
@@ -91,6 +92,17 @@ contract FixedFarm is IMockFarm {
     /// @return isDepositor_ False.
     function isDepositor(address) external pure returns (bool isDepositor_) {
         isDepositor_ = false;
+    }
+
+    /// @notice Records that the farm was paused.
+    function pause() external {
+        s_paused = true;
+    }
+
+    /// @notice Returns whether {pause} was called.
+    /// @return paused_ True after {pause}.
+    function paused() external view returns (bool paused_) {
+        paused_ = s_paused;
     }
 
     /// @notice Returns the token stored in the constructor.
