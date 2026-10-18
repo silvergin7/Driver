@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IMockFarm} from "./interfaces/IMockFarm.sol";
+import {IStrategyBallot} from "./interfaces/IStrategyBallot.sol";
 import {ITreasuryFund} from "./interfaces/ITreasuryFund.sol";
 import {DriverToken} from "./DriverToken.sol";
 import {RoundSchedule} from "./RoundSchedule.sol";
@@ -18,7 +19,7 @@ import {TaxSplitter} from "./TaxSplitter.sol";
 /// accounts that amount and does not read the token balance. The open round is {RoundSchedule.currentRound}.
 /// A round is open from its start inclusive until its end exclusive. At the end timestamp the next round
 /// is already open.
-contract DriverVote is ReentrancyGuard {
+contract DriverVote is IStrategyBallot, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /// @notice DVR this ballot locks.
@@ -251,5 +252,44 @@ contract DriverVote is ReentrancyGuard {
     /// @return end_ End timestamp. The next round is open at this same time.
     function openRoundEnd() external view returns (uint256 end_) {
         end_ = i_schedule.roundEnd(i_schedule.currentRound());
+    }
+
+    /// @inheritdoc IStrategyBallot
+    /// @dev This is {leader} plus the keep-current rule. No listed weight returns the zero address. An active
+    /// farm other than the zero address whose weight equals the leader's also returns the zero address, so the
+    /// fund keeps that farm. This function does not read the clock. An open round returns the provisional
+    /// result, and a halted clock does not make this call revert.
+    function winner(uint256 roundId) external view returns (IMockFarm winner_) {
+        IMockFarm lead = leader(roundId);
+        if (address(lead) == address(0)) {
+            return IMockFarm(address(0));
+        }
+        IMockFarm active = i_fund.activeFarm();
+        if (address(active) != address(0) && s_tally[roundId][address(active)] == s_tally[roundId][address(lead)]) {
+            return IMockFarm(address(0));
+        }
+        return lead;
+    }
+
+    /// @notice Returns the listed farm with the most weight in `roundId`.
+    /// @dev A tie goes to the lowest {ITreasuryFund.strategyAt} index. A farm that is not listed is skipped,
+    /// so a de-listed leader does not hide the next listed farm. No listed weight returns the zero address.
+    /// This function does not read the clock, so an open round returns the provisional leader and a halted
+    /// clock does not make this call revert. It does not apply the keep-current rule.
+    /// @param roundId Round to query, starting at zero.
+    /// @return leader_ Listed farm with the most weight, or the zero address when none has weight.
+    function leader(uint256 roundId) public view returns (IMockFarm leader_) {
+        uint256 count = i_fund.strategyCount();
+        uint256 top = 0;
+        IMockFarm best = IMockFarm(address(0));
+        for (uint256 i = 0; i < count; i++) {
+            IMockFarm farm = i_fund.strategyAt(i);
+            uint256 weight = s_tally[roundId][address(farm)];
+            if (weight > top) {
+                top = weight;
+                best = farm;
+            }
+        }
+        return best;
     }
 }
