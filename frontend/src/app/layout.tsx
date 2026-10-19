@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Driver (DVR)",
-  description: "Driver token, symbol DVR.",
+  description:
+    "The treasury is the student. You hold DVR, so you are the instructor.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
