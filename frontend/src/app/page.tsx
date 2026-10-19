@@ -1,5 +1,6 @@
 import { ClaimTokens } from "@/components/claim-tokens";
 import { DvrBalance } from "@/components/dvr-balance";
+import { UsdcBalance } from "@/components/usdc-balance";
 import { WalletStatus } from "@/components/wallet-status";
 
 export default function Home() {
@@ -11,6 +12,7 @@ export default function Home() {
       </header>
       <WalletStatus />
       <DvrBalance />
+      <UsdcBalance />
       <ClaimTokens />
     </main>
   );
