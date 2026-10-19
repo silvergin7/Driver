@@ -21,6 +21,13 @@ export const contracts: Record<
     driverFaucet: Address;
     mockUsdc: Address;
     mockUsdcFaucet: Address;
+    demoDriverClock: Address;
+    taxSplitter: Address;
+    officialPool: Address;
+    roundSchedule: Address;
+    cruiseControl: Address;
+    degenDriver: Address;
+    driverVote: Address;
   }
 > = {
   [anvil.id]: {
@@ -28,5 +35,12 @@ export const contracts: Record<
     driverFaucet: getAddress(addresses["31337"].DriverFaucet),
     mockUsdc: getAddress(addresses["31337"].MockUSDC),
     mockUsdcFaucet: getAddress(addresses["31337"].MockUsdcFaucet),
+    demoDriverClock: getAddress(addresses["31337"].DemoDriverClock),
+    taxSplitter: getAddress(addresses["31337"].TaxSplitter),
+    officialPool: getAddress(addresses["31337"].OfficialPool),
+    roundSchedule: getAddress(addresses["31337"].RoundSchedule),
+    cruiseControl: getAddress(addresses["31337"].CruiseControl),
+    degenDriver: getAddress(addresses["31337"].DegenDriver),
+    driverVote: getAddress(addresses["31337"].DriverVote),
   },
 };
