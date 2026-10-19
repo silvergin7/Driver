@@ -12,6 +12,7 @@ import {
   mockFarmAbi,
   roundScheduleAbi,
 } from "@/generated/contracts";
+import { headingClass, sectionClass } from "@/lib/control-class";
 import { formatCountdown } from "@/lib/countdown";
 import { farmLabel } from "@/lib/farm-label";
 import { formatDvr } from "@/lib/format-dvr";
@@ -88,16 +89,16 @@ export function Treasury() {
 
   if (!connection.isConnected) {
     return (
-      <section className="text-left">
-        <h2 className="text-xl font-semibold">Treasury</h2>
+      <section className={sectionClass()}>
+        <h2 className={headingClass()}>Treasury</h2>
         <p>Connect a wallet to see the funds.</p>
       </section>
     );
   }
   if (!onAnvil) {
     return (
-      <section className="text-left">
-        <h2 className="text-xl font-semibold">Treasury</h2>
+      <section className={sectionClass()}>
+        <h2 className={headingClass()}>Treasury</h2>
         <p>Switch to Anvil to see the funds.</p>
       </section>
     );
@@ -138,8 +139,8 @@ export function Treasury() {
       : undefined;
 
   return (
-    <section className="flex w-full flex-col gap-3 text-left">
-      <h2 className="text-xl font-semibold">Treasury</h2>
+    <section className={sectionClass()}>
+      <h2 className={headingClass()}>Treasury</h2>
       {failed ? <p>Fund status unavailable.</p> : null}
       {!failed && !ready ? <p>Loading funds…</p> : null}
       {ready &&

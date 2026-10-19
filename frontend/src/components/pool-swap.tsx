@@ -16,6 +16,13 @@ import {
   actionErrorMessage,
   actionReceiptErrorMessage,
 } from "@/lib/action-errors";
+import {
+  choiceButtonClass,
+  fitActionButtonClass,
+  headingClass,
+  inputClass,
+  sectionClass,
+} from "@/lib/control-class";
 import { formatDvr } from "@/lib/format-dvr";
 import { formatUsdc } from "@/lib/format-usdc";
 import { parseTokenAmount, type ParsedAmount } from "@/lib/parse-amount";
@@ -227,16 +234,16 @@ export function PoolSwap() {
 
   if (connection.isConnected && !onAnvil) {
     return (
-      <section className="flex w-full flex-col gap-3 text-left">
-        <h2 className="text-xl font-semibold">Official pool</h2>
+      <section className={sectionClass()}>
+        <h2 className={headingClass()}>Official pool</h2>
         <p>Switch to Anvil to swap.</p>
       </section>
     );
   }
 
   return (
-    <section className="flex w-full flex-col gap-3 text-left">
-      <h2 className="text-xl font-semibold">Official pool</h2>
+    <section className={sectionClass()}>
+      <h2 className={headingClass()}>Official pool</h2>
       {taxBps.data !== undefined ? (
         <p className="tabular-nums">Tax {taxBps.data / 100n}%</p>
       ) : null}
@@ -278,7 +285,7 @@ export function PoolSwap() {
       <label className="flex flex-col gap-1">
         {buying ? "mUSDC to spend" : "DVR to spend"}
         <input
-          className="rounded-md border px-3 py-2"
+          className={inputClass()}
           inputMode="decimal"
           value={text}
           onChange={(event) => {
@@ -305,7 +312,7 @@ export function PoolSwap() {
       ) : null}
       <button
         type="button"
-        className="w-fit rounded-md border px-3 py-2 disabled:opacity-50"
+        className={fitActionButtonClass()}
         disabled={!canSwap}
         onClick={() => {
           void onSwap();
@@ -340,9 +347,7 @@ function useAccrued(fundId: 0 | 1 | 2, enabled: boolean) {
 }
 
 function directionClass(pressed: boolean): string {
-  return pressed
-    ? "rounded-md border bg-foreground px-3 py-2 text-background disabled:opacity-50"
-    : "rounded-md border px-3 py-2 disabled:opacity-50";
+  return choiceButtonClass(pressed);
 }
 
 function unread(read: { isError: boolean; data: unknown }): boolean {

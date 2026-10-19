@@ -8,6 +8,7 @@ import {
   useSwitchChain,
 } from "wagmi";
 import { anvil } from "@/config/contracts";
+import { actionButtonClass } from "@/lib/control-class";
 import { walletErrorMessage } from "@/lib/wallet-errors";
 
 export function ConnectWallet() {
@@ -39,7 +40,7 @@ export function ConnectWallet() {
         {connection.isConnected ? (
           <button
             type="button"
-            className="rounded-md border px-3 py-2 disabled:opacity-50"
+            className={actionButtonClass()}
             disabled={busy}
             onClick={() => disconnect.mutate()}
           >
@@ -48,7 +49,7 @@ export function ConnectWallet() {
         ) : (
           <button
             type="button"
-            className="rounded-md border px-3 py-2 disabled:opacity-50"
+            className={actionButtonClass()}
             disabled={busy || connector === undefined}
             onClick={() => {
               if (connector) {
@@ -62,7 +63,7 @@ export function ConnectWallet() {
         {connection.isConnected && !onAnvil ? (
           <button
             type="button"
-            className="rounded-md border px-3 py-2 disabled:opacity-50"
+            className={actionButtonClass()}
             disabled={busy}
             onClick={() => switchChain.mutate({ chainId: anvil.id })}
           >

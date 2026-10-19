@@ -3,6 +3,7 @@
 import { useConnection, useReadContract } from "wagmi";
 import { anvil, contracts } from "@/config/contracts";
 import { driverTokenAbi } from "@/generated/contracts";
+import { sectionClass } from "@/lib/control-class";
 import { formatDvr } from "@/lib/format-dvr";
 
 export function DvrBalance() {
@@ -33,7 +34,7 @@ export function DvrBalance() {
         : "Loading balance…";
 
   return (
-    <section className="text-left">
+    <section className={sectionClass()}>
       <p className="tabular-nums">{figure}</p>
     </section>
   );

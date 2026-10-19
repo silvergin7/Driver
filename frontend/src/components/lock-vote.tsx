@@ -18,6 +18,12 @@ import {
   actionErrorMessage,
   actionReceiptErrorMessage,
 } from "@/lib/action-errors";
+import {
+  actionButtonClass,
+  headingClass,
+  inputClass,
+  sectionClass,
+} from "@/lib/control-class";
 import { farmLabel } from "@/lib/farm-label";
 import { formatDvr } from "@/lib/format-dvr";
 import { formatCountdown } from "@/lib/countdown";
@@ -456,16 +462,16 @@ export function LockVote() {
 
   if (connection.isConnected && !onAnvil) {
     return (
-      <section className="flex w-full flex-col gap-3 text-left">
-        <h2 className="text-xl font-semibold">Lock and vote</h2>
+      <section className={sectionClass()}>
+        <h2 className={headingClass()}>Lock and vote</h2>
         <p>Switch to Anvil to lock and vote.</p>
       </section>
     );
   }
 
   return (
-    <section className="flex w-full flex-col gap-3 text-left">
-      <h2 className="text-xl font-semibold">Lock and vote</h2>
+    <section className={sectionClass()}>
+      <h2 className={headingClass()}>Lock and vote</h2>
       {accountReady ? (
         <p className="tabular-nums">Locked: {formatDvr(locked.data ?? 0n)} DVR</p>
       ) : null}
@@ -511,7 +517,7 @@ export function LockVote() {
       <label className="flex flex-col gap-1">
         Lock amount
         <input
-          className="rounded-md border px-3 py-2"
+          className={inputClass()}
           inputMode="decimal"
           value={lockText}
           onChange={(event) => {
@@ -522,7 +528,7 @@ export function LockVote() {
       <label className="flex flex-col gap-1">
         Unlock amount
         <input
-          className="rounded-md border px-3 py-2"
+          className={inputClass()}
           inputMode="decimal"
           value={unlockText}
           onChange={(event) => {
@@ -533,7 +539,7 @@ export function LockVote() {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className="rounded-md border px-3 py-2 disabled:opacity-50"
+          className={actionButtonClass()}
           disabled={!canLock}
           onClick={() => {
             void onLock();
@@ -543,7 +549,7 @@ export function LockVote() {
         </button>
         <button
           type="button"
-          className="rounded-md border px-3 py-2 disabled:opacity-50"
+          className={actionButtonClass()}
           disabled={!canUnlock}
           onClick={() => {
             void onUnlock();
@@ -553,7 +559,7 @@ export function LockVote() {
         </button>
         <button
           type="button"
-          className="rounded-md border px-3 py-2 disabled:opacity-50"
+          className={actionButtonClass()}
           disabled={!canVote}
           onClick={() => {
             void onVote();

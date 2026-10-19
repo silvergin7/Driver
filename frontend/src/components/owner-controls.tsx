@@ -25,6 +25,7 @@ import {
   actionErrorMessage,
   actionReceiptErrorMessage,
 } from "@/lib/action-errors";
+import { actionButtonClass, headingClass, sectionClass } from "@/lib/control-class";
 import {
   buybackSpend,
   deferredQuoteError,
@@ -178,8 +179,8 @@ export function OwnerControls() {
 
   if (connection.isConnected && !onAnvil) {
     return (
-      <section className="flex w-full flex-col gap-3 text-left">
-        <h2 className="text-xl font-semibold">Owner</h2>
+      <section className={sectionClass()}>
+        <h2 className={headingClass()}>Owner</h2>
         <p>Switch to Anvil to harvest.</p>
       </section>
     );
@@ -323,14 +324,14 @@ export function OwnerControls() {
     skip.errorMessage;
 
   return (
-    <section className="flex w-full flex-col gap-3 text-left">
-      <h2 className="text-xl font-semibold">Owner</h2>
+    <section className={sectionClass()}>
+      <h2 className={headingClass()}>Owner</h2>
       <p>Slippage {slippageBps / 100n}%</p>
       <div className="flex flex-wrap gap-2">
         {ownsCruise ? (
           <button
             type="button"
-            className="rounded-md border px-3 py-2 disabled:opacity-50"
+            className={actionButtonClass()}
             disabled={busy || cruiseReady.data?.[0] !== true}
             onClick={() => {
               void onHarvest("1");
@@ -342,7 +343,7 @@ export function OwnerControls() {
         {ownsDegen ? (
           <button
             type="button"
-            className="rounded-md border px-3 py-2 disabled:opacity-50"
+            className={actionButtonClass()}
             disabled={busy || degenReady.data?.[0] !== true}
             onClick={() => {
               void onHarvest("2");
@@ -354,7 +355,7 @@ export function OwnerControls() {
         {ownsClock ? (
           <button
             type="button"
-            className="rounded-md border px-3 py-2 disabled:opacity-50"
+            className={actionButtonClass()}
             disabled={busy || epoch.data === undefined || skipTooLarge}
             onClick={() => {
               void onSkip();

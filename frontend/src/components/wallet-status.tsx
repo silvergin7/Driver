@@ -3,6 +3,7 @@
 import { useConnection, useConnect } from "wagmi";
 import { anvil } from "@/config/contracts";
 import { ConnectWallet } from "@/components/connect-wallet";
+import { sectionClass } from "@/lib/control-class";
 
 export function WalletStatus() {
   const connection = useConnection();
@@ -10,7 +11,7 @@ export function WalletStatus() {
   const onAnvil = connection.isConnected && connection.chainId === anvil.id;
 
   return (
-    <section className="flex w-full flex-col gap-3 text-left">
+    <section className={sectionClass()}>
       <p>
         {connection.status === "connecting" || connect.isPending
           ? "Connecting…"
