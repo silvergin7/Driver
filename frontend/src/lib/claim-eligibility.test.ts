@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { claimEligibility, type ClaimEligibilityInput } from "./claim-eligibility";
+import {
+  claimEligibility,
+  claimWindow,
+  type ClaimEligibilityInput,
+} from "./claim-eligibility";
 
 const claimAmount = 10n * 10n ** 18n;
 
@@ -71,5 +75,40 @@ describe("claimEligibility", () => {
     expect(
       claimEligibility(input({ faucetBalance: claimAmount })).status,
     ).toBe("allowed");
+  });
+});
+
+describe("claimWindow", () => {
+  it("allows a wallet that has never claimed when the day is open", () => {
+    expect(
+      claimWindow({
+        blockTimestamp: 1n,
+        claimsToday: 0n,
+        dailyClaimLimit: 25n,
+        nextClaimAt: 0n,
+      }).status,
+    ).toBe("allowed");
+  });
+
+  it("returns cooldown before nextClaimAt", () => {
+    expect(
+      claimWindow({
+        blockTimestamp: 99n,
+        claimsToday: 0n,
+        dailyClaimLimit: 25n,
+        nextClaimAt: 100n,
+      }).status,
+    ).toBe("cooldown");
+  });
+
+  it("returns the daily cap ahead of a cooldown", () => {
+    expect(
+      claimWindow({
+        blockTimestamp: 1n,
+        claimsToday: 25n,
+        dailyClaimLimit: 25n,
+        nextClaimAt: 1_000n,
+      }).status,
+    ).toBe("daily-cap");
   });
 });
