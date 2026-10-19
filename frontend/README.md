@@ -18,6 +18,6 @@ npm run build
 
 `npm run sync:anvil` reads `contracts/broadcast/DeployDriverToken.s.sol/31337/run-latest.json` and writes `src/config/addresses.json`. The script is `scripts/sync-anvil-addresses.mts`.
 
-`npm test` runs the Vitest checks for claim eligibility, countdowns, faucet errors, action errors, wallet errors, DVR amounts, mUSDC amounts, farm labels, round choice, parsed amounts, slippage, buyback quotes, claim status, burned DVR, basis points, and the address explorer.
+`npm test` runs the Vitest checks for claim eligibility, countdowns, faucet errors, action errors, wallet errors, DVR amounts, mUSDC amounts, farm labels, round choice, parsed amounts, slippage, buyback quotes, claim status, burned DVR, basis points, the address explorer, the page navigation, and wallet alerts.
 
 Copy `.env.example` to `.env` for local settings.

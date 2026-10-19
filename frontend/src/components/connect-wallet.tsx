@@ -9,6 +9,7 @@ import {
 } from "wagmi";
 import { anvil } from "@/config/contracts";
 import { actionButtonClass } from "@/lib/control-class";
+import { walletAlertText } from "@/lib/wallet-alert";
 import { walletErrorMessage } from "@/lib/wallet-errors";
 
 function shortAddress(address: string): string {
@@ -36,12 +37,12 @@ export function useWalletControls() {
     switchChain.error === null
       ? undefined
       : walletErrorMessage(switchChain.error, "switch");
-  const alertMessage =
-    connectError !== undefined && !connection.isConnected
-      ? connectError
-      : switchError !== undefined && connection.isConnected && !onAnvil
-        ? switchError
-        : undefined;
+  const alertMessage = walletAlertText(
+    connectError,
+    switchError,
+    connection.isConnected,
+    onAnvil,
+  );
 
   return {
     connection,
@@ -59,9 +60,34 @@ export function useWalletControls() {
 
 type WalletControls = ReturnType<typeof useWalletControls>;
 
-export function ConnectWallet({ compact = false }: { compact?: boolean }) {
+export function ConnectWallet({
+  compact = false,
+  showAlert = true,
+  controls,
+}: {
+  compact?: boolean;
+  showAlert?: boolean;
+  controls?: WalletControls;
+}) {
+  if (controls !== undefined) {
+    return (
+      <WalletMarkup controls={controls} compact={compact} showAlert={showAlert} />
+    );
+  }
+  return <OwnWallet compact={compact} showAlert={showAlert} />;
+}
+
+function OwnWallet({
+  compact,
+  showAlert,
+}: {
+  compact: boolean;
+  showAlert: boolean;
+}) {
   const controls = useWalletControls();
-  return <WalletMarkup controls={controls} compact={compact} showAlert />;
+  return (
+    <WalletMarkup controls={controls} compact={compact} showAlert={showAlert} />
+  );
 }
 
 function WalletMarkup({
@@ -167,5 +193,17 @@ function WalletMarkup({
         <p role="alert">{switchError}</p>
       ) : null}
     </>
+  );
+}
+
+export function WalletBarAlert({ message }: { message: string | undefined }) {
+  if (message === undefined) {
+    return null;
+  }
+
+  return (
+    <p role="alert" className="bg-background px-6 py-2 text-ink">
+      <span className="mx-auto block max-w-5xl">{message}</span>
+    </p>
   );
 }

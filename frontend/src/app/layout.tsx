@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -26,7 +28,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-ink">
-        <Providers>{children}</Providers>
+        <Providers>
+          <a
+            href="#content"
+            className="absolute left-4 top-4 z-[60] -translate-y-24 rounded-md bg-background px-3 py-2 text-ink focus:translate-y-0"
+          >
+            Skip to content
+          </a>
+          <SiteHeader />
+          <div id="content" className="flex flex-1 flex-col">
+            {children}
+          </div>
+          <SiteFooter />
+        </Providers>
       </body>
     </html>
   );
