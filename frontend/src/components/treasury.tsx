@@ -12,6 +12,7 @@ import {
   mockFarmAbi,
   roundScheduleAbi,
 } from "@/generated/contracts";
+import { burnedDvr } from "@/lib/burned-dvr";
 import { headingClass, sectionClass } from "@/lib/control-class";
 import { formatCountdown } from "@/lib/countdown";
 import { farmLabel } from "@/lib/farm-label";
@@ -135,7 +136,7 @@ export function Treasury() {
       : undefined;
   const totalBurned =
     minted.data !== undefined && supply.data !== undefined
-      ? minted.data - supply.data
+      ? burnedDvr(minted.data, supply.data)
       : undefined;
 
   return (
