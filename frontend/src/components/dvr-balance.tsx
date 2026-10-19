@@ -3,11 +3,9 @@
 import { useConnection, useReadContract } from "wagmi";
 import { anvil, contracts } from "@/config/contracts";
 import { driverTokenAbi } from "@/generated/contracts";
-import { useAnvilBlockRefresh } from "@/hooks/use-anvil-block";
 import { formatDvr } from "@/lib/format-dvr";
 
 export function DvrBalance() {
-  useAnvilBlockRefresh();
   const connection = useConnection();
   const onAnvil = connection.isConnected && connection.chainId === anvil.id;
   const args =
