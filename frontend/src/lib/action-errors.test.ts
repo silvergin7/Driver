@@ -10,10 +10,14 @@ import {
   type Hex,
 } from "viem";
 import {
+  cruiseControlAbi,
+  demoDriverClockAbi,
   driverFaucetAbi,
   driverTokenAbi,
   driverVoteAbi,
+  mockFarmAbi,
   mockUsdcFaucetAbi,
+  officialPoolAbi,
 } from "../generated/contracts";
 import {
   actionErrorMessage,
@@ -25,6 +29,10 @@ const faucetAbi = driverFaucetAbi as Abi;
 const usdcFaucetAbi = mockUsdcFaucetAbi as Abi;
 const voteAbi = driverVoteAbi as Abi;
 const tokenAbi = driverTokenAbi as Abi;
+const fundAbi = cruiseControlAbi as Abi;
+const poolAbi = officialPoolAbi as Abi;
+const farmAbi = mockFarmAbi as Abi;
+const clockAbi = demoDriverClockAbi as Abi;
 
 function replayRevert(data: Hex): CallExecutionError {
   return new CallExecutionError(
@@ -148,6 +156,38 @@ function executionError(abi: Abi, data: Hex): ContractFunctionExecutionError {
     functionName: "vote",
   });
 }
+
+describe("actionReceiptErrorMessage harvest", () => {
+  it("decodes a pool error with the fund, pool, and farm ABIs", () => {
+    const data = encodeErrorResult({
+      abi: poolAbi,
+      errorName: "OfficialPool__InsufficientOutput",
+      args: [1n, 2n],
+    });
+    expect(
+      actionReceiptErrorMessage(
+        replayRevert(data),
+        [fundAbi, poolAbi, farmAbi],
+        "The transaction reverted.",
+      ),
+    ).toBe("The buyback would return less DVR than the minimum.");
+  });
+
+  it("maps DemoDriverClock__AdvanceTooLarge", () => {
+    const data = encodeErrorResult({
+      abi: clockAbi,
+      errorName: "DemoDriverClock__AdvanceTooLarge",
+      args: [1n, 2n],
+    });
+    expect(
+      actionReceiptErrorMessage(
+        replayRevert(data),
+        [clockAbi],
+        "The transaction reverted.",
+      ),
+    ).toBe("The clock skip is too large.");
+  });
+});
 
 describe("actionReceiptErrorMessage", () => {
   it("decodes a faucet error when the fund ABI does not match", () => {

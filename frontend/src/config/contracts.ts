@@ -22,6 +22,7 @@ export const contracts: Record<
     mockUsdc: Address;
     mockUsdcFaucet: Address;
     demoDriverClock: Address;
+    officialPool: Address;
     roundSchedule: Address;
     cruiseControl: Address;
     degenDriver: Address;
@@ -34,6 +35,7 @@ export const contracts: Record<
     mockUsdc: getAddress(addresses["31337"].MockUSDC),
     mockUsdcFaucet: getAddress(addresses["31337"].MockUsdcFaucet),
     demoDriverClock: getAddress(addresses["31337"].DemoDriverClock),
+    officialPool: getAddress(addresses["31337"].OfficialPool),
     roundSchedule: getAddress(addresses["31337"].RoundSchedule),
     cruiseControl: getAddress(addresses["31337"].CruiseControl),
     degenDriver: getAddress(addresses["31337"].DegenDriver),

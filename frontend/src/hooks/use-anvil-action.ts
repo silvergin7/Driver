@@ -99,7 +99,9 @@ export function useAnvilAction<
         ? options.describeError(write.error)
         : simulationError;
 
-  async function send(): Promise<boolean> {
+  async function send(
+    override?: ContractFunctionArgs<abi, "nonpayable" | "payable", functionName>,
+  ): Promise<boolean> {
     if (options.account === undefined) {
       return false;
     }
@@ -108,7 +110,7 @@ export function useAnvilAction<
     write.reset();
     setSimulationError(undefined);
     setSimulating(true);
-    const args = options.args;
+    const args = override === undefined ? options.args : override;
     const call = {
       abi: options.abi,
       account: options.account,

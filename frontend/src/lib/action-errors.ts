@@ -28,6 +28,17 @@ export const actionErrorMessages = {
   DriverVote__ZeroAmount: "Enter an amount above zero.",
   ERC20InsufficientAllowance: "The wallet has not approved enough tokens.",
   ERC20InsufficientBalance: "The wallet does not hold enough tokens.",
+  TreasuryFund__RoundAlreadyHarvested: "This round is already harvested.",
+  OwnableUnauthorizedAccount: "Only the owner can do that.",
+  OfficialPool__InsufficientOutput:
+    "The buyback would return less DVR than the minimum.",
+  OfficialPool__DeadlinePassed: "The swap deadline has passed.",
+  OfficialPool__ZeroAmount: "The swap amount is zero.",
+  OfficialPool__ZeroOutput: "The swap would return no tokens.",
+  OfficialPool__InsufficientReserves: "The pool does not have enough reserves.",
+  DemoDriverClock__AdvanceTooLarge: "The clock skip is too large.",
+  DemoDriverClock__ZeroSeconds: "The clock skip must move time forward.",
+  EnforcedPause: "That farm is paused.",
 } as const;
 
 type ErrorName = keyof typeof actionErrorMessages;

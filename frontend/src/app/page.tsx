@@ -1,6 +1,7 @@
 import { ClaimTokens } from "@/components/claim-tokens";
 import { ClaimUsdc } from "@/components/claim-usdc";
 import { LockVote } from "@/components/lock-vote";
+import { OwnerControls } from "@/components/owner-controls";
 import { Treasury } from "@/components/treasury";
 import { DvrBalance } from "@/components/dvr-balance";
 import { UsdcBalance } from "@/components/usdc-balance";
@@ -20,6 +21,7 @@ export default function Home() {
       <ClaimUsdc />
       <LockVote />
       <Treasury />
+      <OwnerControls />
     </main>
   );
 }
