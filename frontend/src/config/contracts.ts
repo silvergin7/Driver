@@ -14,6 +14,8 @@ export const anvil = {
   },
 };
 
+export const anvilNetworkLabel = "Anvil";
+
 export const contracts: Record<
   typeof anvil.id,
   {

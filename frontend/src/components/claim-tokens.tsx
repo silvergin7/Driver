@@ -9,6 +9,7 @@ import {
   type ClaimEligibility,
 } from "@/lib/claim-eligibility";
 import { claimStatus } from "@/lib/claim-status";
+import { fitActionButtonClass, sectionClass } from "@/lib/control-class";
 import { formatCountdown } from "@/lib/countdown";
 import { faucetErrorMessage, receiptErrorMessage } from "@/lib/faucet-errors";
 import { formatDvr } from "@/lib/format-dvr";
@@ -165,7 +166,7 @@ export function ClaimTokens() {
   });
 
   return (
-    <section className="flex w-full flex-col gap-3 text-left">
+    <section className={sectionClass()}>
       {onAnvil && claimAmount.data !== undefined ? (
         <p className="tabular-nums">
           Claim amount: {formatDvr(claimAmount.data)} DVR
@@ -173,7 +174,7 @@ export function ClaimTokens() {
       ) : null}
       <button
         type="button"
-        className="w-fit rounded-md border px-3 py-2 disabled:opacity-50"
+        className={fitActionButtonClass()}
         disabled={!canClaim}
         onClick={() => {
           void action.send();

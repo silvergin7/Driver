@@ -1,26 +1,60 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-brand: var(--dvr-brand);
+  --color-brand-text: var(--dvr-brand-text);
+  --color-sign: var(--dvr-sign);
+  --color-surface: var(--dvr-surface);
+  --color-background: var(--dvr-background);
+  --color-ink: var(--dvr-ink);
+  --color-ink-muted: var(--dvr-ink-muted);
+  --color-line: var(--dvr-line);
+  --color-disabled-bg: var(--dvr-disabled-bg);
+  --color-on-brand: var(--dvr-on-brand);
+  --shadow-raise: var(--dvr-raise);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --dvr-brand: #e11d48;
+  --dvr-brand-text: #e11d48;
+  --dvr-sign: #1d4ed8;
+  --dvr-surface: #f1f5f9;
+  --dvr-background: #ffffff;
+  --dvr-ink: #0f172a;
+  --dvr-ink-muted: #334155;
+  --dvr-line: #64748b;
+  --dvr-disabled-bg: #e2e8f0;
+  --dvr-on-brand: #ffffff;
+  --dvr-raise: 0 1px 2px rgb(15 23 42 / 0.12);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --dvr-brand: #e11d48;
+  --dvr-brand-text: #fb7185;
+  --dvr-sign: #60a5fa;
+  --dvr-surface: #1e293b;
+  --dvr-background: #0f172a;
+  --dvr-ink: #f1f5f9;
+  --dvr-ink-muted: #cbd5e1;
+  --dvr-line: #64748b;
+  --dvr-disabled-bg: #334155;
+  --dvr-on-brand: #ffffff;
+  --dvr-raise: 0 1px 2px rgb(0 0 0 / 0.45);
+  color-scheme: dark;
+}
+
+:focus-visible {
+  outline: 2px solid var(--dvr-sign);
+  outline-offset: 2px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--dvr-background);
+  color: var(--dvr-ink);
   font-family: var(--font-sans), sans-serif;
 }

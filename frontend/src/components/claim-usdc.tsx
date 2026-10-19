@@ -11,6 +11,7 @@ import {
 } from "@/lib/action-errors";
 import { claimWindow } from "@/lib/claim-eligibility";
 import { claimStatus } from "@/lib/claim-status";
+import { fitActionButtonClass, sectionClass } from "@/lib/control-class";
 import { formatCountdown } from "@/lib/countdown";
 import { claimFailedMessage, claimRevertedMessage } from "@/lib/faucet-errors";
 import { formatUsdc } from "@/lib/format-usdc";
@@ -162,7 +163,7 @@ export function ClaimUsdc() {
   });
 
   return (
-    <section className="flex w-full flex-col gap-3 text-left">
+    <section className={sectionClass()}>
       {onAnvil && claimAmount.data !== undefined ? (
         <p className="tabular-nums">
           Claim amount: {formatUsdc(claimAmount.data)} mUSDC
@@ -170,7 +171,7 @@ export function ClaimUsdc() {
       ) : null}
       <button
         type="button"
-        className="w-fit rounded-md border px-3 py-2 disabled:opacity-50"
+        className={fitActionButtonClass()}
         disabled={!canClaim}
         onClick={() => {
           void action.send();
