@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 @theme inline {
   --color-brand: var(--dvr-brand);
   --color-brand-text: var(--dvr-brand-text);
@@ -29,6 +31,21 @@
   --dvr-on-brand: #ffffff;
   --dvr-raise: 0 1px 2px rgb(15 23 42 / 0.12);
   color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --dvr-brand: #e11d48;
+  --dvr-brand-text: #fb7185;
+  --dvr-sign: #60a5fa;
+  --dvr-surface: #1e293b;
+  --dvr-background: #0f172a;
+  --dvr-ink: #f1f5f9;
+  --dvr-ink-muted: #cbd5e1;
+  --dvr-line: #64748b;
+  --dvr-disabled-bg: #334155;
+  --dvr-on-brand: #ffffff;
+  --dvr-raise: 0 1px 2px rgb(0 0 0 / 0.45);
+  color-scheme: dark;
 }
 
 :focus-visible {

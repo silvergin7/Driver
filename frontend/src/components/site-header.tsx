@@ -9,6 +9,7 @@ import {
   useWalletControls,
 } from "@/components/connect-wallet";
 import { LogoMark } from "@/components/logo-mark";
+import { ThemeSwitch } from "@/components/theme-switch";
 import { choiceButtonClass } from "@/lib/control-class";
 import { isCurrentPage, navItems } from "@/lib/nav";
 
@@ -59,6 +60,7 @@ export function SiteHeader() {
           >
             Menu
           </button>
+          <ThemeSwitch />
           <ConnectWallet compact showAlert={false} controls={controls} />
         </div>
       </div>
@@ -77,6 +79,7 @@ export function SiteHeader() {
               onNavigate={() => setOpenPath(undefined)}
             />
           ))}
+          <ThemeSwitch menu />
         </nav>
       ) : null}
       <WalletBarAlert message={controls.alertMessage} />

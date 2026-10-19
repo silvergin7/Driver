@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { ThemeSync } from "@/components/theme-sync";
+import { themeScript } from "@/lib/theme";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -25,10 +27,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      data-theme="dark"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="flex min-h-full flex-col bg-background text-ink">
         <Providers>
+          <ThemeSync />
           <a
             href="#content"
             className="absolute left-4 top-4 z-[60] -translate-y-24 rounded-md bg-background px-3 py-2 text-ink focus:translate-y-0"
