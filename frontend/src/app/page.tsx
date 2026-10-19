@@ -1,5 +1,6 @@
 import { ClaimTokens } from "@/components/claim-tokens";
 import { ClaimUsdc } from "@/components/claim-usdc";
+import { LockVote } from "@/components/lock-vote";
 import { DvrBalance } from "@/components/dvr-balance";
 import { UsdcBalance } from "@/components/usdc-balance";
 import { WalletStatus } from "@/components/wallet-status";
@@ -16,6 +17,7 @@ export default function Home() {
       <UsdcBalance />
       <ClaimTokens />
       <ClaimUsdc />
+      <LockVote />
     </main>
   );
 }

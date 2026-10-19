@@ -21,6 +21,13 @@ export const actionErrorMessages = {
   MockUsdcFaucet__DailyLimitReached: "Today's claim limit is full.",
   MockUsdcFaucet__ZeroAddress: "The faucet token address is missing.",
   MockUsdcFaucet__ZeroValue: "The faucet claim settings are invalid.",
+  DriverVote__Voted: "Unlock waits until this round ends.",
+  DriverVote__NothingLocked: "Lock DVR before voting.",
+  DriverVote__InsufficientLock: "That is more DVR than the lock.",
+  DriverVote__StrategyNotAllowed: "That farm is not listed.",
+  DriverVote__ZeroAmount: "Enter an amount above zero.",
+  ERC20InsufficientAllowance: "The wallet has not approved enough tokens.",
+  ERC20InsufficientBalance: "The wallet does not hold enough tokens.",
 } as const;
 
 type ErrorName = keyof typeof actionErrorMessages;

@@ -37,7 +37,19 @@ export function useAnvilAction<
   const [simulationError, setSimulationError] = useState<string>();
   const scopeRef = useRef(options.scope);
   const refreshedHash = useRef<Hex | undefined>(undefined);
+  const waiter = useRef<{ resolve: (ok: boolean) => void } | undefined>(
+    undefined,
+  );
   const write = useWriteContract();
+
+  function finish(ok: boolean): void {
+    const current = waiter.current;
+    if (current === undefined) {
+      return;
+    }
+    waiter.current = undefined;
+    current.resolve(ok);
+  }
 
   if (scope !== options.scope) {
     setScope(options.scope);
@@ -48,6 +60,7 @@ export function useAnvilAction<
 
   useEffect(() => {
     scopeRef.current = options.scope;
+    finish(false);
   }, [options.scope]);
 
   const receipt = useWaitForTransactionReceipt({
@@ -56,16 +69,25 @@ export function useAnvilAction<
   });
 
   useEffect(() => {
-    if (
-      !receipt.isSuccess ||
-      write.data === undefined ||
-      refreshedHash.current === write.data
-    ) {
+    if (write.error) {
+      finish(false);
       return;
     }
-    refreshedHash.current = write.data;
-    void queryClient.invalidateQueries({ queryKey: ["readContract"] });
-  }, [queryClient, receipt.isSuccess, write.data]);
+    if (write.data === undefined) {
+      return;
+    }
+    if (receipt.isSuccess) {
+      if (refreshedHash.current !== write.data) {
+        refreshedHash.current = write.data;
+        void queryClient.invalidateQueries({ queryKey: ["readContract"] });
+      }
+      finish(true);
+      return;
+    }
+    if (receipt.isError) {
+      finish(false);
+    }
+  }, [queryClient, receipt.isError, receipt.isSuccess, write.data, write.error]);
 
   const confirming =
     write.data !== undefined && !receipt.isSuccess && !receipt.isError;
@@ -77,11 +99,12 @@ export function useAnvilAction<
         ? options.describeError(write.error)
         : simulationError;
 
-  async function send(): Promise<void> {
+  async function send(): Promise<boolean> {
     if (options.account === undefined) {
-      return;
+      return false;
     }
     const started = scopeRef.current;
+    finish(false);
     write.reset();
     setSimulationError(undefined);
     setSimulating(true);
@@ -104,13 +127,16 @@ export function useAnvilAction<
         setSimulationError(options.describeError(error));
         setSimulating(false);
       }
-      return;
+      return false;
     }
     if (scopeRef.current !== started) {
-      return;
+      return false;
     }
     setSimulating(false);
-    write.mutate(call as unknown as Parameters<typeof write.mutate>[0]);
+    return await new Promise<boolean>((resolve) => {
+      waiter.current = { resolve };
+      write.mutate(call as unknown as Parameters<typeof write.mutate>[0]);
+    });
   }
 
   return {
