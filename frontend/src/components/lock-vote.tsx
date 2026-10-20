@@ -20,10 +20,10 @@ import {
 } from "@/lib/action-errors";
 import {
   actionButtonClass,
-  headingClass,
   inputClass,
-  sectionClass,
 } from "@/lib/control-class";
+import { Card } from "@/components/ui/card";
+import { StatList } from "@/components/ui/stat-list";
 import { farmLabel } from "@/lib/farm-label";
 import { formatBps } from "@/lib/format-bps";
 import { formatDvr } from "@/lib/format-dvr";
@@ -463,122 +463,150 @@ export function LockVote() {
 
   if (connection.isConnected && !onAnvil) {
     return (
-      <section className={sectionClass()}>
-        <h2 className={headingClass()}>Lock and vote</h2>
-        <p>Switch to Anvil to lock and vote.</p>
-      </section>
+      <Card
+        className="w-full"
+        title="Lock and vote"
+        subtitle="Instructors vote on Degen Driver's speed."
+      >
+        <p className="text-sm text-ink-muted">Switch to Anvil to lock and vote.</p>
+      </Card>
     );
   }
 
+  const lockedRow = accountReady
+    ? [{ label: "Locked", value: `${formatDvr(locked.data ?? 0n)} DVR` }]
+    : [];
+  const voteRows = [
+    farmsReady
+      ? {
+          label: "Open round leader",
+          value:
+            openChoice === undefined
+              ? "No votes yet."
+              : (labels.get(openChoice) ?? openChoice),
+        }
+      : undefined,
+    farmsReady && round.data !== undefined && round.data > 0n
+      ? {
+          label: `Round ${closedRound.toString()} choice`,
+          value:
+            closedChoice === undefined
+              ? "No votes."
+              : (labels.get(closedChoice) ?? closedChoice),
+        }
+      : undefined,
+    currentVote !== undefined
+      ? { label: "Your vote", value: labels.get(currentVote) ?? currentVote }
+      : undefined,
+  ].filter((row): row is { label: string; value: string } => row !== undefined);
+
   return (
-    <section className={sectionClass()}>
-      <h2 className={headingClass()}>Lock and vote</h2>
-      {accountReady ? (
-        <p className="tabular-nums">Locked: {formatDvr(locked.data ?? 0n)} DVR</p>
-      ) : null}
-      {round.data !== undefined ? (
-        <p className="tabular-nums">Open round: {round.data.toString()}</p>
-      ) : null}
-      {farmsReady ? (
-        <p>
-          Open round leader:{" "}
-          {openChoice === undefined
-            ? "No votes yet."
-            : (labels.get(openChoice) ?? openChoice)}
-        </p>
-      ) : null}
-      {farmsReady && round.data !== undefined && round.data > 0n ? (
-        <p>
-          Round {closedRound.toString()} choice:{" "}
-          {closedChoice === undefined
-            ? "No votes."
-            : (labels.get(closedChoice) ?? closedChoice)}
-        </p>
-      ) : null}
-      {currentVote !== undefined ? (
-        <p>Your vote: {labels.get(currentVote) ?? currentVote}</p>
-      ) : null}
-      {listed.map((farm) =>
-        farm.farm === undefined ||
-        farm.apr.data === undefined ||
-        farm.tally.data === undefined ? null : (
-          <label key={farm.farm} className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="farm"
-              checked={selected === farm.farm}
-              onChange={() => {
-                setSelected(farm.farm);
+    <Card
+      className="w-full"
+      title="Lock and vote"
+      subtitle="Instructors vote on Degen Driver's speed."
+    >
+      <div className="flex flex-col gap-6 md:grid md:grid-cols-2 md:items-start">
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="flex items-end gap-2">
+            <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm text-ink-muted">
+              Lock amount
+              <input
+                className={`${inputClass()} w-full`}
+                inputMode="decimal"
+                value={lockText}
+                onChange={(event) => {
+                  setLockText(event.target.value);
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              className={`${actionButtonClass()} shrink-0 whitespace-nowrap`}
+              disabled={!canLock}
+              onClick={() => {
+                void onLock();
               }}
-            />
-            <span className="tabular-nums">
-              {labels.get(farm.farm) ?? farm.farm} ({formatBps(farm.apr.data)} APR):{" "}
-              {formatDvr(farm.tally.data)} DVR
-            </span>
-          </label>
-        ),
-      )}
-      <label className="flex flex-col gap-1">
-        Lock amount
-        <input
-          className={inputClass()}
-          inputMode="decimal"
-          value={lockText}
-          onChange={(event) => {
-            setLockText(event.target.value);
-          }}
-        />
-      </label>
-      <label className="flex flex-col gap-1">
-        Unlock amount
-        <input
-          className={inputClass()}
-          inputMode="decimal"
-          value={unlockText}
-          onChange={(event) => {
-            setUnlockText(event.target.value);
-          }}
-        />
-      </label>
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={actionButtonClass()}
-          disabled={!canLock}
-          onClick={() => {
-            void onLock();
-          }}
-        >
-          Lock DVR
-        </button>
-        <button
-          type="button"
-          className={actionButtonClass()}
-          disabled={!canUnlock}
-          onClick={() => {
-            void onUnlock();
-          }}
-        >
-          Unlock DVR
-        </button>
-        <button
-          type="button"
-          className={actionButtonClass()}
-          disabled={!canVote}
-          onClick={() => {
-            void onVote();
-          }}
-        >
-          Vote
-        </button>
+            >
+              Lock DVR
+            </button>
+          </div>
+          <div className="flex items-end gap-2">
+            <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm text-ink-muted">
+              Unlock amount
+              <input
+                className={`${inputClass()} w-full`}
+                inputMode="decimal"
+                value={unlockText}
+                onChange={(event) => {
+                  setUnlockText(event.target.value);
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              className={`${actionButtonClass()} shrink-0 whitespace-nowrap`}
+              disabled={!canUnlock}
+              onClick={() => {
+                void onUnlock();
+              }}
+            >
+              Unlock DVR
+            </button>
+          </div>
+          {lockedRow.length > 0 ? <StatList rows={lockedRow} /> : null}
+        </div>
+        <div className="flex min-w-0 flex-col gap-4">
+          {voteRows.length > 0 ? <StatList rows={voteRows} /> : null}
+          <div className="grid grid-cols-2 gap-3 lg:flex">
+            {listed.map((farm) =>
+              farm.farm === undefined ||
+              farm.apr.data === undefined ||
+              farm.tally.data === undefined ? null : (
+                <label
+                  key={farm.farm}
+                  className="flex min-w-0 items-start gap-2 text-sm text-ink lg:flex-1"
+                >
+                  <input
+                    type="radio"
+                    name="farm"
+                    className="mt-1"
+                    checked={selected === farm.farm}
+                    onChange={() => {
+                      setSelected(farm.farm);
+                    }}
+                  />
+                  <span className="min-w-0 flex-1">
+                    {labels.get(farm.farm) ?? farm.farm} ({formatBps(farm.apr.data)} APR)
+                  </span>
+                  <span className="shrink-0 tabular-nums">
+                    {formatDvr(farm.tally.data)} DVR
+                  </span>
+                </label>
+              ),
+            )}
+          </div>
+          <button
+            type="button"
+            className={`${actionButtonClass()} w-fit`}
+            disabled={!canVote}
+            onClick={() => {
+              void onVote();
+            }}
+          >
+            Vote
+          </button>
+        </div>
       </div>
-      {status ? <p>{status}</p> : null}
-      {lockReason && !busy ? <p>{lockReason}</p> : null}
-      {unlockReason && !busy ? <p>{unlockReason}</p> : null}
-      {voteReason && !busy ? <p>{voteReason}</p> : null}
-      {unlockCountdown ? <p className="tabular-nums">{unlockCountdown}</p> : null}
+      {status ? <p className="text-sm text-ink-muted">{status}</p> : null}
+      {lockReason && !busy ? <p className="text-sm text-ink-muted">{lockReason}</p> : null}
+      {unlockReason && !busy ? <p className="text-sm text-ink-muted">{unlockReason}</p> : null}
+      {voteReason && !busy ? <p className="text-sm text-ink-muted">{voteReason}</p> : null}
+      {unlockCountdown ? (
+        <p className="text-sm text-ink-muted tabular-nums">{unlockCountdown}</p>
+      ) : null}
       {errorMessage ? <p role="alert">{errorMessage}</p> : null}
-    </section>
+    </Card>
   );
 }
 

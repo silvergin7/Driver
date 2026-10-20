@@ -3,7 +3,7 @@
 import { useConnection, useReadContract } from "wagmi";
 import { anvil, contracts } from "@/config/contracts";
 import { driverTokenAbi } from "@/generated/contracts";
-import { sectionClass } from "@/lib/control-class";
+import { BigStat } from "@/components/ui/big-stat";
 import { formatDvr } from "@/lib/format-dvr";
 
 export function DvrBalance() {
@@ -28,14 +28,10 @@ export function DvrBalance() {
 
   const figure =
     balance.data !== undefined
-      ? `${formatDvr(balance.data)} DVR`
+      ? formatDvr(balance.data)
       : balance.isError
         ? "Balance unavailable."
         : "Loading balance…";
 
-  return (
-    <section className={sectionClass()}>
-      <p className="tabular-nums">{figure}</p>
-    </section>
-  );
+  return <BigStat label="DVR" value={figure} />;
 }

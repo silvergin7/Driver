@@ -25,7 +25,9 @@ import {
   actionErrorMessage,
   actionReceiptErrorMessage,
 } from "@/lib/action-errors";
-import { actionButtonClass, headingClass, sectionClass } from "@/lib/control-class";
+import { actionButtonClass } from "@/lib/control-class";
+import { Card } from "@/components/ui/card";
+import { StatList } from "@/components/ui/stat-list";
 import {
   buybackSpend,
   deferredQuoteError,
@@ -179,10 +181,9 @@ export function OwnerControls() {
 
   if (connection.isConnected && !onAnvil) {
     return (
-      <section className={sectionClass()}>
-        <h2 className={headingClass()}>Owner</h2>
-        <p>Switch to Anvil to harvest.</p>
-      </section>
+      <Card className="w-fit max-w-full self-center" title="Owner">
+        <p className="text-sm text-ink-muted">Switch to Anvil to harvest.</p>
+      </Card>
     );
   }
   if (!ownsCruise && !ownsDegen && !ownsClock) {
@@ -324,10 +325,12 @@ export function OwnerControls() {
     skip.errorMessage;
 
   return (
-    <section className={sectionClass()}>
-      <h2 className={headingClass()}>Owner</h2>
-      <p>Slippage {slippageBps / 100n}%</p>
-      <div className="flex flex-wrap gap-2">
+    <Card className="w-fit max-w-full self-center" title="Owner">
+      <StatList
+        layout="inline"
+        rows={[{ label: "Slippage", value: `${slippageBps / 100n}%` }]}
+      />
+      <div className="flex flex-wrap items-center gap-2">
         {ownsCruise ? (
           <button
             type="button"
@@ -366,17 +369,17 @@ export function OwnerControls() {
         ) : null}
       </div>
       {harvestCruise.simulating || harvestDegen.simulating || skip.simulating ? (
-        <p>Checking the transaction.</p>
+        <p className="text-sm text-ink-muted">Checking the transaction.</p>
       ) : null}
       {harvestCruise.writePending || harvestDegen.writePending || skip.writePending ? (
-        <p>Waiting for the wallet.</p>
+        <p className="text-sm text-ink-muted">Waiting for the wallet.</p>
       ) : null}
       {harvestCruise.confirming || harvestDegen.confirming ? (
-        <p>Confirming the harvest.</p>
+        <p className="text-sm text-ink-muted">Confirming the harvest.</p>
       ) : null}
-      {skip.confirming ? <p>Confirming the clock skip.</p> : null}
-      {notice && !busy ? <p>{notice}</p> : null}
+      {skip.confirming ? <p className="text-sm text-ink-muted">Confirming the clock skip.</p> : null}
+      {notice && !busy ? <p className="text-sm text-ink-muted">{notice}</p> : null}
       {errorMessage ? <p role="alert">{errorMessage}</p> : null}
-    </section>
+    </Card>
   );
 }
