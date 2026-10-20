@@ -25,6 +25,7 @@ import {
   sectionClass,
 } from "@/lib/control-class";
 import { farmLabel } from "@/lib/farm-label";
+import { formatBps } from "@/lib/format-bps";
 import { formatDvr } from "@/lib/format-dvr";
 import { formatCountdown } from "@/lib/countdown";
 import { parseTokenAmount, type ParsedAmount } from "@/lib/parse-amount";
@@ -498,7 +499,9 @@ export function LockVote() {
         <p>Your vote: {labels.get(currentVote) ?? currentVote}</p>
       ) : null}
       {listed.map((farm) =>
-        farm.farm === undefined || farm.tally.data === undefined ? null : (
+        farm.farm === undefined ||
+        farm.apr.data === undefined ||
+        farm.tally.data === undefined ? null : (
           <label key={farm.farm} className="flex items-center gap-2">
             <input
               type="radio"
@@ -509,7 +512,8 @@ export function LockVote() {
               }}
             />
             <span className="tabular-nums">
-              {labels.get(farm.farm) ?? farm.farm}: {formatDvr(farm.tally.data)} DVR
+              {labels.get(farm.farm) ?? farm.farm} ({formatBps(farm.apr.data)} APR):{" "}
+              {formatDvr(farm.tally.data)} DVR
             </span>
           </label>
         ),

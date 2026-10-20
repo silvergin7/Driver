@@ -16,8 +16,10 @@ import { burnedDvr } from "@/lib/burned-dvr";
 import { headingClass, sectionClass } from "@/lib/control-class";
 import { formatCountdown } from "@/lib/countdown";
 import { farmLabel } from "@/lib/farm-label";
+import { formatBps } from "@/lib/format-bps";
 import { formatDvr } from "@/lib/format-dvr";
 import { formatUsdc } from "@/lib/format-usdc";
+import { farmAprBps } from "@/lib/farm-apr";
 
 const anvilContracts = contracts[anvil.id];
 
@@ -38,20 +40,8 @@ export function Treasury() {
   });
   const cruiseFarm = fundAddress(cruise.data?.[3]);
   const degenFarm = fundAddress(degen.data?.[3]);
-  const cruiseApr = useReadContract({
-    abi: mockFarmAbi,
-    address: cruiseFarm ?? zeroAddress,
-    chainId: anvil.id,
-    functionName: "aprBps",
-    query: { enabled: cruiseFarm !== undefined && cruiseFarm !== zeroAddress },
-  });
-  const degenApr = useReadContract({
-    abi: mockFarmAbi,
-    address: degenFarm ?? zeroAddress,
-    chainId: anvil.id,
-    functionName: "aprBps",
-    query: { enabled: degenFarm !== undefined && degenFarm !== zeroAddress },
-  });
+  const cruiseFarmState = useFarmState(cruiseFarm);
+  const degenFarmState = useFarmState(degenFarm);
   const round = useReadContract({
     abi: roundScheduleAbi,
     address: anvilContracts.roundSchedule,
@@ -113,8 +103,12 @@ export function Treasury() {
     unread(clock) ||
     unread(minted) ||
     unread(supply) ||
-    unread(cruiseApr) ||
-    unread(degenApr);
+    unread(cruiseFarmState.apr) ||
+    unread(cruiseFarmState.paused) ||
+    unread(cruiseFarmState.reserve) ||
+    unread(degenFarmState.apr) ||
+    unread(degenFarmState.paused) ||
+    unread(degenFarmState.reserve);
   const ready =
     cruise.data !== undefined &&
     degen.data !== undefined &&
@@ -123,12 +117,8 @@ export function Treasury() {
     clock.data !== undefined &&
     minted.data !== undefined &&
     supply.data !== undefined &&
-    (cruiseFarm === undefined ||
-      cruiseFarm === zeroAddress ||
-      cruiseApr.data !== undefined) &&
-    (degenFarm === undefined ||
-      degenFarm === zeroAddress ||
-      degenApr.data !== undefined);
+    farmStateReady(cruiseFarm, cruiseFarmState) &&
+    farmStateReady(degenFarm, degenFarmState);
 
   const boughtBack =
     typeof cruise.data?.[5] === "bigint" && typeof degen.data?.[5] === "bigint"
@@ -154,17 +144,20 @@ export function Treasury() {
         </p>
       ) : null}
       <FundSummary
-        apr={cruiseApr.data}
         data={cruise.data}
         farm={cruiseFarm}
+        state={cruiseFarmState}
         title="Fund 1"
       />
       <FundSummary
-        apr={degenApr.data}
         data={degen.data}
         farm={degenFarm}
+        state={degenFarmState}
         title="Fund 2"
       />
+      {ready ? (
+        <p>APR is simple interest. At each harvest, half of the rewards goes back into the farm.</p>
+      ) : null}
       {boughtBack !== undefined ? (
         <p className="tabular-nums">
           Bought back and burned: {formatDvr(boughtBack)} DVR
@@ -179,16 +172,57 @@ export function Treasury() {
   );
 }
 
+function useFarmState(farm: Address | undefined) {
+  const enabled = farm !== undefined && farm !== zeroAddress;
+  const address = farm ?? zeroAddress;
+  const apr = useReadContract({
+    abi: mockFarmAbi,
+    address,
+    chainId: anvil.id,
+    functionName: "aprBps",
+    query: { enabled },
+  });
+  const paused = useReadContract({
+    abi: mockFarmAbi,
+    address,
+    chainId: anvil.id,
+    functionName: "paused",
+    query: { enabled },
+  });
+  const reserve = useReadContract({
+    abi: mockFarmAbi,
+    address,
+    chainId: anvil.id,
+    functionName: "rewardReserve",
+    query: { enabled },
+  });
+  return { apr, paused, reserve };
+}
+
+function farmStateReady(
+  farm: Address | undefined,
+  state: ReturnType<typeof useFarmState>,
+): boolean {
+  if (farm === undefined || farm === zeroAddress) {
+    return true;
+  }
+  return (
+    state.apr.data !== undefined &&
+    state.paused.data !== undefined &&
+    state.reserve.data !== undefined
+  );
+}
+
 function FundSummary({
   title,
   data,
   farm,
-  apr,
+  state,
 }: {
   title: string;
   data: readonly unknown[] | undefined;
   farm: Address | undefined;
-  apr: bigint | undefined;
+  state: ReturnType<typeof useFarmState>;
 }) {
   const value = typeof data?.[0] === "bigint" ? data[0] : undefined;
   const idle = typeof data?.[1] === "bigint" ? data[1] : undefined;
@@ -203,12 +237,26 @@ function FundSummary({
   ) {
     return null;
   }
-  const farmName =
-    farm === zeroAddress
-      ? "No active farm"
-      : apr === undefined
-        ? farm
-        : farmLabel(apr, farm);
+  const active = farm !== zeroAddress;
+  if (
+    active &&
+    (state.apr.data === undefined ||
+      state.paused.data === undefined ||
+      state.reserve.data === undefined)
+  ) {
+    return null;
+  }
+  const farmApr = farmAprBps({
+    aprBps: state.apr.data ?? 0n,
+    active,
+    paused: state.paused.data === true,
+    rewardReserve: state.reserve.data ?? 0n,
+  });
+  const farmName = active
+    ? state.apr.data === undefined
+      ? farm
+      : farmLabel(state.apr.data, farm)
+    : "No active farm";
   return (
     <div className="flex flex-col gap-1">
       <h3 className="font-semibold">{title}</h3>
@@ -216,6 +264,7 @@ function FundSummary({
       <p className="tabular-nums">Idle: {formatUsdc(idle)} mUSDC</p>
       <p className="tabular-nums">Principal: {formatUsdc(principal)} mUSDC</p>
       <p>Active farm: {farmName}</p>
+      <p className="tabular-nums">Farm APR: {formatBps(farmApr)}</p>
       <p className="tabular-nums">Pending rewards: {formatUsdc(pending)} mUSDC</p>
     </div>
   );
