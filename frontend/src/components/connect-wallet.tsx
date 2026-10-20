@@ -12,8 +12,12 @@ import { actionButtonClass } from "@/lib/control-class";
 import { walletAlertText } from "@/lib/wallet-alert";
 import { walletErrorMessage } from "@/lib/wallet-errors";
 
-function shortAddress(address: string): string {
+function wideAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
+
+function narrowAddress(address: string): string {
+  return `${address.slice(0, 4)}…${address.slice(-2)}`;
 }
 
 export function useWalletControls() {
@@ -139,7 +143,8 @@ function WalletMarkup({
           </button>
         ) : connection.address !== undefined ? (
           <p className="whitespace-nowrap font-mono text-sm text-ink">
-            {shortAddress(connection.address)}
+            <span className="md:hidden">{narrowAddress(connection.address)}</span>
+            <span className="hidden md:inline">{wideAddress(connection.address)}</span>
           </p>
         ) : null}
         {showAlert && alertMessage !== undefined ? (
@@ -202,7 +207,7 @@ export function WalletBarAlert({ message }: { message: string | undefined }) {
   }
 
   return (
-    <p role="alert" className="bg-background px-6 py-2 text-ink">
+    <p role="alert" className="bg-background px-4 py-2 text-ink md:px-6">
       <span className="mx-auto block max-w-5xl">{message}</span>
     </p>
   );

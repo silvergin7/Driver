@@ -1,7 +1,6 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { choiceButtonClass } from "@/lib/control-class";
 import {
   darkTheme,
   lightTheme,
@@ -30,7 +29,16 @@ function currentTheme(): ThemeName {
     : darkTheme;
 }
 
-export function ThemeSwitch({ menu = false }: { menu?: boolean }) {
+function ThemeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 text-ink">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 3a9 9 0 0 0 0 18Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function ThemeSwitch() {
   const theme = useSyncExternalStore(subscribe, currentTheme, () => undefined);
 
   if (theme === undefined) {
@@ -45,27 +53,15 @@ export function ThemeSwitch({ menu = false }: { menu?: boolean }) {
     document.documentElement.setAttribute("data-theme", next);
   }
 
-  if (menu) {
-    return (
-      <button
-        type="button"
-        className="min-h-11 text-left text-ink md:hidden"
-        aria-label={label}
-        onClick={choose}
-      >
-        {label}
-      </button>
-    );
-  }
-
   return (
     <button
       type="button"
-      className={`${choiceButtonClass(false)} hidden md:inline-flex`}
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink hover:bg-surface"
       aria-label={label}
+      title={label}
       onClick={choose}
     >
-      {label}
+      <ThemeIcon />
     </button>
   );
 }
