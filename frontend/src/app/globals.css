@@ -20,14 +20,14 @@
 
 :root {
   --dvr-brand: #e11d48;
-  --dvr-brand-text: #e11d48;
+  --dvr-brand-text: #be123c;
   --dvr-sign: #1d4ed8;
-  --dvr-surface: #f1f5f9;
-  --dvr-background: #ffffff;
+  --dvr-surface: #e2e8f0;
+  --dvr-background: #f1f5f9;
   --dvr-ink: #0f172a;
   --dvr-ink-muted: #334155;
   --dvr-line: #64748b;
-  --dvr-disabled-bg: #e2e8f0;
+  --dvr-disabled-bg: #cbd5e1;
   --dvr-on-brand: #ffffff;
   --dvr-raise: 0 1px 2px rgb(15 23 42 / 0.12);
   color-scheme: light;
