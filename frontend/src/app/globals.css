@@ -58,3 +58,99 @@ body {
   color: var(--dvr-ink);
   font-family: var(--font-sans), sans-serif;
 }
+
+.scene {
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+:root:not([data-theme="dark"]) .scene-home {
+  background-image: image-set(
+    url("/scenes/home-day-768.webp") 1x,
+    url("/scenes/home-day-1600.webp") 2x
+  );
+}
+
+:root:not([data-theme="dark"]) .scene-game {
+  background-image: image-set(
+    url("/scenes/game-day-768.webp") 1x,
+    url("/scenes/game-day-1600.webp") 2x
+  );
+}
+
+:root:not([data-theme="dark"]) .scene-token {
+  background-image: image-set(
+    url("/scenes/token-day-768.webp") 1x,
+    url("/scenes/token-day-1600.webp") 2x
+  );
+}
+
+:root:not([data-theme="dark"]) .scene-community {
+  background-image: image-set(
+    url("/scenes/community-day-768.webp") 1x,
+    url("/scenes/community-day-1600.webp") 2x
+  );
+}
+
+[data-theme="dark"] .scene-home {
+  background-image: image-set(
+    url("/scenes/home-night-768.webp") 1x,
+    url("/scenes/home-night-1600.webp") 2x
+  );
+}
+
+[data-theme="dark"] .scene-game {
+  background-image: image-set(
+    url("/scenes/game-night-768.webp") 1x,
+    url("/scenes/game-night-1600.webp") 2x
+  );
+}
+
+[data-theme="dark"] .scene-token {
+  background-image: image-set(
+    url("/scenes/token-night-768.webp") 1x,
+    url("/scenes/token-night-1600.webp") 2x
+  );
+}
+
+[data-theme="dark"] .scene-community {
+  background-image: image-set(
+    url("/scenes/community-night-768.webp") 1x,
+    url("/scenes/community-night-1600.webp") 2x
+  );
+}
+
+@media (min-width: 768px) {
+  :root:not([data-theme="dark"]) .scene-home {
+    background-image: url("/scenes/home-day-1600.webp");
+  }
+
+  :root:not([data-theme="dark"]) .scene-game {
+    background-image: url("/scenes/game-day-1600.webp");
+  }
+
+  :root:not([data-theme="dark"]) .scene-token {
+    background-image: url("/scenes/token-day-1600.webp");
+  }
+
+  :root:not([data-theme="dark"]) .scene-community {
+    background-image: url("/scenes/community-day-1600.webp");
+  }
+
+  [data-theme="dark"] .scene-home {
+    background-image: url("/scenes/home-night-1600.webp");
+  }
+
+  [data-theme="dark"] .scene-game {
+    background-image: url("/scenes/game-night-1600.webp");
+  }
+
+  [data-theme="dark"] .scene-token {
+    background-image: url("/scenes/token-night-1600.webp");
+  }
+
+  [data-theme="dark"] .scene-community {
+    background-image: url("/scenes/community-night-1600.webp");
+  }
+}

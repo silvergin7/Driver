@@ -42,7 +42,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-background">
       <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 md:px-6">
-        <LogoMark linked />
+        <LogoMark />
         <nav aria-label="Pages" className="hidden items-center gap-4 md:flex">
           {navItems.map((item) => (
             <PageLink key={item.href} href={item.href} label={item.label} />
