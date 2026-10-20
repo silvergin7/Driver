@@ -81,7 +81,7 @@ export function SiteHeader() {
           ))}
         </nav>
       ) : null}
-      <WalletBarAlert message={controls.alertMessage} />
+      <WalletBarAlert message={controls.accountAlert ?? controls.alertMessage} />
     </header>
   );
 }
