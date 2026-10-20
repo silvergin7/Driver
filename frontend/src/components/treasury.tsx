@@ -6,20 +6,24 @@ import { anvil, contracts } from "@/config/contracts";
 import {
   cruiseControlAbi,
   degenDriverAbi,
-  demoDriverClockAbi,
   driverTokenAbi,
-  driverVoteAbi,
   mockFarmAbi,
-  roundScheduleAbi,
 } from "@/generated/contracts";
 import { burnedDvr } from "@/lib/burned-dvr";
-import { headingClass, sectionClass } from "@/lib/control-class";
-import { formatCountdown } from "@/lib/countdown";
 import { farmLabel } from "@/lib/farm-label";
+import { formatBps } from "@/lib/format-bps";
 import { formatDvr } from "@/lib/format-dvr";
 import { formatUsdc } from "@/lib/format-usdc";
+import { farmAprBps } from "@/lib/farm-apr";
+import { Badge } from "@/components/ui/badge";
+import { BigStat } from "@/components/ui/big-stat";
+import { Card } from "@/components/ui/card";
+import { StatList } from "@/components/ui/stat-list";
 
 const anvilContracts = contracts[anvil.id];
+
+const treasurySubtitle =
+  "Cruise Control never goes above 5%. Degen Driver drives as fast as the instructors allow.";
 
 export function Treasury() {
   const connection = useConnection();
@@ -38,41 +42,8 @@ export function Treasury() {
   });
   const cruiseFarm = fundAddress(cruise.data?.[3]);
   const degenFarm = fundAddress(degen.data?.[3]);
-  const cruiseApr = useReadContract({
-    abi: mockFarmAbi,
-    address: cruiseFarm ?? zeroAddress,
-    chainId: anvil.id,
-    functionName: "aprBps",
-    query: { enabled: cruiseFarm !== undefined && cruiseFarm !== zeroAddress },
-  });
-  const degenApr = useReadContract({
-    abi: mockFarmAbi,
-    address: degenFarm ?? zeroAddress,
-    chainId: anvil.id,
-    functionName: "aprBps",
-    query: { enabled: degenFarm !== undefined && degenFarm !== zeroAddress },
-  });
-  const round = useReadContract({
-    abi: roundScheduleAbi,
-    address: anvilContracts.roundSchedule,
-    chainId: anvil.id,
-    functionName: "currentRound",
-    query: { enabled: onAnvil },
-  });
-  const roundEnd = useReadContract({
-    abi: driverVoteAbi,
-    address: anvilContracts.driverVote,
-    chainId: anvil.id,
-    functionName: "openRoundEnd",
-    query: { enabled: onAnvil },
-  });
-  const clock = useReadContract({
-    abi: demoDriverClockAbi,
-    address: anvilContracts.demoDriverClock,
-    chainId: anvil.id,
-    functionName: "currentTime",
-    query: { enabled: onAnvil },
-  });
+  const cruiseFarmState = useFarmState(cruiseFarm);
+  const degenFarmState = useFarmState(degenFarm);
   const minted = useReadContract({
     abi: driverTokenAbi,
     address: anvilContracts.driverToken,
@@ -90,45 +61,37 @@ export function Treasury() {
 
   if (!connection.isConnected) {
     return (
-      <section className={sectionClass()}>
-        <h2 className={headingClass()}>Treasury</h2>
-        <p>Connect a wallet to see the funds.</p>
-      </section>
+      <Card className="w-full" title="Treasury" subtitle={treasurySubtitle}>
+        <p className="text-sm text-ink-muted">Connect a wallet to see the funds.</p>
+      </Card>
     );
   }
   if (!onAnvil) {
     return (
-      <section className={sectionClass()}>
-        <h2 className={headingClass()}>Treasury</h2>
-        <p>Switch to Anvil to see the funds.</p>
-      </section>
+      <Card className="w-full" title="Treasury" subtitle={treasurySubtitle}>
+        <p className="text-sm text-ink-muted">Switch to Anvil to see the funds.</p>
+      </Card>
     );
   }
 
   const failed =
     unread(cruise) ||
     unread(degen) ||
-    unread(round) ||
-    unread(roundEnd) ||
-    unread(clock) ||
     unread(minted) ||
     unread(supply) ||
-    unread(cruiseApr) ||
-    unread(degenApr);
+    unread(cruiseFarmState.apr) ||
+    unread(cruiseFarmState.paused) ||
+    unread(cruiseFarmState.reserve) ||
+    unread(degenFarmState.apr) ||
+    unread(degenFarmState.paused) ||
+    unread(degenFarmState.reserve);
   const ready =
     cruise.data !== undefined &&
     degen.data !== undefined &&
-    round.data !== undefined &&
-    roundEnd.data !== undefined &&
-    clock.data !== undefined &&
     minted.data !== undefined &&
     supply.data !== undefined &&
-    (cruiseFarm === undefined ||
-      cruiseFarm === zeroAddress ||
-      cruiseApr.data !== undefined) &&
-    (degenFarm === undefined ||
-      degenFarm === zeroAddress ||
-      degenApr.data !== undefined);
+    farmStateReady(cruiseFarm, cruiseFarmState) &&
+    farmStateReady(degenFarm, degenFarmState);
 
   const boughtBack =
     typeof cruise.data?.[5] === "bigint" && typeof degen.data?.[5] === "bigint"
@@ -139,43 +102,81 @@ export function Treasury() {
       ? burnedDvr(minted.data, supply.data)
       : undefined;
 
+  const burnedRows = [
+    boughtBack !== undefined
+      ? { label: "Bought back and burned", value: `${formatDvr(boughtBack)} DVR` }
+      : undefined,
+    totalBurned !== undefined
+      ? { label: "Total DVR burned", value: `${formatDvr(totalBurned)} DVR` }
+      : undefined,
+  ].filter((row): row is { label: string; value: string } => row !== undefined);
+
   return (
-    <section className={sectionClass()}>
-      <h2 className={headingClass()}>Treasury</h2>
-      {failed ? <p>Fund status unavailable.</p> : null}
-      {!failed && !ready ? <p>Loading funds…</p> : null}
-      {ready &&
-      clock.data !== undefined &&
-      round.data !== undefined &&
-      roundEnd.data !== undefined ? (
-        <p className="tabular-nums">
-          Demo clock. Round {round.data.toString()} ends in{" "}
-          {formatCountdown(roundEnd.data, clock.data)}.
+    <Card className="w-full" title="Treasury" subtitle={treasurySubtitle}>
+      {failed ? <p className="text-sm text-ink-muted">Fund status unavailable.</p> : null}
+      {!failed && !ready ? <p className="text-sm text-ink-muted">Loading funds…</p> : null}
+      <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
+        <FundSummary
+          data={cruise.data}
+          farm={cruiseFarm}
+          state={cruiseFarmState}
+          title="Fund 1"
+        />
+        <FundSummary
+          data={degen.data}
+          farm={degenFarm}
+          state={degenFarmState}
+          title="Fund 2"
+        />
+      </div>
+      {burnedRows.length > 0 ? <StatList rows={burnedRows} /> : null}
+      {ready ? (
+        <p className="text-sm text-ink-muted">
+          APR is simple interest. At each harvest, half of the rewards goes back into the farm.
         </p>
       ) : null}
-      <FundSummary
-        apr={cruiseApr.data}
-        data={cruise.data}
-        farm={cruiseFarm}
-        title="Fund 1"
-      />
-      <FundSummary
-        apr={degenApr.data}
-        data={degen.data}
-        farm={degenFarm}
-        title="Fund 2"
-      />
-      {boughtBack !== undefined ? (
-        <p className="tabular-nums">
-          Bought back and burned: {formatDvr(boughtBack)} DVR
-        </p>
-      ) : null}
-      {totalBurned !== undefined ? (
-        <p className="tabular-nums">
-          Total DVR burned: {formatDvr(totalBurned)} DVR
-        </p>
-      ) : null}
-    </section>
+    </Card>
+  );
+}
+
+function useFarmState(farm: Address | undefined) {
+  const enabled = farm !== undefined && farm !== zeroAddress;
+  const address = farm ?? zeroAddress;
+  const apr = useReadContract({
+    abi: mockFarmAbi,
+    address,
+    chainId: anvil.id,
+    functionName: "aprBps",
+    query: { enabled },
+  });
+  const paused = useReadContract({
+    abi: mockFarmAbi,
+    address,
+    chainId: anvil.id,
+    functionName: "paused",
+    query: { enabled },
+  });
+  const reserve = useReadContract({
+    abi: mockFarmAbi,
+    address,
+    chainId: anvil.id,
+    functionName: "rewardReserve",
+    query: { enabled },
+  });
+  return { apr, paused, reserve };
+}
+
+function farmStateReady(
+  farm: Address | undefined,
+  state: ReturnType<typeof useFarmState>,
+): boolean {
+  if (farm === undefined || farm === zeroAddress) {
+    return true;
+  }
+  return (
+    state.apr.data !== undefined &&
+    state.paused.data !== undefined &&
+    state.reserve.data !== undefined
   );
 }
 
@@ -183,12 +184,12 @@ function FundSummary({
   title,
   data,
   farm,
-  apr,
+  state,
 }: {
   title: string;
   data: readonly unknown[] | undefined;
   farm: Address | undefined;
-  apr: bigint | undefined;
+  state: ReturnType<typeof useFarmState>;
 }) {
   const value = typeof data?.[0] === "bigint" ? data[0] : undefined;
   const idle = typeof data?.[1] === "bigint" ? data[1] : undefined;
@@ -203,20 +204,40 @@ function FundSummary({
   ) {
     return null;
   }
-  const farmName =
-    farm === zeroAddress
-      ? "No active farm"
-      : apr === undefined
-        ? farm
-        : farmLabel(apr, farm);
+  const active = farm !== zeroAddress;
+  if (
+    active &&
+    (state.apr.data === undefined ||
+      state.paused.data === undefined ||
+      state.reserve.data === undefined)
+  ) {
+    return null;
+  }
+  const farmApr = farmAprBps({
+    aprBps: state.apr.data ?? 0n,
+    active,
+    paused: state.paused.data === true,
+    rewardReserve: state.reserve.data ?? 0n,
+  });
+  const farmName = active
+    ? state.apr.data === undefined
+      ? farm
+      : farmLabel(state.apr.data, farm)
+    : "No active farm";
   return (
-    <div className="flex flex-col gap-1">
-      <h3 className="font-semibold">{title}</h3>
-      <p className="tabular-nums">Value: {formatUsdc(value)} mUSDC</p>
-      <p className="tabular-nums">Idle: {formatUsdc(idle)} mUSDC</p>
-      <p className="tabular-nums">Principal: {formatUsdc(principal)} mUSDC</p>
-      <p>Active farm: {farmName}</p>
-      <p className="tabular-nums">Pending rewards: {formatUsdc(pending)} mUSDC</p>
+    <div className="flex h-full min-w-0 flex-col gap-3">
+      <h3 className="font-semibold text-ink">{title}</h3>
+      <Badge>
+        {active ? `${farmName} · ${formatBps(farmApr)} APR` : "No active farm"}
+      </Badge>
+      <BigStat label="Value" value={`${formatUsdc(value)} mUSDC`} />
+      <StatList
+        rows={[
+          { label: "Idle", value: `${formatUsdc(idle)} mUSDC` },
+          { label: "Principal", value: `${formatUsdc(principal)} mUSDC` },
+          { label: "Pending rewards", value: `${formatUsdc(pending)} mUSDC` },
+        ]}
+      />
     </div>
   );
 }

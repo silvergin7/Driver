@@ -19,10 +19,10 @@ import {
 import {
   choiceButtonClass,
   fitActionButtonClass,
-  headingClass,
   inputClass,
-  sectionClass,
 } from "@/lib/control-class";
+import { Card } from "@/components/ui/card";
+import { StatList } from "@/components/ui/stat-list";
 import { formatDvr } from "@/lib/format-dvr";
 import { formatUsdc } from "@/lib/format-usdc";
 import { parseTokenAmount, type ParsedAmount } from "@/lib/parse-amount";
@@ -234,20 +234,22 @@ export function PoolSwap() {
 
   if (connection.isConnected && !onAnvil) {
     return (
-      <section className={sectionClass()}>
-        <h2 className={headingClass()}>Official pool</h2>
-        <p>Switch to Anvil to swap.</p>
-      </section>
+      <Card title="Official pool">
+        <p className="text-sm text-ink-muted">Switch to Anvil to swap.</p>
+      </Card>
     );
   }
 
+  const poolStats = [
+    taxBps.data !== undefined
+      ? { label: "Tax", value: `${taxBps.data / 100n}%` }
+      : undefined,
+    { label: "Slippage", value: `${slippageBps / 100n}%` },
+  ].filter((row): row is { label: string; value: string } => row !== undefined);
+
   return (
-    <section className={sectionClass()}>
-      <h2 className={headingClass()}>Official pool</h2>
-      {taxBps.data !== undefined ? (
-        <p className="tabular-nums">Tax {taxBps.data / 100n}%</p>
-      ) : null}
-      <p className="tabular-nums">Slippage {slippageBps / 100n}%</p>
+    <Card title="Official pool">
+      <StatList rows={poolStats} />
       <div className="flex gap-2">
         <button
           type="button"
@@ -282,19 +284,31 @@ export function PoolSwap() {
           Sell
         </button>
       </div>
-      <label className="flex flex-col gap-1">
-        {buying ? "mUSDC to spend" : "DVR to spend"}
-        <input
-          className={inputClass()}
-          inputMode="decimal"
-          value={text}
-          onChange={(event) => {
-            setText(event.target.value);
+      <div className="flex items-end gap-2">
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm text-ink-muted">
+          {buying ? "mUSDC to spend" : "DVR to spend"}
+          <input
+            className={`${inputClass()} w-full`}
+            inputMode="decimal"
+            value={text}
+            onChange={(event) => {
+              setText(event.target.value);
+            }}
+          />
+        </label>
+        <button
+          type="button"
+          className={`${fitActionButtonClass()} shrink-0 whitespace-nowrap`}
+          disabled={!canSwap}
+          onClick={() => {
+            void onSwap();
           }}
-        />
-      </label>
+        >
+          {buying ? "Buy DVR" : "Sell DVR"}
+        </button>
+      </div>
       {quotedOut !== undefined && quotedTax !== undefined && parsed.status === "amount" ? (
-        <p className="tabular-nums">
+        <p className="text-sm text-ink tabular-nums">
           Quote: {buying ? formatDvr(quotedOut) : formatUsdc(quotedOut)}{" "}
           {buying ? "DVR" : "mUSDC"}, tax {formatUsdc(quotedTax)} mUSDC
         </p>
@@ -302,28 +316,19 @@ export function PoolSwap() {
       {fund1Tax.data !== undefined &&
       fund2Tax.data !== undefined &&
       unassignedTax.data !== undefined ? (
-        <div className="flex flex-col gap-1">
-          <p className="tabular-nums">Fund 1 tax: {formatUsdc(fund1Tax.data)} mUSDC</p>
-          <p className="tabular-nums">Fund 2 tax: {formatUsdc(fund2Tax.data)} mUSDC</p>
-          <p className="tabular-nums">
-            Unassigned tax: {formatUsdc(unassignedTax.data)} mUSDC
-          </p>
-        </div>
+        <StatList
+          title="Tax collected"
+          rows={[
+            { label: "Fund 1", value: `${formatUsdc(fund1Tax.data)} mUSDC` },
+            { label: "Fund 2", value: `${formatUsdc(fund2Tax.data)} mUSDC` },
+            { label: "Unassigned", value: `${formatUsdc(unassignedTax.data)} mUSDC` },
+          ]}
+        />
       ) : null}
-      <button
-        type="button"
-        className={fitActionButtonClass()}
-        disabled={!canSwap}
-        onClick={() => {
-          void onSwap();
-        }}
-      >
-        {buying ? "Buy DVR" : "Sell DVR"}
-      </button>
-      {status ? <p>{status}</p> : null}
-      {amountReason && !busy ? <p>{amountReason}</p> : null}
+      {status ? <p className="text-sm text-ink-muted">{status}</p> : null}
+      {amountReason && !busy ? <p className="text-sm text-ink-muted">{amountReason}</p> : null}
       {parsed.status === "amount" && quotedOut === 0n ? (
-        <p>The swap would return no tokens.</p>
+        <p className="text-sm text-ink-muted">The swap would return no tokens.</p>
       ) : null}
       {actionError ?? approve.errorMessage ?? swap.errorMessage ? (
         <p role="alert">
@@ -331,7 +336,7 @@ export function PoolSwap() {
         </p>
       ) : null}
       {quote.isError ? <p role="alert">{describeError(quote.error)}</p> : null}
-    </section>
+    </Card>
   );
 }
 

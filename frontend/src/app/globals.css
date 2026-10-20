@@ -20,14 +20,14 @@
 
 :root {
   --dvr-brand: #e11d48;
-  --dvr-brand-text: #e11d48;
+  --dvr-brand-text: #be123c;
   --dvr-sign: #1d4ed8;
-  --dvr-surface: #f1f5f9;
-  --dvr-background: #ffffff;
+  --dvr-surface: #e2e8f0;
+  --dvr-background: #f1f5f9;
   --dvr-ink: #0f172a;
   --dvr-ink-muted: #334155;
   --dvr-line: #64748b;
-  --dvr-disabled-bg: #e2e8f0;
+  --dvr-disabled-bg: #cbd5e1;
   --dvr-on-brand: #ffffff;
   --dvr-raise: 0 1px 2px rgb(15 23 42 / 0.12);
   color-scheme: light;
@@ -57,4 +57,144 @@ body {
   background: var(--dvr-background);
   color: var(--dvr-ink);
   font-family: var(--font-sans), sans-serif;
+}
+
+.scene {
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+:root:not([data-theme="dark"]) .scene-home {
+  background-image: image-set(
+    url("/scenes/home-day-768.webp") 1x,
+    url("/scenes/home-day-1600.webp") 2x
+  );
+}
+
+:root:not([data-theme="dark"]) .scene-game {
+  background-image: image-set(
+    url("/scenes/game-day-768.webp") 1x,
+    url("/scenes/game-day-1600.webp") 2x
+  );
+}
+
+:root:not([data-theme="dark"]) .scene-token {
+  background-image: image-set(
+    url("/scenes/token-day-768.webp") 1x,
+    url("/scenes/token-day-1600.webp") 2x
+  );
+}
+
+:root:not([data-theme="dark"]) .scene-community {
+  background-image: image-set(
+    url("/scenes/community-day-768.webp") 1x,
+    url("/scenes/community-day-1600.webp") 2x
+  );
+}
+
+:root:not([data-theme="dark"]) .scene-faucet {
+  background-image: image-set(
+    url("/scenes/faucet-day-768.webp") 1x,
+    url("/scenes/faucet-day-1600.webp") 2x
+  );
+}
+
+:root:not([data-theme="dark"]) .scene-swap {
+  background-image: image-set(
+    url("/scenes/swap-day-768.webp") 1x,
+    url("/scenes/swap-day-1600.webp") 2x
+  );
+}
+
+[data-theme="dark"] .scene-home {
+  background-image: image-set(
+    url("/scenes/home-night-768.webp") 1x,
+    url("/scenes/home-night-1600.webp") 2x
+  );
+}
+
+[data-theme="dark"] .scene-game {
+  background-image: image-set(
+    url("/scenes/game-night-768.webp") 1x,
+    url("/scenes/game-night-1600.webp") 2x
+  );
+}
+
+[data-theme="dark"] .scene-token {
+  background-image: image-set(
+    url("/scenes/token-night-768.webp") 1x,
+    url("/scenes/token-night-1600.webp") 2x
+  );
+}
+
+[data-theme="dark"] .scene-community {
+  background-image: image-set(
+    url("/scenes/community-night-768.webp") 1x,
+    url("/scenes/community-night-1600.webp") 2x
+  );
+}
+
+[data-theme="dark"] .scene-faucet {
+  background-image: image-set(
+    url("/scenes/faucet-night-768.webp") 1x,
+    url("/scenes/faucet-night-1600.webp") 2x
+  );
+}
+
+[data-theme="dark"] .scene-swap {
+  background-image: image-set(
+    url("/scenes/swap-night-768.webp") 1x,
+    url("/scenes/swap-night-1600.webp") 2x
+  );
+}
+
+@media (min-width: 768px) {
+  :root:not([data-theme="dark"]) .scene-home {
+    background-image: url("/scenes/home-day-1600.webp");
+  }
+
+  :root:not([data-theme="dark"]) .scene-game {
+    background-image: url("/scenes/game-day-1600.webp");
+  }
+
+  :root:not([data-theme="dark"]) .scene-token {
+    background-image: url("/scenes/token-day-1600.webp");
+  }
+
+  :root:not([data-theme="dark"]) .scene-community {
+    background-image: url("/scenes/community-day-1600.webp");
+  }
+
+  :root:not([data-theme="dark"]) .scene-faucet {
+    background-image: url("/scenes/faucet-day-1600.webp");
+  }
+
+  :root:not([data-theme="dark"]) .scene-swap {
+    background-image: url("/scenes/swap-day-1600.webp");
+  }
+
+  [data-theme="dark"] .scene-home {
+    background-image: url("/scenes/home-night-1600.webp");
+  }
+
+  [data-theme="dark"] .scene-game {
+    background-image: url("/scenes/game-night-1600.webp");
+  }
+
+  [data-theme="dark"] .scene-token {
+    background-image: url("/scenes/token-night-1600.webp");
+  }
+
+  [data-theme="dark"] .scene-community {
+    background-image: url("/scenes/community-night-1600.webp");
+  }
+
+  [data-theme="dark"] .scene-faucet {
+    background-image: url("/scenes/faucet-night-1600.webp");
+  }
+
+  [data-theme="dark"] .scene-swap {
+    background-image: url("/scenes/swap-night-1600.webp");
+  }
 }

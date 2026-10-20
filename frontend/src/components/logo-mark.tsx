@@ -19,22 +19,14 @@ function CarMark() {
 const tileClass =
   "rounded-xl border-2 border-sign bg-white shadow-[0_1px_2px_rgb(15_23_42/0.12)]";
 
-export function LogoMark({ linked = false }: { linked?: boolean }) {
-  if (linked) {
-    return (
-      <Link
-        href="/"
-        aria-label="Driver home"
-        className={`inline-flex h-11 w-16 items-center justify-center p-1 ${tileClass}`}
-      >
-        <CarMark />
-      </Link>
-    );
-  }
-
+export function LogoMark() {
   return (
-    <span className={`inline-flex w-64 items-center justify-center p-4 md:w-80 ${tileClass}`}>
+    <Link
+      href="/"
+      aria-label="Driver home"
+      className={`inline-flex h-11 w-16 shrink-0 items-center justify-center p-1 ${tileClass}`}
+    >
       <CarMark />
-    </span>
+    </Link>
   );
 }

@@ -77,8 +77,8 @@ export function TokenFigures() {
   const failed = figures.isError && figures.data === undefined;
 
   return (
-    <div className="flex max-w-3xl flex-col gap-8">
-      <dl className="grid gap-4">
+    <div className="grid max-w-3xl gap-8 lg:max-w-none lg:grid-cols-2 lg:items-start">
+      <dl className="grid min-w-0 gap-4">
         <Figure label="Total supply" value={dvrFigure(supply, failed, figures.isFetched)} />
         <Figure label="Lifetime cap" value={dvrFigure(cap, failed, figures.isFetched)} />
         <Figure label="Total DVR burned" value={burnedFigure(burned, minted, supply, failed, figures.isFetched)} />
@@ -121,7 +121,7 @@ export function TokenFigures() {
           </dd>
         </div>
       </dl>
-      <section className="flex flex-col gap-3 text-ink">
+      <section className="flex min-w-0 flex-col gap-3 text-ink">
         <h2 className="text-2xl font-semibold">Tokenomics</h2>
         <p>The lifetime cap is 1,000,000 DVR.</p>
         <ul className="list-disc pl-5">

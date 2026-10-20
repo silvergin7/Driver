@@ -10,7 +10,6 @@ import {
 } from "@/components/connect-wallet";
 import { LogoMark } from "@/components/logo-mark";
 import { ThemeSwitch } from "@/components/theme-switch";
-import { choiceButtonClass } from "@/lib/control-class";
 import { isCurrentPage, navItems } from "@/lib/nav";
 
 export function SiteHeader() {
@@ -42,25 +41,26 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-background">
-      <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-6">
-        <LogoMark linked />
-        <nav aria-label="Pages" className="hidden items-center gap-4 md:flex">
+      <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 md:px-6">
+        <LogoMark />
+        <nav aria-label="Pages" className="hidden items-center gap-4 lg:flex">
           {navItems.map((item) => (
             <PageLink key={item.href} href={item.href} label={item.label} />
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <ThemeSwitch />
           <button
             ref={menuButton}
             type="button"
-            className={`${choiceButtonClass(false)} md:hidden`}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink hover:bg-surface lg:hidden"
+            aria-label="Menu"
             aria-expanded={open}
             aria-controls="site-menu"
             onClick={() => setOpenPath(open ? undefined : pathname)}
           >
-            Menu
+            <MenuIcon />
           </button>
-          <ThemeSwitch />
           <ConnectWallet compact showAlert={false} controls={controls} />
         </div>
       </div>
@@ -69,7 +69,7 @@ export function SiteHeader() {
           ref={menu}
           id="site-menu"
           aria-label="Pages"
-          className="flex flex-col gap-3 bg-background px-6 py-4 md:hidden"
+          className="flex flex-col gap-3 bg-background px-4 py-4 lg:hidden"
         >
           {navItems.map((item) => (
             <PageLink
@@ -79,11 +79,24 @@ export function SiteHeader() {
               onNavigate={() => setOpenPath(undefined)}
             />
           ))}
-          <ThemeSwitch menu />
         </nav>
       ) : null}
-      <WalletBarAlert message={controls.alertMessage} />
+      <WalletBarAlert message={controls.accountAlert ?? controls.alertMessage} />
     </header>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
