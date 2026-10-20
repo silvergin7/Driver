@@ -11,7 +11,7 @@ import {
 } from "@/lib/action-errors";
 import { claimWindow } from "@/lib/claim-eligibility";
 import { claimStatus } from "@/lib/claim-status";
-import { fitActionButtonClass, sectionClass } from "@/lib/control-class";
+import { fitActionButtonClass } from "@/lib/control-class";
 import { formatCountdown } from "@/lib/countdown";
 import { claimFailedMessage, claimRevertedMessage } from "@/lib/faucet-errors";
 import { formatUsdc } from "@/lib/format-usdc";
@@ -163,9 +163,9 @@ export function ClaimUsdc() {
   });
 
   return (
-    <section className={sectionClass()}>
+    <div className="flex h-full min-w-0 flex-col gap-3">
       {onAnvil && claimAmount.data !== undefined ? (
-        <p className="tabular-nums">
+        <p className="text-sm text-ink tabular-nums">
           Claim amount: {formatUsdc(claimAmount.data)} mUSDC
         </p>
       ) : null}
@@ -179,11 +179,11 @@ export function ClaimUsdc() {
       >
         Claim mUSDC
       </button>
-      {status ? <p>{status}</p> : null}
-      {reason ? <p>{reason}</p> : null}
-      {countdown ? <p className="tabular-nums">{countdown}</p> : null}
+      {status ? <p className="text-sm text-ink-muted">{status}</p> : null}
+      {reason ? <p className="text-sm text-ink-muted">{reason}</p> : null}
+      {countdown ? <p className="text-sm text-ink-muted tabular-nums">{countdown}</p> : null}
       {action.errorMessage ? <p role="alert">{action.errorMessage}</p> : null}
-    </section>
+    </div>
   );
 }
 

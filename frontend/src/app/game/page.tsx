@@ -1,10 +1,7 @@
-import { ClaimTokens } from "@/components/claim-tokens";
 import { PageScene } from "@/components/page-scene";
-import { ClaimUsdc } from "@/components/claim-usdc";
 import { DvrBalance } from "@/components/dvr-balance";
 import { LockVote } from "@/components/lock-vote";
 import { OwnerControls } from "@/components/owner-controls";
-import { PoolSwap } from "@/components/pool-swap";
 import { Treasury } from "@/components/treasury";
 import { UsdcBalance } from "@/components/usdc-balance";
 import { WalletStatus } from "@/components/wallet-status";
@@ -18,12 +15,10 @@ export default function GamePage() {
           Drive the treasury
         </h1>
         <section className="flex flex-col gap-8">
-          <h2 className="text-2xl font-semibold text-ink">Wallet and faucets</h2>
+          <h2 className="text-2xl font-semibold text-ink">Wallet</h2>
           <WalletStatus />
           <DvrBalance />
           <UsdcBalance />
-          <ClaimTokens />
-          <ClaimUsdc />
         </section>
         <div className="flex flex-col gap-4">
           <p>Instructors vote on Degen Driver&apos;s speed.</p>
@@ -37,7 +32,6 @@ export default function GamePage() {
           <Treasury />
         </div>
         <OwnerControls />
-        <PoolSwap />
       </main>
     </>
   );

@@ -43,7 +43,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-line bg-background">
       <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 md:px-6">
         <LogoMark />
-        <nav aria-label="Pages" className="hidden items-center gap-4 md:flex">
+        <nav aria-label="Pages" className="hidden items-center gap-4 lg:flex">
           {navItems.map((item) => (
             <PageLink key={item.href} href={item.href} label={item.label} />
           ))}
@@ -53,7 +53,7 @@ export function SiteHeader() {
           <button
             ref={menuButton}
             type="button"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink hover:bg-surface md:hidden"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink hover:bg-surface lg:hidden"
             aria-label="Menu"
             aria-expanded={open}
             aria-controls="site-menu"
@@ -69,7 +69,7 @@ export function SiteHeader() {
           ref={menu}
           id="site-menu"
           aria-label="Pages"
-          className="flex flex-col gap-3 bg-background px-4 py-4 md:hidden"
+          className="flex flex-col gap-3 bg-background px-4 py-4 lg:hidden"
         >
           {navItems.map((item) => (
             <PageLink

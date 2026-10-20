@@ -1,4 +1,4 @@
-type ScenePage = "home" | "game" | "token" | "community";
+type ScenePage = "home" | "game" | "token" | "community" | "faucet" | "swap";
 
 export function PageScene({ page }: { page: ScenePage }) {
   return (

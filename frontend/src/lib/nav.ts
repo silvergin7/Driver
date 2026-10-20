@@ -1,6 +1,8 @@
 export const navItems = [
   { href: "/", label: "Home" },
   { href: "/game", label: "Game" },
+  { href: "/faucet", label: "Faucet" },
+  { href: "/swap", label: "Swap" },
   { href: "/token", label: "Token" },
   { href: "/community", label: "Community" },
 ] as const;
