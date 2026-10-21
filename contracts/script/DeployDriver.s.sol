@@ -19,9 +19,9 @@ import {RoundSchedule} from "../src/RoundSchedule.sol";
 import {TaxSplitter} from "../src/TaxSplitter.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 
-/// @title DeployDriverToken
+/// @title DeployDriver
 /// @notice Deploys DriverToken, the faucets, the clock, the tax splitter, the official pool, the four mock farms, the two funds, and the vote.
-contract DeployDriverToken is Script {
+contract DeployDriver is Script {
     /// @notice Contracts created by {run}.
     struct Deployed {
         DriverToken token;
@@ -42,13 +42,17 @@ contract DeployDriverToken is Script {
     }
 
     /// @notice The DVR faucet allocation transfer returned false.
-    error DeployDriverToken__TransferFailed();
+    error DeployDriver__TransferFailed();
+
+    /// @notice {runProduction} was used on a chain other than Anvil.
+    error DeployDriver__ProductionRunOnlyOnAnvil();
 
     /// @notice Deploys the contracts, mints the setup balances, funds the DVR faucet, seeds the pool, funds the farms, and seeds the two funds.
     /// @dev Community and team DVR stay with the deployer. Fund 3's mUSDC stays with the deployer. The official
     /// pool receives {HelperConfig.POOL_ALLOCATION} and {HelperConfig.POOL_USDC}. The DVR faucet receives
     /// {HelperConfig.FAUCET_ALLOCATION} by transfer. The Mock USDC faucet is the minter and receives no
-    /// pre-minted balance. Anvil deploys {DemoDriverClock}. Sepolia deploys {DriverClock}. The splitter and
+    /// pre-minted balance. {run} uses {HelperConfig.getConfig}. Demo deploys {DemoDriverClock}. Production
+    /// deploys {DriverClock}. {runProduction} selects production on Anvil only. The splitter and
     /// the pool are created after the clock. The starting tax is {HelperConfig.INITIAL_TAX_BPS}. After
     /// {OfficialPool.addLiquidity}, this deploys Cruise, Highway, Autobahn, and Drift, mints the sum of their
     /// reserves to the deployer in one call, then approves and calls {MockFarm.fundRewards} for that exact
@@ -63,7 +67,26 @@ contract DeployDriverToken is Script {
     /// @return deployed The deployed contracts.
     function run() external returns (Deployed memory deployed) {
         HelperConfig helper = new HelperConfig();
-        HelperConfig.NetworkConfig memory config = helper.getConfig();
+        deployed = _run(helper, helper.getConfig());
+    }
+
+    /// @notice Deploys the protocol on Anvil with the production clock.
+    /// @dev Reverts with {DeployDriver__ProductionRunOnlyOnAnvil} on any other chain, before reading
+    /// the environment or broadcasting.
+    /// @return deployed The deployed contracts.
+    function runProduction() external returns (Deployed memory deployed) {
+        HelperConfig helper = new HelperConfig();
+        if (block.chainid != helper.ANVIL_CHAIN_ID()) {
+            revert DeployDriver__ProductionRunOnlyOnAnvil();
+        }
+        deployed = _run(helper, helper.configFor(block.chainid, address(0), HelperConfig.DeployProfile.Production));
+    }
+
+    /// @dev Broadcasts the protocol from `config`. Demo creates {DemoDriverClock}. Production creates {DriverClock}.
+    function _run(HelperConfig helper, HelperConfig.NetworkConfig memory config)
+        private
+        returns (Deployed memory deployed)
+    {
         address deployer = config.deployer;
 
         vm.startBroadcast(deployer);
@@ -80,7 +103,7 @@ contract DeployDriverToken is Script {
             helper.DVR_FAUCET_DAILY_CLAIM_LIMIT()
         );
         if (!deployed.token.transfer(address(deployed.dvrFaucet), helper.FAUCET_ALLOCATION())) {
-            revert DeployDriverToken__TransferFailed();
+            revert DeployDriver__TransferFailed();
         }
 
         deployed.usdc = new MockUSDC(deployer);
@@ -95,7 +118,7 @@ contract DeployDriverToken is Script {
         deployed.usdc.mint(deployer, helper.FUND_1_USDC());
         deployed.usdc.mint(deployer, helper.FUND_2_USDC());
         deployed.usdc.mint(deployer, helper.FUND_3_USDC());
-        if (config.demoClock) {
+        if (config.profile == HelperConfig.DeployProfile.Demo) {
             deployed.clock = new DemoDriverClock(deployer);
         } else {
             deployed.clock = new DriverClock();

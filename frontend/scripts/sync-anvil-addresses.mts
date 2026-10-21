@@ -46,7 +46,7 @@ const addressPattern = /^0x[0-9a-fA-F]{40}$/;
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const broadcastPath = resolve(
   scriptDir,
-  "../../contracts/broadcast/DeployDriverToken.s.sol/31337/run-latest.json",
+  "../../contracts/broadcast/DeployDriver.s.sol/31337/run-latest.json",
 );
 const outputPath = resolve(scriptDir, "../src/config/addresses.json");
 

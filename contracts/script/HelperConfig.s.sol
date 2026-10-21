@@ -6,9 +6,15 @@ import {Script} from "forge-std/Script.sol";
 /// @title HelperConfig
 /// @notice Per-chain deploy parameters for Anvil and Sepolia.
 contract HelperConfig is Script {
+    /// @notice Which clock a deploy creates. Production is the fixed clock. Demo can be advanced.
+    enum DeployProfile {
+        Production,
+        Demo
+    }
+
     struct NetworkConfig {
         address deployer;
-        bool demoClock;
+        DeployProfile profile;
     }
 
     /// @notice Chain id of a local Anvil node.
@@ -111,32 +117,80 @@ contract HelperConfig is Script {
     /// @notice Sepolia was selected and the deployer address was missing or zero.
     error HelperConfig__SepoliaDeployerNotSet();
 
-    /// @notice Resolves deploy parameters for one chain.
-    /// @dev Anvil ignores `sepoliaDeployer`. Sepolia reverts when that address is zero.
-    /// `demoClock` is true on Anvil and false on Sepolia.
+    /// @notice Sepolia was selected and `DEPLOY_PROFILE` was missing or empty.
+    error HelperConfig__DeployProfileNotSet();
+
+    /// @notice Sepolia was selected and `DEPLOY_PROFILE` was not `production` or `demo`.
+    /// @param value The raw profile value.
+    error HelperConfig__DeployProfileInvalid(string value);
+
+    /// @notice Resolves deploy parameters for one chain and one profile.
+    /// @dev Anvil ignores `sepoliaDeployer` and keeps `profile`. Sepolia reverts when that address is zero.
     /// @param chainId Chain id to resolve.
     /// @param sepoliaDeployer Deployer address used when `chainId` is Sepolia.
+    /// @param profile Clock profile to store.
     /// @return config Deploy parameters for `chainId`.
-    function configFor(uint256 chainId, address sepoliaDeployer) public pure returns (NetworkConfig memory config) {
+    function configFor(uint256 chainId, address sepoliaDeployer, DeployProfile profile)
+        public
+        pure
+        returns (NetworkConfig memory config)
+    {
         if (chainId == ANVIL_CHAIN_ID) {
-            config = NetworkConfig({deployer: ANVIL_DEPLOYER, demoClock: true});
+            config = NetworkConfig({deployer: ANVIL_DEPLOYER, profile: profile});
         } else if (chainId == SEPOLIA_CHAIN_ID) {
             if (sepoliaDeployer == address(0)) {
                 revert HelperConfig__SepoliaDeployerNotSet();
             }
-            config = NetworkConfig({deployer: sepoliaDeployer, demoClock: false});
+            config = NetworkConfig({deployer: sepoliaDeployer, profile: profile});
         } else {
             revert HelperConfig__ChainNotSupported(chainId);
         }
     }
 
+    /// @notice Resolves Sepolia parameters from the deployer and the raw profile value.
+    /// @dev A zero deployer reverts {HelperConfig__SepoliaDeployerNotSet} before the profile is read.
+    /// An empty value reverts {HelperConfig__DeployProfileNotSet}. Only the exact strings `production`
+    /// and `demo` are accepted.
+    /// @param sepoliaDeployer Deployer address. Zero reverts.
+    /// @param profileValue Raw `DEPLOY_PROFILE` value.
+    /// @return config Sepolia deploy parameters.
+    function sepoliaConfigFor(address sepoliaDeployer, string memory profileValue)
+        public
+        pure
+        returns (NetworkConfig memory config)
+    {
+        if (sepoliaDeployer == address(0)) {
+            revert HelperConfig__SepoliaDeployerNotSet();
+        }
+        config = configFor(SEPOLIA_CHAIN_ID, sepoliaDeployer, _profileFrom(profileValue));
+    }
+
     /// @notice Returns deploy parameters for the active chain.
-    /// @dev Reads `SEPOLIA_DEPLOYER` only when the active chain is Sepolia.
-    /// `demoClock` is true on Anvil and false on Sepolia.
+    /// @dev Anvil selects {DeployProfile.Demo} and reads no environment variables. Sepolia reads
+    /// `SEPOLIA_DEPLOYER` and `DEPLOY_PROFILE`. Any other chain reverts and reads neither.
     /// @return config Deploy parameters for this chain.
     function getConfig() public view returns (NetworkConfig memory config) {
-        address sepoliaDeployer =
-            block.chainid == SEPOLIA_CHAIN_ID ? vm.envOr("SEPOLIA_DEPLOYER", address(0)) : address(0);
-        config = configFor(block.chainid, sepoliaDeployer);
+        if (block.chainid == ANVIL_CHAIN_ID) {
+            config = configFor(ANVIL_CHAIN_ID, address(0), DeployProfile.Demo);
+        } else if (block.chainid == SEPOLIA_CHAIN_ID) {
+            config = sepoliaConfigFor(vm.envOr("SEPOLIA_DEPLOYER", address(0)), vm.envOr("DEPLOY_PROFILE", string("")));
+        } else {
+            revert HelperConfig__ChainNotSupported(block.chainid);
+        }
+    }
+
+    /// @dev Accepts only an exact `production` or `demo`. Empty reverts {HelperConfig__DeployProfileNotSet}.
+    function _profileFrom(string memory value) private pure returns (DeployProfile profile) {
+        if (bytes(value).length == 0) {
+            revert HelperConfig__DeployProfileNotSet();
+        }
+        bytes32 hashed = keccak256(bytes(value));
+        if (hashed == keccak256(bytes("production"))) {
+            profile = DeployProfile.Production;
+        } else if (hashed == keccak256(bytes("demo"))) {
+            profile = DeployProfile.Demo;
+        } else {
+            revert HelperConfig__DeployProfileInvalid(value);
+        }
     }
 }

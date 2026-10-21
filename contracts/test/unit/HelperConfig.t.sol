@@ -10,27 +10,57 @@ contract HelperConfigTest is Test {
         HelperConfig helper = new HelperConfig();
 
         assertEq(block.chainid, helper.ANVIL_CHAIN_ID());
-        assertEq(helper.getConfig().deployer, helper.ANVIL_DEPLOYER());
-        assertTrue(helper.getConfig().demoClock);
+        HelperConfig.NetworkConfig memory config = helper.getConfig();
+        assertEq(config.deployer, helper.ANVIL_DEPLOYER());
+        assertTrue(config.profile == HelperConfig.DeployProfile.Demo);
     }
 
-    function test_AnvilConfigForReturnsDefaultDeployer() public {
+    function test_AnvilConfigForKeepsTheGivenProfile() public {
         HelperConfig helper = new HelperConfig();
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
 
-        assertEq(helper.configFor(helper.ANVIL_CHAIN_ID(), address(0)).deployer, helper.ANVIL_DEPLOYER());
-        assertTrue(helper.configFor(helper.ANVIL_CHAIN_ID(), address(0)).demoClock);
-        assertEq(
-            helper.configFor(helper.ANVIL_CHAIN_ID(), makeAddr("sepoliaDeployer")).deployer, helper.ANVIL_DEPLOYER()
-        );
-        assertTrue(helper.configFor(helper.ANVIL_CHAIN_ID(), makeAddr("sepoliaDeployer")).demoClock);
+        HelperConfig.NetworkConfig memory demo =
+            helper.configFor(helper.ANVIL_CHAIN_ID(), address(0), HelperConfig.DeployProfile.Demo);
+        assertEq(demo.deployer, helper.ANVIL_DEPLOYER());
+        assertTrue(demo.profile == HelperConfig.DeployProfile.Demo);
+
+        HelperConfig.NetworkConfig memory production =
+            helper.configFor(helper.ANVIL_CHAIN_ID(), sepoliaDeployer, HelperConfig.DeployProfile.Production);
+        assertEq(production.deployer, helper.ANVIL_DEPLOYER());
+        assertTrue(production.profile == HelperConfig.DeployProfile.Production);
     }
 
     function test_SepoliaConfigForReturnsGivenDeployer() public {
         HelperConfig helper = new HelperConfig();
         address sepoliaDeployer = makeAddr("sepoliaDeployer");
 
-        assertEq(helper.configFor(helper.SEPOLIA_CHAIN_ID(), sepoliaDeployer).deployer, sepoliaDeployer);
-        assertFalse(helper.configFor(helper.SEPOLIA_CHAIN_ID(), sepoliaDeployer).demoClock);
+        HelperConfig.NetworkConfig memory demo =
+            helper.configFor(helper.SEPOLIA_CHAIN_ID(), sepoliaDeployer, HelperConfig.DeployProfile.Demo);
+        assertEq(demo.deployer, sepoliaDeployer);
+        assertTrue(demo.profile == HelperConfig.DeployProfile.Demo);
+
+        HelperConfig.NetworkConfig memory production =
+            helper.configFor(helper.SEPOLIA_CHAIN_ID(), sepoliaDeployer, HelperConfig.DeployProfile.Production);
+        assertEq(production.deployer, sepoliaDeployer);
+        assertTrue(production.profile == HelperConfig.DeployProfile.Production);
+    }
+
+    function test_SepoliaProfileValueDemo() public {
+        HelperConfig helper = new HelperConfig();
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
+
+        HelperConfig.NetworkConfig memory config = helper.sepoliaConfigFor(sepoliaDeployer, "demo");
+        assertEq(config.deployer, sepoliaDeployer);
+        assertTrue(config.profile == HelperConfig.DeployProfile.Demo);
+    }
+
+    function test_SepoliaProfileValueProduction() public {
+        HelperConfig helper = new HelperConfig();
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
+
+        HelperConfig.NetworkConfig memory config = helper.sepoliaConfigFor(sepoliaDeployer, "production");
+        assertEq(config.deployer, sepoliaDeployer);
+        assertTrue(config.profile == HelperConfig.DeployProfile.Production);
     }
 
     function test_AnvilGetConfigIgnoresSepoliaEnv() public {
@@ -39,19 +69,22 @@ contract HelperConfigTest is Test {
         HelperConfig helper = new HelperConfig();
 
         assertEq(block.chainid, helper.ANVIL_CHAIN_ID());
-        assertEq(helper.getConfig().deployer, helper.ANVIL_DEPLOYER());
-        assertTrue(helper.getConfig().demoClock);
+        HelperConfig.NetworkConfig memory config = helper.getConfig();
+        assertEq(config.deployer, helper.ANVIL_DEPLOYER());
+        assertTrue(config.profile == HelperConfig.DeployProfile.Demo);
     }
 
     function test_SepoliaGetConfigReturnsEnvDeployer() public {
         address sepoliaDeployer = makeAddr("sepoliaDeployer");
         vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(sepoliaDeployer));
+        vm.setEnv("DEPLOY_PROFILE", "demo");
         vm.chainId(11_155_111);
         HelperConfig helper = new HelperConfig();
 
         assertEq(block.chainid, helper.SEPOLIA_CHAIN_ID());
-        assertEq(helper.getConfig().deployer, sepoliaDeployer);
-        assertFalse(helper.getConfig().demoClock);
+        HelperConfig.NetworkConfig memory config = helper.getConfig();
+        assertEq(config.deployer, sepoliaDeployer);
+        assertTrue(config.profile == HelperConfig.DeployProfile.Demo);
     }
 
     function test_AllocationConstantsSumToMaxSupply() public {
@@ -127,14 +160,69 @@ contract HelperConfigTest is Test {
         uint256 sepoliaChainId = helper.SEPOLIA_CHAIN_ID();
 
         vm.expectRevert(HelperConfig.HelperConfig__SepoliaDeployerNotSet.selector);
-        helper.configFor(sepoliaChainId, address(0));
+        helper.configFor(sepoliaChainId, address(0), HelperConfig.DeployProfile.Demo);
+    }
+
+    function test_RevertWhen_SepoliaDeployerIsZeroAndProfileIsInvalid() public {
+        HelperConfig helper = new HelperConfig();
+
+        vm.expectRevert(HelperConfig.HelperConfig__SepoliaDeployerNotSet.selector);
+        helper.sepoliaConfigFor(address(0), "demo\r");
+    }
+
+    function test_RevertWhen_SepoliaProfileIsEmpty() public {
+        HelperConfig helper = new HelperConfig();
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
+
+        vm.expectRevert(HelperConfig.HelperConfig__DeployProfileNotSet.selector);
+        helper.sepoliaConfigFor(sepoliaDeployer, "");
+    }
+
+    function test_RevertWhen_SepoliaProfileIsWrongCase() public {
+        HelperConfig helper = new HelperConfig();
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
+
+        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__DeployProfileInvalid.selector, "Demo"));
+        helper.sepoliaConfigFor(sepoliaDeployer, "Demo");
+    }
+
+    function test_RevertWhen_SepoliaProfileHasCarriageReturn() public {
+        HelperConfig helper = new HelperConfig();
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
+
+        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__DeployProfileInvalid.selector, "demo\r"));
+        helper.sepoliaConfigFor(sepoliaDeployer, "demo\r");
+
+        vm.expectRevert(
+            abi.encodeWithSelector(HelperConfig.HelperConfig__DeployProfileInvalid.selector, "production\r")
+        );
+        helper.sepoliaConfigFor(sepoliaDeployer, "production\r");
+    }
+
+    function test_RevertWhen_SepoliaProfileHasSpace() public {
+        HelperConfig helper = new HelperConfig();
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
+
+        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__DeployProfileInvalid.selector, " demo"));
+        helper.sepoliaConfigFor(sepoliaDeployer, " demo");
+
+        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__DeployProfileInvalid.selector, "demo "));
+        helper.sepoliaConfigFor(sepoliaDeployer, "demo ");
     }
 
     function test_RevertWhen_ChainIsNotConfigured() public {
         HelperConfig helper = new HelperConfig();
 
         vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__ChainNotSupported.selector, 1));
-        helper.configFor(1, address(0));
+        helper.configFor(1, address(0), HelperConfig.DeployProfile.Demo);
+    }
+
+    function test_RevertWhen_GetConfigChainIsNotConfigured() public {
+        HelperConfig helper = new HelperConfig();
+
+        vm.chainId(1);
+        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__ChainNotSupported.selector, 1));
+        helper.getConfig();
     }
 
     function _twoYearReserve(uint256 maxBalance, uint256 aprBps) private pure returns (uint256 reserve) {
