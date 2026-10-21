@@ -35,6 +35,7 @@ import {
   type BuybackPlan,
   type BuybackQuote,
 } from "@/lib/buyback-quote";
+import { ownerCardView } from "@/lib/owner-card";
 import { slippageBps } from "@/lib/slippage";
 
 const anvilContracts = contracts[anvil.id];
@@ -73,9 +74,11 @@ function revertName(error: unknown): string | undefined {
 export function OwnerControls() {
   const connection = useConnection();
   const config = useConfig();
-  const onAnvil = connection.isConnected && connection.chainId === anvil.id;
-  const address = onAnvil ? connection.address : undefined;
-  const identity = `${address ?? "disconnected"}:${connection.chainId ?? "none"}`;
+  const connected = connection.isConnected;
+  const onAnvil = connected && connection.chainId === anvil.id;
+  const readAddress = connected ? connection.address : undefined;
+  const actionAddress = onAnvil ? connection.address : undefined;
+  const identity = `${readAddress ?? "disconnected"}:${connection.chainId ?? "none"}`;
   const [notice, setNotice] = useState<string>();
   const [quoteError, setQuoteError] = useState<string>();
   const [noticeScope, setNoticeScope] = useState(identity);
@@ -90,21 +93,21 @@ export function OwnerControls() {
     address: anvilContracts.cruiseControl,
     chainId: anvil.id,
     functionName: "owner",
-    query: { enabled: address !== undefined },
+    query: { enabled: readAddress !== undefined },
   });
   const degenOwner = useReadContract({
     abi: degenDriverAbi,
     address: anvilContracts.degenDriver,
     chainId: anvil.id,
     functionName: "owner",
-    query: { enabled: address !== undefined },
+    query: { enabled: readAddress !== undefined },
   });
   const clockOwner = useReadContract({
     abi: demoDriverClockAbi,
     address: anvilContracts.demoDriverClock,
     chainId: anvil.id,
     functionName: "owner",
-    query: { enabled: address !== undefined },
+    query: { enabled: readAddress !== undefined },
   });
   const maxAdvance = useReadContract({
     abi: demoDriverClockAbi,
@@ -136,21 +139,21 @@ export function OwnerControls() {
   });
 
   const ownsCruise =
-    address !== undefined &&
+    readAddress !== undefined &&
     cruiseOwner.data !== undefined &&
-    getAddress(cruiseOwner.data) === getAddress(address);
+    getAddress(cruiseOwner.data) === getAddress(readAddress);
   const ownsDegen =
-    address !== undefined &&
+    readAddress !== undefined &&
     degenOwner.data !== undefined &&
-    getAddress(degenOwner.data) === getAddress(address);
+    getAddress(degenOwner.data) === getAddress(readAddress);
   const ownsClock =
-    address !== undefined &&
+    readAddress !== undefined &&
     clockOwner.data !== undefined &&
-    getAddress(clockOwner.data) === getAddress(address);
+    getAddress(clockOwner.data) === getAddress(readAddress);
 
   const harvestCruise = useAnvilAction({
     abi: cruiseControlAbi,
-    account: ownsCruise ? address : undefined,
+    account: ownsCruise ? actionAddress : undefined,
     address: anvilContracts.cruiseControl,
     args: [0n] as const,
     describeError,
@@ -160,7 +163,7 @@ export function OwnerControls() {
   });
   const harvestDegen = useAnvilAction({
     abi: degenDriverAbi,
-    account: ownsDegen ? address : undefined,
+    account: ownsDegen ? actionAddress : undefined,
     address: anvilContracts.degenDriver,
     args: [0n] as const,
     describeError,
@@ -170,7 +173,7 @@ export function OwnerControls() {
   });
   const skip = useAnvilAction({
     abi: demoDriverClockAbi,
-    account: ownsClock ? address : undefined,
+    account: ownsClock ? actionAddress : undefined,
     address: anvilContracts.demoDriverClock,
     args: [epoch.data ?? 1n] as const,
     describeError,
@@ -179,15 +182,20 @@ export function OwnerControls() {
     scope: identity,
   });
 
-  if (connection.isConnected && !onAnvil) {
+  const view = ownerCardView({
+    connected,
+    onAnvil,
+    ownsAny: ownsCruise || ownsDegen || ownsClock,
+  });
+  if (view === "hidden") {
+    return null;
+  }
+  if (view === "switch") {
     return (
       <Card className="w-fit max-w-full self-center" title="Owner">
         <p className="text-sm text-ink-muted">Switch to Anvil to harvest.</p>
       </Card>
     );
-  }
-  if (!ownsCruise && !ownsDegen && !ownsClock) {
-    return null;
   }
 
   const busy = harvestCruise.busy || harvestDegen.busy || skip.busy;
