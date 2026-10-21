@@ -13,6 +13,7 @@
     "start": "next start",
     "generate": "wagmi generate",
     "sync:anvil": "node scripts/sync-anvil-addresses.mts",
+    "sync:sepolia": "node scripts/sync-sepolia-addresses.mts",
     "test": "vitest run",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "next typegen && tsc --noEmit"
