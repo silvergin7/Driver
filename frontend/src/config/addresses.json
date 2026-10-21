@@ -15,5 +15,22 @@
     "CruiseControl": "0x1613beb3b2c4f22ee086b2b38c1476a3ce7f78e8",
     "DegenDriver": "0x851356ae760d987e095750cceb3bc6014560891c",
     "DriverVote": "0x1291be112d480055dafd8a610b7d1e203891c274"
+  },
+  "11155111": {
+    "DriverToken": "0xcf865f0ff3910fc9888ac0af4f250b50019d9eec",
+    "DriverFaucet": "0x84bba1e41a786aa53853795bafb2118c98359377",
+    "MockUSDC": "0x37269d0c9be48d40dd7a130fb33df24b73c5ccf3",
+    "MockUsdcFaucet": "0x146d0050ee974dad461f9ba3f95def650a4abae8",
+    "DemoDriverClock": "0x6d5c255c139c89af17b38db228fe2fc2458285aa",
+    "TaxSplitter": "0xd182ee97b32fa1109012351e3ffbe3f162c22e01",
+    "OfficialPool": "0x15dd35991324e22c27a10b1fbb56aa0018694ae6",
+    "CruiseFarm": "0xed916e06ec68c5ad16ad806c5f3a3a331c6a7068",
+    "HighwayFarm": "0xfbd52a17da1dffabe12b46c15f901df4214ce2ee",
+    "AutobahnFarm": "0x4bb2b635df86c460920df4c54f14846b4122d774",
+    "DriftFarm": "0x74eb8844a7bf2014769a9c4a2209e844b269726a",
+    "RoundSchedule": "0xc4f78da54c9cdd1d8e008b8158fd60fe315fad2f",
+    "CruiseControl": "0xd3d13fba75d43235a6595e891555bd22abf1e93a",
+    "DegenDriver": "0x2dd01ddb664a8469cbfd7b770f6623289911a374",
+    "DriverVote": "0x4cd1d79005831d49ecbac62c4467a689c5da3274"
   }
 }
