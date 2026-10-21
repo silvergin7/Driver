@@ -10,21 +10,30 @@ import {
 } from "@/components/connect-wallet";
 import { LogoMark } from "@/components/logo-mark";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { nextHeaderMenu, type HeaderMenu } from "@/lib/header-menu";
 import { isCurrentPage, navItems } from "@/lib/nav";
 
 export function SiteHeader() {
   const controls = useWalletControls();
   const pathname = usePathname();
-  const [openPath, setOpenPath] = useState<string | undefined>(undefined);
-  const open = openPath === pathname;
+  const [menu, setMenu] = useState<HeaderMenu>("closed");
+  const [menuPath, setMenuPath] = useState(pathname);
+  if (pathname !== menuPath) {
+    setMenuPath(pathname);
+    setMenu("closed");
+  }
+  if (!controls.connection.isConnected && menu === "account") {
+    setMenu("closed");
+  }
+  const navOpen = menu === "nav";
   const menuButton = useRef<HTMLButtonElement>(null);
-  const menu = useRef<HTMLElement>(null);
+  const navMenu = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!open) {
+    if (!navOpen) {
       return;
     }
-    const first = menu.current?.querySelector("a");
+    const first = navMenu.current?.querySelector("a");
     if (first instanceof HTMLAnchorElement) {
       first.focus();
     }
@@ -32,12 +41,12 @@ export function SiteHeader() {
       if (event.key !== "Escape") {
         return;
       }
-      setOpenPath(undefined);
+      setMenu("closed");
       menuButton.current?.focus();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [navOpen]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-background">
@@ -55,18 +64,27 @@ export function SiteHeader() {
             type="button"
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink hover:bg-surface lg:hidden"
             aria-label="Menu"
-            aria-expanded={open}
+            aria-expanded={navOpen}
             aria-controls="site-menu"
-            onClick={() => setOpenPath(open ? undefined : pathname)}
+            onClick={() => setMenu((current) => nextHeaderMenu(current, "toggle-nav"))}
           >
             <MenuIcon />
           </button>
-          <ConnectWallet compact showAlert={false} controls={controls} />
+          <ConnectWallet
+            compact
+            showAlert={false}
+            controls={controls}
+            accountMenu={{
+              open: menu === "account",
+              onToggle: () => setMenu((current) => nextHeaderMenu(current, "toggle-account")),
+              onClose: () => setMenu("closed"),
+            }}
+          />
         </div>
       </div>
-      {open ? (
+      {navOpen ? (
         <nav
-          ref={menu}
+          ref={navMenu}
           id="site-menu"
           aria-label="Pages"
           className="flex flex-col gap-3 bg-background px-4 py-4 lg:hidden"
@@ -76,7 +94,7 @@ export function SiteHeader() {
               key={item.href}
               href={item.href}
               label={item.label}
-              onNavigate={() => setOpenPath(undefined)}
+              onNavigate={() => setMenu("closed")}
             />
           ))}
         </nav>
