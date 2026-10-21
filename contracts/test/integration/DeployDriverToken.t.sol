@@ -153,6 +153,7 @@ contract DeployDriverTokenTest is Test {
         HelperConfig helper = new HelperConfig();
         address deployer = makeAddr("sepoliaDeployer");
         vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(deployer));
+        vm.setEnv("DEPLOY_PROFILE", "demo");
         vm.chainId(helper.SEPOLIA_CHAIN_ID());
         DeployDriverToken.Deployed memory deployed = new DeployDriverToken().run();
         uint256 maxSupply = deployed.token.MAX_SUPPLY();
@@ -204,15 +205,14 @@ contract DeployDriverTokenTest is Test {
         vm.prank(deployer);
         deployed.token.mint(deployer, 1);
 
-        DriverClock production = DriverClock(address(deployed.clock));
-        assertEq(production.currentTime(), block.timestamp);
-        vm.warp(block.timestamp + 100);
-        assertEq(production.currentTime(), block.timestamp);
-
-        (bool ok, bytes memory data) = address(production).call(abi.encodeWithSignature("advanceTime(uint256)", 1));
-        assertFalse(ok);
-        assertEq(data.length, 0);
-        assertEq(production.currentTime(), block.timestamp);
+        DemoDriverClock demo = DemoDriverClock(address(deployed.clock));
+        assertEq(demo.owner(), deployer);
+        assertEq(demo.offset(), 0);
+        assertEq(demo.currentTime(), block.timestamp);
+        vm.prank(deployer);
+        demo.advanceTime(1 days);
+        assertEq(demo.offset(), 1 days);
+        assertEq(demo.currentTime(), block.timestamp + 1 days);
     }
 
     function test_AnvilDeployFundsTheFourFarms() public {
@@ -250,6 +250,7 @@ contract DeployDriverTokenTest is Test {
         HelperConfig helper = new HelperConfig();
         address deployer = makeAddr("sepoliaDeployer");
         vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(deployer));
+        vm.setEnv("DEPLOY_PROFILE", "demo");
         vm.chainId(helper.SEPOLIA_CHAIN_ID());
 
         DeployDriverToken.Deployed memory deployed = new DeployDriverToken().run();
@@ -265,11 +266,55 @@ contract DeployDriverTokenTest is Test {
         assertEq(usdc.balanceOf(deployer), helper.FUND_3_USDC());
         _assertFarms(helper, usdc, clock, deployer, cruise, highway, autobahn, drift);
 
-        DriverClock production = DriverClock(address(clock));
-        assertEq(production.currentTime(), block.timestamp);
-        (bool ok, bytes memory data) = address(production).call(abi.encodeWithSignature("advanceTime(uint256)", 1));
+        DemoDriverClock demo = DemoDriverClock(address(clock));
+        assertEq(demo.owner(), deployer);
+        vm.prank(deployer);
+        demo.advanceTime(1 days);
+        assertEq(demo.offset(), 1 days);
+    }
+
+    function test_ProductionDeployMatchesTheDemoDeploy() public {
+        HelperConfig helper = new HelperConfig();
+        address deployer = helper.ANVIL_DEPLOYER();
+        uint256 snapshotId = vm.snapshotState();
+        DeployDriverToken script = new DeployDriverToken();
+        DeployDriverToken.Deployed memory demo = script.run();
+        address demoClock = address(demo.clock);
+        bytes32 demoClockCode = demoClock.codehash;
+        uint256 demoClockLength = demoClock.code.length;
+        _assertSeed(helper, deployer, demo);
+        assertEq(demoClock, 0x9A676e781A523b5d0C0e43731313A708CB607508);
+        assertEq(demoClockLength, type(DemoDriverClock).runtimeCode.length);
+
+        DemoDriverClock advanced = DemoDriverClock(demoClock);
+        vm.prank(deployer);
+        advanced.advanceTime(1 days);
+        assertEq(advanced.offset(), 1 days);
+
+        assertTrue(vm.revertToState(snapshotId));
+        DeployDriverToken.Deployed memory production = new DeployDriverToken().runProduction();
+        _assertSameAddresses(demo, production);
+        _assertSeed(helper, deployer, production);
+        assertEq(address(production.clock).code.length, type(DriverClock).runtimeCode.length);
+        assertTrue(address(production.clock).codehash != demoClockCode);
+
+        DriverClock clock = DriverClock(address(production.clock));
+        assertEq(clock.currentTime(), block.timestamp);
+        vm.warp(block.timestamp + 100);
+        assertEq(clock.currentTime(), block.timestamp);
+        (bool ok, bytes memory data) = address(clock).call(abi.encodeWithSignature("advanceTime(uint256)", 1 days));
         assertFalse(ok);
         assertEq(data.length, 0);
+        assertEq(clock.currentTime(), block.timestamp);
+    }
+
+    function test_RevertWhen_ProductionRunOnSepolia() public {
+        HelperConfig helper = new HelperConfig();
+
+        DeployDriverToken script = new DeployDriverToken();
+        vm.chainId(helper.SEPOLIA_CHAIN_ID());
+        vm.expectRevert(DeployDriverToken.DeployDriverToken__ProductionRunOnlyOnAnvil.selector);
+        script.runProduction();
     }
 
     function _assertFarms(
@@ -304,6 +349,27 @@ contract DeployDriverTokenTest is Test {
         assertFalse(farm.isDepositor(deployer));
         assertFalse(farm.isDepositor(address(0)));
         assertEq(usdc.allowance(deployer, address(farm)), 0);
+    }
+
+    function _assertSameAddresses(DeployDriverToken.Deployed memory left, DeployDriverToken.Deployed memory right)
+        private
+        pure
+    {
+        assertEq(address(left.token), address(right.token));
+        assertEq(address(left.dvrFaucet), address(right.dvrFaucet));
+        assertEq(address(left.usdc), address(right.usdc));
+        assertEq(address(left.usdcFaucet), address(right.usdcFaucet));
+        assertEq(address(left.clock), address(right.clock));
+        assertEq(address(left.splitter), address(right.splitter));
+        assertEq(address(left.pool), address(right.pool));
+        assertEq(address(left.cruise), address(right.cruise));
+        assertEq(address(left.highway), address(right.highway));
+        assertEq(address(left.autobahn), address(right.autobahn));
+        assertEq(address(left.drift), address(right.drift));
+        assertEq(address(left.schedule), address(right.schedule));
+        assertEq(address(left.cruiseControl), address(right.cruiseControl));
+        assertEq(address(left.degenDriver), address(right.degenDriver));
+        assertEq(address(left.vote), address(right.vote));
     }
 
     function _assertSeed(HelperConfig helper, address deployer, DeployDriverToken.Deployed memory deployed)
