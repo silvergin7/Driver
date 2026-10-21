@@ -18,7 +18,7 @@ import {OfficialPool} from "../../../src/OfficialPool.sol";
 import {RoundSchedule} from "../../../src/RoundSchedule.sol";
 import {TaxSplitter} from "../../../src/TaxSplitter.sol";
 import {TreasuryFund} from "../../../src/TreasuryFund.sol";
-import {DeployDriverToken} from "../../../script/DeployDriverToken.s.sol";
+import {DeployDriver} from "../../../script/DeployDriver.s.sol";
 import {HelperConfig} from "../../../script/HelperConfig.s.sol";
 
 contract ProtocolHandler is Test {
@@ -45,7 +45,7 @@ contract ProtocolHandler is Test {
     uint256 internal constant MOVE_D = 238_990_821;
     uint256 internal constant CAP_E = 15_972_525;
 
-    DeployDriverToken.Deployed private s_deployed;
+    DeployDriver.Deployed private s_deployed;
     DemoDriverClock private s_clock;
     address private s_owner;
     address private s_script;
@@ -143,7 +143,7 @@ contract ProtocolHandler is Test {
 
     constructor(bool exits) {
         s_exits = exits;
-        DeployDriverToken deployScript = new DeployDriverToken();
+        DeployDriver deployScript = new DeployDriver();
         s_script = address(deployScript);
         s_deployed = deployScript.run();
         s_clock = DemoDriverClock(address(s_deployed.clock));

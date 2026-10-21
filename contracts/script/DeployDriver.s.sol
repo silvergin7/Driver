@@ -19,9 +19,9 @@ import {RoundSchedule} from "../src/RoundSchedule.sol";
 import {TaxSplitter} from "../src/TaxSplitter.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
 
-/// @title DeployDriverToken
+/// @title DeployDriver
 /// @notice Deploys DriverToken, the faucets, the clock, the tax splitter, the official pool, the four mock farms, the two funds, and the vote.
-contract DeployDriverToken is Script {
+contract DeployDriver is Script {
     /// @notice Contracts created by {run}.
     struct Deployed {
         DriverToken token;
@@ -42,10 +42,10 @@ contract DeployDriverToken is Script {
     }
 
     /// @notice The DVR faucet allocation transfer returned false.
-    error DeployDriverToken__TransferFailed();
+    error DeployDriver__TransferFailed();
 
     /// @notice {runProduction} was used on a chain other than Anvil.
-    error DeployDriverToken__ProductionRunOnlyOnAnvil();
+    error DeployDriver__ProductionRunOnlyOnAnvil();
 
     /// @notice Deploys the contracts, mints the setup balances, funds the DVR faucet, seeds the pool, funds the farms, and seeds the two funds.
     /// @dev Community and team DVR stay with the deployer. Fund 3's mUSDC stays with the deployer. The official
@@ -71,13 +71,13 @@ contract DeployDriverToken is Script {
     }
 
     /// @notice Deploys the protocol on Anvil with the production clock.
-    /// @dev Reverts with {DeployDriverToken__ProductionRunOnlyOnAnvil} on any other chain, before reading
+    /// @dev Reverts with {DeployDriver__ProductionRunOnlyOnAnvil} on any other chain, before reading
     /// the environment or broadcasting.
     /// @return deployed The deployed contracts.
     function runProduction() external returns (Deployed memory deployed) {
         HelperConfig helper = new HelperConfig();
         if (block.chainid != helper.ANVIL_CHAIN_ID()) {
-            revert DeployDriverToken__ProductionRunOnlyOnAnvil();
+            revert DeployDriver__ProductionRunOnlyOnAnvil();
         }
         deployed = _run(helper, helper.configFor(block.chainid, address(0), HelperConfig.DeployProfile.Production));
     }
@@ -103,7 +103,7 @@ contract DeployDriverToken is Script {
             helper.DVR_FAUCET_DAILY_CLAIM_LIMIT()
         );
         if (!deployed.token.transfer(address(deployed.dvrFaucet), helper.FAUCET_ALLOCATION())) {
-            revert DeployDriverToken__TransferFailed();
+            revert DeployDriver__TransferFailed();
         }
 
         deployed.usdc = new MockUSDC(deployer);

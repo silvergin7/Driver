@@ -115,7 +115,7 @@ jobs:
             cat /tmp/anvil.log
             exit 1
           fi
-          forge script script/DeployDriverToken.s.sol:DeployDriverToken --rpc-url http://127.0.0.1:8545 --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+          forge script script/DeployDriver.s.sol:DeployDriver --rpc-url http://127.0.0.1:8545 --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
       - name: Sync Anvil addresses
         working-directory: frontend
