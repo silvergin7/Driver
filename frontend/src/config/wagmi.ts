@@ -1,14 +1,16 @@
-import { createConfig, http } from "wagmi";
+import { createConfig, http, type CreateConfigParameters } from "wagmi";
 import { injected } from "wagmi/connectors";
-import { chain } from "./contracts";
+import { chain, pollingInterval } from "./contracts";
 
-export const wagmiConfig = createConfig({
+const parameters = {
   chains: [chain],
   connectors: [injected()],
   multiInjectedProviderDiscovery: false,
-  pollingInterval: 1_000,
+  pollingInterval,
   ssr: true,
   transports: {
     [chain.id]: http(chain.rpcUrls.default.http[0]),
   },
-});
+} as CreateConfigParameters;
+
+export const wagmiConfig = createConfig(parameters);

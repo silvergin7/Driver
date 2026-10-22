@@ -277,7 +277,7 @@ function WalletMarkup({
               {!onChain ? (
                 <button
                   type="button"
-                  className="min-h-11 whitespace-nowrap rounded-md bg-brand px-2 py-2 text-sm text-on-brand disabled:border disabled:border-line disabled:bg-disabled-bg disabled:text-ink-muted md:px-3 md:text-base"
+                  className="min-h-11 whitespace-nowrap rounded-md bg-brand px-1.5 py-2 text-sm text-on-brand disabled:border disabled:border-line disabled:bg-disabled-bg disabled:text-ink-muted md:px-3 md:text-base"
                   disabled={busy}
                   onClick={() => switchChain.mutate({ chainId: chain.id })}
                 >

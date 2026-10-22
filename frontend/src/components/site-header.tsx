@@ -50,7 +50,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-background">
-      <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 md:px-6">
+      <div className="mx-auto flex h-16 max-w-5xl items-center gap-1 px-4 sm:gap-4 md:px-6">
         <LogoMark />
         <nav aria-label="Pages" className="hidden items-center gap-4 lg:flex">
           {navItems.map((item) => (

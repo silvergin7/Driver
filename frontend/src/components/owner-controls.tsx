@@ -9,6 +9,7 @@ import {
   type Abi,
   type Address,
 } from "viem";
+import { sepolia } from "viem/chains";
 import { useConfig, useConnection, useReadContract } from "wagmi";
 import { readContract } from "wagmi/actions";
 import { chain, chainLabel, contracts } from "@/config/contracts";
@@ -337,6 +338,11 @@ export function OwnerControls() {
 
   return (
     <Card className="w-fit max-w-full self-center" title="Owner">
+      {chain.id === sepolia.id ? (
+        <p className="text-sm text-ink-muted">
+          A skip or a harvest on this demo clock is permanent.
+        </p>
+      ) : null}
       <StatList
         layout="inline"
         rows={[{ label: "Slippage", value: `${slippageBps / 100n}%` }]}
