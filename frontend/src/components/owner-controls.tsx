@@ -29,6 +29,11 @@ import {
 } from "@/lib/action-errors";
 import { TransactionLink } from "@/components/transaction-link";
 import { actionButtonClass } from "@/lib/control-class";
+import { addressExplorer } from "@/lib/explorer";
+import {
+  ownerActionTarget,
+  type OwnerActionTargetInput,
+} from "@/lib/owner-action-target";
 import { Card } from "@/components/ui/card";
 import { StatList } from "@/components/ui/stat-list";
 import {
@@ -59,6 +64,28 @@ function describeError(error: unknown): string {
 
 function describeReceiptError(error: unknown): string {
   return actionReceiptErrorMessage(error, harvestAbis, reverted);
+}
+
+function OwnerActionLine({ action }: { action: OwnerActionTargetInput }) {
+  const target = ownerActionTarget(action);
+  const explorer = addressExplorer(chain, target.address);
+  return (
+    <p className="max-w-full text-sm text-ink-muted">
+      {target.lead}
+      {explorer.kind === "link" ? (
+        <a
+          className="text-sign underline"
+          href={explorer.href}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {target.shortAddress}
+        </a>
+      ) : (
+        target.shortAddress
+      )}
+    </p>
+  );
 }
 
 function revertName(error: unknown): string | undefined {
@@ -352,42 +379,72 @@ export function OwnerControls() {
         layout="inline"
         rows={[{ label: "Slippage", value: `${slippageBps / 100n}%` }]}
       />
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex max-w-full flex-col items-start gap-3">
         {ownsCruise ? (
-          <button
-            type="button"
-            className={actionButtonClass()}
-            disabled={busy || cruiseReady.data?.[0] !== true}
-            onClick={() => {
-              void onHarvest("1");
-            }}
-          >
-            Harvest Fund 1
-          </button>
+          <div className="flex max-w-full flex-col items-start gap-1">
+            <button
+              type="button"
+              className={actionButtonClass()}
+              disabled={busy || cruiseReady.data?.[0] !== true}
+              onClick={() => {
+                void onHarvest("1");
+              }}
+            >
+              Harvest Fund 1
+            </button>
+            <OwnerActionLine
+              action={{
+                kind: "harvest",
+                contractName: "CruiseControl",
+                address: chainContracts.cruiseControl,
+              }}
+            />
+          </div>
         ) : null}
         {ownsDegen ? (
-          <button
-            type="button"
-            className={actionButtonClass()}
-            disabled={busy || degenReady.data?.[0] !== true}
-            onClick={() => {
-              void onHarvest("2");
-            }}
-          >
-            Harvest Fund 2
-          </button>
+          <div className="flex max-w-full flex-col items-start gap-1">
+            <button
+              type="button"
+              className={actionButtonClass()}
+              disabled={busy || degenReady.data?.[0] !== true}
+              onClick={() => {
+                void onHarvest("2");
+              }}
+            >
+              Harvest Fund 2
+            </button>
+            <OwnerActionLine
+              action={{
+                kind: "harvest",
+                contractName: "DegenDriver",
+                address: chainContracts.degenDriver,
+              }}
+            />
+          </div>
         ) : null}
         {ownsClock ? (
-          <button
-            type="button"
-            className={actionButtonClass()}
-            disabled={busy || epoch.data === undefined || skipTooLarge}
-            onClick={() => {
-              void onSkip();
-            }}
-          >
-            {skipLabel}
-          </button>
+          <div className="flex max-w-full flex-col items-start gap-1">
+            <button
+              type="button"
+              className={actionButtonClass()}
+              disabled={busy || epoch.data === undefined || skipTooLarge}
+              onClick={() => {
+                void onSkip();
+              }}
+            >
+              {skipLabel}
+            </button>
+            {epoch.data !== undefined ? (
+              <OwnerActionLine
+                action={{
+                  kind: "advanceTime",
+                  contractName: "DemoDriverClock",
+                  address: chainContracts.demoDriverClock,
+                  seconds: epoch.data,
+                }}
+              />
+            ) : null}
+          </div>
         ) : null}
       </div>
       {harvestCruise.simulating || harvestDegen.simulating || skip.simulating ? (
