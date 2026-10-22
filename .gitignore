@@ -18,6 +18,7 @@ frontend/.env.*
 frontend/next-env.d.ts
 frontend/*.tsbuildinfo
 frontend/.vercel/
+/.vercel/
 frontend/coverage/
 
 # OS
