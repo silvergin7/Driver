@@ -46,10 +46,15 @@ export function RoundChip() {
     return null;
   }
 
+  const duration = formatCountdown(roundEnd.data, clock.data);
+
   return (
     <div className="flex justify-center">
       <Badge>
-        {`Round ${round.data.toString()} · ends in ${formatCountdown(roundEnd.data, clock.data)}`}
+        <span className="text-center tabular-nums">
+          Round {round.data.toString()} · ends in{" "}
+          <span className="whitespace-nowrap">{duration}</span>
+        </span>
       </Badge>
     </div>
   );
