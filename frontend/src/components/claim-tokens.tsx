@@ -9,6 +9,7 @@ import {
   type ClaimEligibility,
 } from "@/lib/claim-eligibility";
 import { claimStatus } from "@/lib/claim-status";
+import { TransactionLink } from "@/components/transaction-link";
 import { fitActionButtonClass } from "@/lib/control-class";
 import { formatCountdown } from "@/lib/countdown";
 import { faucetErrorMessage, receiptErrorMessage } from "@/lib/faucet-errors";
@@ -184,6 +185,7 @@ export function ClaimTokens() {
         Claim Tokens
       </button>
       {status ? <p className="text-sm text-ink-muted">{status}</p> : null}
+      <TransactionLink hash={action.isSuccess ? action.hash : undefined} />
       {reason ? <p className="text-sm text-ink-muted">{reason}</p> : null}
       {countdown ? <p className="text-sm text-ink-muted tabular-nums">{countdown}</p> : null}
       {action.errorMessage ? <p role="alert">{action.errorMessage}</p> : null}

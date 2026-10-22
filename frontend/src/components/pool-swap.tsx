@@ -22,6 +22,7 @@ import {
   fitActionButtonClass,
   inputClass,
 } from "@/lib/control-class";
+import { TransactionLink } from "@/components/transaction-link";
 import { Card } from "@/components/ui/card";
 import { StatList } from "@/components/ui/stat-list";
 import { formatDvr } from "@/lib/format-dvr";
@@ -327,6 +328,7 @@ export function PoolSwap() {
         />
       ) : null}
       {status ? <p className="text-sm text-ink-muted">{status}</p> : null}
+      <TransactionLink hash={swap.isSuccess ? swap.hash : undefined} />
       {amountReason && !busy ? <p className="text-sm text-ink-muted">{amountReason}</p> : null}
       {parsed.status === "amount" && quotedOut === 0n ? (
         <p className="text-sm text-ink-muted">The swap would return no tokens.</p>

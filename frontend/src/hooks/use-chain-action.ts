@@ -148,6 +148,7 @@ export function useChainAction<
     confirming,
     busy,
     errorMessage,
+    hash: write.data,
     isSuccess: receipt.isSuccess,
     receipt,
   };

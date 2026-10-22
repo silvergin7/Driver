@@ -19,6 +19,7 @@ import {
   actionErrorMessage,
   actionReceiptErrorMessage,
 } from "@/lib/action-errors";
+import { TransactionLink } from "@/components/transaction-link";
 import {
   actionButtonClass,
   inputClass,
@@ -602,6 +603,17 @@ export function LockVote() {
         </div>
       </div>
       {status ? <p className="text-sm text-ink-muted">{status}</p> : null}
+      <TransactionLink
+        hash={
+          lastAction === "lock" && lock.isSuccess
+            ? lock.hash
+            : lastAction === "unlock" && unlock.isSuccess
+              ? unlock.hash
+              : lastAction === "vote" && vote.isSuccess
+                ? vote.hash
+                : undefined
+        }
+      />
       {lockReason && !busy ? <p className="text-sm text-ink-muted">{lockReason}</p> : null}
       {unlockReason && !busy ? <p className="text-sm text-ink-muted">{unlockReason}</p> : null}
       {voteReason && !busy ? <p className="text-sm text-ink-muted">{voteReason}</p> : null}

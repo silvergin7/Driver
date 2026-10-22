@@ -27,6 +27,7 @@ import {
   actionErrorMessage,
   actionReceiptErrorMessage,
 } from "@/lib/action-errors";
+import { TransactionLink } from "@/components/transaction-link";
 import { actionButtonClass } from "@/lib/control-class";
 import { Card } from "@/components/ui/card";
 import { StatList } from "@/components/ui/stat-list";
@@ -84,10 +85,12 @@ export function OwnerControls() {
   const [notice, setNotice] = useState<string>();
   const [quoteError, setQuoteError] = useState<string>();
   const [noticeScope, setNoticeScope] = useState(identity);
+  const [lastAction, setLastAction] = useState<"fund-1" | "fund-2" | "skip">();
   if (noticeScope !== identity) {
     setNoticeScope(identity);
     setNotice(undefined);
     setQuoteError(undefined);
+    setLastAction(undefined);
   }
 
   const cruiseOwner = useReadContract({
@@ -235,6 +238,7 @@ export function OwnerControls() {
       setQuoteError("The buyback quote failed.");
       return;
     }
+    setLastAction(fund === "1" ? "fund-1" : "fund-2");
     const harvested = await action.send([plan.minDvrOut]);
     if (harvested) {
       setNotice(`Harvested Fund ${fund}.`);
@@ -324,6 +328,7 @@ export function OwnerControls() {
     }
     setNotice(undefined);
     setQuoteError(undefined);
+    setLastAction("skip");
     const advanced = await skip.send([epoch.data]);
     if (advanced) {
       setNotice("Demo clock moved forward.");
@@ -396,6 +401,26 @@ export function OwnerControls() {
       ) : null}
       {skip.confirming ? <p className="text-sm text-ink-muted">Confirming the clock skip.</p> : null}
       {notice && !busy ? <p className="text-sm text-ink-muted">{notice}</p> : null}
+      <TransactionLink
+        action={
+          lastAction === "fund-1"
+            ? "Fund 1 harvest"
+            : lastAction === "fund-2"
+              ? "Fund 2 harvest"
+              : lastAction === "skip"
+                ? "clock skip"
+                : undefined
+        }
+        hash={
+          lastAction === "fund-1" && harvestCruise.isSuccess
+            ? harvestCruise.hash
+            : lastAction === "fund-2" && harvestDegen.isSuccess
+              ? harvestDegen.hash
+              : lastAction === "skip" && skip.isSuccess
+                ? skip.hash
+                : undefined
+        }
+      />
       {errorMessage ? <p role="alert">{errorMessage}</p> : null}
     </Card>
   );
