@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import { claimStatus, type ClaimStatusInput } from "./claim-status";
 
 const idle: ClaimStatusInput = {
+  chainLabel: "Anvil",
   claimed: undefined,
   confirming: false,
   connected: true,
   eligibility: "allowed",
-  onAnvil: true,
+  onChain: true,
   readsFailed: false,
   readsReady: true,
   simulating: false,
@@ -51,5 +52,14 @@ describe("claimStatus", () => {
     expect(claimStatus({ ...idle, confirming: true })).toBe(
       "Confirming the claim.",
     );
+  });
+
+  it("asks for the selected chain", () => {
+    expect(claimStatus({ ...idle, onChain: false })).toBe(
+      "Switch to Anvil to claim.",
+    );
+    expect(
+      claimStatus({ ...idle, chainLabel: "Sepolia", onChain: false }),
+    ).toBe("Switch to Sepolia to claim.");
   });
 });

@@ -3,11 +3,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useBlockNumber } from "wagmi";
-import { anvil } from "@/config/contracts";
+import { chain } from "@/config/contracts";
 
-export function useAnvilBlockRefresh(): void {
+export function useChainBlockRefresh(): void {
   const queryClient = useQueryClient();
-  const blockNumber = useBlockNumber({ chainId: anvil.id, watch: true });
+  const blockNumber = useBlockNumber({ chainId: chain.id, watch: true });
   const seen = useRef<bigint | undefined>(undefined);
 
   useEffect(() => {

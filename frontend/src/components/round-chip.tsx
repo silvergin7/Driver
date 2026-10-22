@@ -1,7 +1,7 @@
 "use client";
 
 import { useConnection, useReadContract } from "wagmi";
-import { anvil, contracts } from "@/config/contracts";
+import { chain, contracts } from "@/config/contracts";
 import {
   demoDriverClockAbi,
   driverVoteAbi,
@@ -10,35 +10,35 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCountdown } from "@/lib/countdown";
 
-const anvilContracts = contracts[anvil.id];
+const chainContracts = contracts[chain.id];
 
 export function RoundChip() {
   const connection = useConnection();
-  const onAnvil = connection.isConnected && connection.chainId === anvil.id;
+  const onChain = connection.isConnected && connection.chainId === chain.id;
   const round = useReadContract({
     abi: roundScheduleAbi,
-    address: anvilContracts.roundSchedule,
-    chainId: anvil.id,
+    address: chainContracts.roundSchedule,
+    chainId: chain.id,
     functionName: "currentRound",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const roundEnd = useReadContract({
     abi: driverVoteAbi,
-    address: anvilContracts.driverVote,
-    chainId: anvil.id,
+    address: chainContracts.driverVote,
+    chainId: chain.id,
     functionName: "openRoundEnd",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const clock = useReadContract({
     abi: demoDriverClockAbi,
-    address: anvilContracts.demoDriverClock,
-    chainId: anvil.id,
+    address: chainContracts.demoDriverClock,
+    chainId: chain.id,
     functionName: "currentTime",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
 
   if (
-    !onAnvil ||
+    !onChain ||
     round.data === undefined ||
     roundEnd.data === undefined ||
     clock.data === undefined

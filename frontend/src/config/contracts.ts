@@ -5,7 +5,7 @@ import addresses from "./addresses.json" with { type: "json" };
 const anvilRpcUrl =
   process.env.NEXT_PUBLIC_ANVIL_RPC_URL || "http://127.0.0.1:8545";
 
-export const anvil = {
+export const chain = {
   ...foundry,
   rpcUrls: {
     default: {
@@ -14,10 +14,10 @@ export const anvil = {
   },
 };
 
-export const anvilNetworkLabel = "Anvil";
+export const chainLabel = "Anvil";
 
 export const contracts: Record<
-  typeof anvil.id,
+  typeof chain.id,
   {
     driverToken: Address;
     driverFaucet: Address;
@@ -32,7 +32,7 @@ export const contracts: Record<
     driverVote: Address;
   }
 > = {
-  [anvil.id]: {
+  [chain.id]: {
     driverToken: getAddress(addresses["31337"].DriverToken),
     driverFaucet: getAddress(addresses["31337"].DriverFaucet),
     mockUsdc: getAddress(addresses["31337"].MockUSDC),

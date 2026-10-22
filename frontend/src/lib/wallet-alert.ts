@@ -2,12 +2,12 @@ export function walletAlertText(
   connectError: string | undefined,
   switchError: string | undefined,
   connected: boolean,
-  onAnvil: boolean,
+  onChain: boolean,
 ): string | undefined {
   if (connectError !== undefined && !connected) {
     return connectError;
   }
-  if (switchError !== undefined && connected && !onAnvil) {
+  if (switchError !== undefined && connected && !onChain) {
     return switchError;
   }
   return undefined;

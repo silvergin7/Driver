@@ -4,14 +4,15 @@ import { useState } from "react";
 import type { Abi } from "viem";
 import { useConfig, useConnection, useReadContract } from "wagmi";
 import { getBlock, readContract } from "wagmi/actions";
-import { anvil, contracts } from "@/config/contracts";
+import { chain, chainLabel, contracts } from "@/config/contracts";
+import { switchPrompt } from "@/lib/switch-prompt";
 import {
   driverTokenAbi,
   mockUsdcAbi,
   officialPoolAbi,
   taxSplitterAbi,
 } from "@/generated/contracts";
-import { useAnvilAction } from "@/hooks/use-anvil-action";
+import { useChainAction } from "@/hooks/use-chain-action";
 import {
   actionErrorMessage,
   actionReceiptErrorMessage,
@@ -28,7 +29,7 @@ import { formatUsdc } from "@/lib/format-usdc";
 import { parseTokenAmount, type ParsedAmount } from "@/lib/parse-amount";
 import { minAmountAfterSlippage, slippageBps } from "@/lib/slippage";
 
-const anvilContracts = contracts[anvil.id];
+const chainContracts = contracts[chain.id];
 const deadlineBuffer = 1_200n;
 const failed = "The transaction failed.";
 const reverted = "The transaction reverted.";
@@ -47,8 +48,8 @@ function describeReceiptError(error: unknown): string {
 export function PoolSwap() {
   const connection = useConnection();
   const config = useConfig();
-  const onAnvil = connection.isConnected && connection.chainId === anvil.id;
-  const address = onAnvil ? connection.address : undefined;
+  const onChain = connection.isConnected && connection.chainId === chain.id;
+  const address = onChain ? connection.address : undefined;
   const identity = `${address ?? "disconnected"}:${connection.chainId ?? "none"}`;
   const [direction, setDirection] = useState<"buy" | "sell">("buy");
   const [text, setText] = useState("");
@@ -66,14 +67,14 @@ export function PoolSwap() {
   const amount = parsed.status === "amount" ? parsed.amount : 0n;
   const spentAbi = buying ? mockUsdcAbi : driverTokenAbi;
   const spentAddress = buying
-    ? anvilContracts.mockUsdc
-    : anvilContracts.driverToken;
+    ? chainContracts.mockUsdc
+    : chainContracts.driverToken;
   const accountArgs = address === undefined ? undefined : ([address] as const);
   const balance = useReadContract({
     abi: spentAbi,
     address: spentAddress,
     args: accountArgs,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "balanceOf",
     query: { enabled: address !== undefined },
   });
@@ -83,48 +84,48 @@ export function PoolSwap() {
     args:
       address === undefined
         ? undefined
-        : ([address, anvilContracts.officialPool] as const),
-    chainId: anvil.id,
+        : ([address, chainContracts.officialPool] as const),
+    chainId: chain.id,
     functionName: "allowance",
     query: { enabled: address !== undefined },
   });
   const quote = useReadContract({
     abi: officialPoolAbi,
-    address: anvilContracts.officialPool,
+    address: chainContracts.officialPool,
     args: [buying ? 0 : 1, amount] as const,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "quoteExactInput",
-    query: { enabled: onAnvil && parsed.status === "amount" },
+    query: { enabled: onChain && parsed.status === "amount" },
   });
   const taxParameters = {
     abi: officialPoolAbi,
-    address: anvilContracts.officialPool,
-    chainId: anvil.id,
+    address: chainContracts.officialPool,
+    chainId: chain.id,
     functionName: "taxBps",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   } as const;
   const taxBps = useReadContract({
     ...taxParameters,
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
-  const fund1Tax = useAccrued(0, onAnvil);
-  const fund2Tax = useAccrued(1, onAnvil);
-  const unassignedTax = useAccrued(2, onAnvil);
+  const fund1Tax = useAccrued(0, onChain);
+  const fund2Tax = useAccrued(1, onChain);
+  const unassignedTax = useAccrued(2, onChain);
 
-  const approve = useAnvilAction({
+  const approve = useChainAction({
     abi: spentAbi,
     account: address,
     address: spentAddress,
-    args: [anvilContracts.officialPool, amount] as const,
+    args: [chainContracts.officialPool, amount] as const,
     describeError,
     describeReceiptError,
     functionName: "approve",
     scope: `${identity}:${direction}`,
   });
-  const swap = useAnvilAction({
+  const swap = useChainAction({
     abi: officialPoolAbi,
     account: address,
-    address: anvilContracts.officialPool,
+    address: chainContracts.officialPool,
     args: [buying ? 0 : 1, amount, 0n, 0n] as const,
     describeError,
     describeReceiptError,
@@ -141,7 +142,7 @@ export function PoolSwap() {
     fund2Tax.data !== undefined &&
     unassignedTax.data !== undefined;
   const readsFailed =
-    onAnvil &&
+    onChain &&
     (unread(balance) ||
       unread(allowance) ||
       unread(taxBps) ||
@@ -170,14 +171,14 @@ export function PoolSwap() {
     }
     setNotice(undefined);
     setActionError(undefined);
-    const latest = await getBlock(config, { chainId: anvil.id });
+    const latest = await getBlock(config, { chainId: chain.id });
     let minOut: bigint;
     try {
       const fresh = await readContract(config, {
         abi: officialPoolAbi,
-        address: anvilContracts.officialPool,
+        address: chainContracts.officialPool,
         args: [buying ? 0 : 1, parsed.amount],
-        chainId: anvil.id,
+        chainId: chain.id,
         functionName: "quoteExactInput",
       });
       if (fresh[0] === 0n) {
@@ -191,7 +192,7 @@ export function PoolSwap() {
     }
     if (allowance.data < parsed.amount) {
       const approved = await approve.send([
-        anvilContracts.officialPool,
+        chainContracts.officialPool,
         parsed.amount,
       ]);
       if (!approved) {
@@ -212,8 +213,8 @@ export function PoolSwap() {
   let status: string | undefined;
   if (!connection.isConnected) {
     status = "Connect a wallet to swap.";
-  } else if (!onAnvil) {
-    status = "Switch to Anvil to swap.";
+  } else if (!onChain) {
+    status = switchPrompt(chainLabel, "to swap.");
   } else if (readsFailed) {
     status = "Swap status unavailable.";
   } else if (!ready) {
@@ -232,10 +233,10 @@ export function PoolSwap() {
     status = notice;
   }
 
-  if (connection.isConnected && !onAnvil) {
+  if (connection.isConnected && !onChain) {
     return (
       <Card title="Official pool">
-        <p className="text-sm text-ink-muted">Switch to Anvil to swap.</p>
+        <p className="text-sm text-ink-muted">{switchPrompt(chainLabel, "to swap.")}</p>
       </Card>
     );
   }
@@ -343,9 +344,9 @@ export function PoolSwap() {
 function useAccrued(fundId: 0 | 1 | 2, enabled: boolean) {
   return useReadContract({
     abi: taxSplitterAbi,
-    address: anvilContracts.taxSplitter,
+    address: chainContracts.taxSplitter,
     args: [fundId] as const,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "accrued",
     query: { enabled },
   });

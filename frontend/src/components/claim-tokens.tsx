@@ -1,9 +1,9 @@
 "use client";
 
 import { useBlock, useConnection, useReadContract } from "wagmi";
-import { anvil, contracts } from "@/config/contracts";
+import { chain, chainLabel, contracts } from "@/config/contracts";
 import { driverFaucetAbi, driverTokenAbi } from "@/generated/contracts";
-import { useAnvilAction } from "@/hooks/use-anvil-action";
+import { useChainAction } from "@/hooks/use-chain-action";
 import {
   claimEligibility,
   type ClaimEligibility,
@@ -14,76 +14,76 @@ import { formatCountdown } from "@/lib/countdown";
 import { faucetErrorMessage, receiptErrorMessage } from "@/lib/faucet-errors";
 import { formatDvr } from "@/lib/format-dvr";
 
-const anvilContracts = contracts[anvil.id];
+const chainContracts = contracts[chain.id];
 
 export function ClaimTokens() {
   const connection = useConnection();
-  const onAnvil = connection.isConnected && connection.chainId === anvil.id;
-  const address = onAnvil ? connection.address : undefined;
+  const onChain = connection.isConnected && connection.chainId === chain.id;
+  const address = onChain ? connection.address : undefined;
   const identity = `${address ?? "disconnected"}:${connection.chainId ?? "none"}`;
-  const action = useAnvilAction({
+  const action = useChainAction({
     abi: driverFaucetAbi,
     account: address,
-    address: anvilContracts.driverFaucet,
+    address: chainContracts.driverFaucet,
     describeError: faucetErrorMessage,
     describeReceiptError: receiptErrorMessage,
     functionName: "claim",
     scope: identity,
   });
   const block = useBlock({
-    chainId: anvil.id,
-    query: { enabled: onAnvil },
-    watch: onAnvil,
+    chainId: chain.id,
+    query: { enabled: onChain },
+    watch: onChain,
   });
   const claimsToday = useReadContract({
     abi: driverFaucetAbi,
-    address: anvilContracts.driverFaucet,
-    chainId: anvil.id,
+    address: chainContracts.driverFaucet,
+    chainId: chain.id,
     functionName: "claimsToday",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const dailyClaimLimit = useReadContract({
     abi: driverFaucetAbi,
-    address: anvilContracts.driverFaucet,
+    address: chainContracts.driverFaucet,
     functionName: "i_dailyClaimLimit",
-    chainId: anvil.id,
-    query: { enabled: onAnvil },
+    chainId: chain.id,
+    query: { enabled: onChain },
   });
   const nextClaimArgs =
     address === undefined ? undefined : ([address] as const);
   const nextClaimAt = useReadContract({
     abi: driverFaucetAbi,
-    address: anvilContracts.driverFaucet,
+    address: chainContracts.driverFaucet,
     args: nextClaimArgs,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "nextClaimAt",
     query: { enabled: address !== undefined },
   });
   const nextDailyReset = useReadContract({
     abi: driverFaucetAbi,
-    address: anvilContracts.driverFaucet,
-    chainId: anvil.id,
+    address: chainContracts.driverFaucet,
+    chainId: chain.id,
     functionName: "nextDailyReset",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const claimAmount = useReadContract({
     abi: driverFaucetAbi,
-    address: anvilContracts.driverFaucet,
+    address: chainContracts.driverFaucet,
     functionName: "i_claimAmount",
-    chainId: anvil.id,
-    query: { enabled: onAnvil },
+    chainId: chain.id,
+    query: { enabled: onChain },
   });
   const faucetBalance = useReadContract({
     abi: driverTokenAbi,
-    address: anvilContracts.driverToken,
-    args: [anvilContracts.driverFaucet] as const,
-    chainId: anvil.id,
+    address: chainContracts.driverToken,
+    args: [chainContracts.driverFaucet] as const,
+    chainId: chain.id,
     functionName: "balanceOf",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
 
   const readsFailed =
-    onAnvil &&
+    onChain &&
     (unread(claimsToday) ||
       unread(dailyClaimLimit) ||
       unread(nextClaimAt) ||
@@ -157,8 +157,9 @@ export function ClaimTokens() {
     claimed,
     confirming: action.confirming,
     connected: connection.isConnected,
+    chainLabel,
     eligibility: eligibility?.status,
-    onAnvil,
+    onChain,
     readsFailed,
     readsReady,
     simulating: action.simulating,
@@ -167,7 +168,7 @@ export function ClaimTokens() {
 
   return (
     <div className="flex h-full min-w-0 flex-col gap-3">
-      {onAnvil && claimAmount.data !== undefined ? (
+      {onChain && claimAmount.data !== undefined ? (
         <p className="text-sm text-ink tabular-nums">
           Claim amount: {formatDvr(claimAmount.data)} DVR
         </p>

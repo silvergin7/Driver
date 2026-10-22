@@ -2,9 +2,9 @@
 
 import type { Abi } from "viem";
 import { useBlock, useConnection, useReadContract } from "wagmi";
-import { anvil, contracts } from "@/config/contracts";
+import { chain, chainLabel, contracts } from "@/config/contracts";
 import { mockUsdcFaucetAbi } from "@/generated/contracts";
-import { useAnvilAction } from "@/hooks/use-anvil-action";
+import { useChainAction } from "@/hooks/use-chain-action";
 import {
   actionErrorMessage,
   actionReceiptErrorMessage,
@@ -16,7 +16,7 @@ import { formatCountdown } from "@/lib/countdown";
 import { claimFailedMessage, claimRevertedMessage } from "@/lib/faucet-errors";
 import { formatUsdc } from "@/lib/format-usdc";
 
-const anvilContracts = contracts[anvil.id];
+const chainContracts = contracts[chain.id];
 const faucetAbi = mockUsdcFaucetAbi as Abi;
 
 function describeError(error: unknown): string {
@@ -29,64 +29,64 @@ function describeReceiptError(error: unknown): string {
 
 export function ClaimUsdc() {
   const connection = useConnection();
-  const onAnvil = connection.isConnected && connection.chainId === anvil.id;
-  const address = onAnvil ? connection.address : undefined;
+  const onChain = connection.isConnected && connection.chainId === chain.id;
+  const address = onChain ? connection.address : undefined;
   const identity = `${address ?? "disconnected"}:${connection.chainId ?? "none"}`;
-  const action = useAnvilAction({
+  const action = useChainAction({
     abi: mockUsdcFaucetAbi,
     account: address,
-    address: anvilContracts.mockUsdcFaucet,
+    address: chainContracts.mockUsdcFaucet,
     describeError,
     describeReceiptError,
     functionName: "claim",
     scope: identity,
   });
   const block = useBlock({
-    chainId: anvil.id,
-    query: { enabled: onAnvil },
-    watch: onAnvil,
+    chainId: chain.id,
+    query: { enabled: onChain },
+    watch: onChain,
   });
   const claimsToday = useReadContract({
     abi: mockUsdcFaucetAbi,
-    address: anvilContracts.mockUsdcFaucet,
-    chainId: anvil.id,
+    address: chainContracts.mockUsdcFaucet,
+    chainId: chain.id,
     functionName: "claimsToday",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const dailyClaimLimit = useReadContract({
     abi: mockUsdcFaucetAbi,
-    address: anvilContracts.mockUsdcFaucet,
+    address: chainContracts.mockUsdcFaucet,
     functionName: "i_dailyClaimLimit",
-    chainId: anvil.id,
-    query: { enabled: onAnvil },
+    chainId: chain.id,
+    query: { enabled: onChain },
   });
   const nextClaimArgs =
     address === undefined ? undefined : ([address] as const);
   const nextClaimAt = useReadContract({
     abi: mockUsdcFaucetAbi,
-    address: anvilContracts.mockUsdcFaucet,
+    address: chainContracts.mockUsdcFaucet,
     args: nextClaimArgs,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "nextClaimAt",
     query: { enabled: address !== undefined },
   });
   const nextDailyReset = useReadContract({
     abi: mockUsdcFaucetAbi,
-    address: anvilContracts.mockUsdcFaucet,
-    chainId: anvil.id,
+    address: chainContracts.mockUsdcFaucet,
+    chainId: chain.id,
     functionName: "nextDailyReset",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const claimAmount = useReadContract({
     abi: mockUsdcFaucetAbi,
-    address: anvilContracts.mockUsdcFaucet,
+    address: chainContracts.mockUsdcFaucet,
     functionName: "i_claimAmount",
-    chainId: anvil.id,
-    query: { enabled: onAnvil },
+    chainId: chain.id,
+    query: { enabled: onChain },
   });
 
   const readsFailed =
-    onAnvil &&
+    onChain &&
     (unread(claimsToday) ||
       unread(dailyClaimLimit) ||
       unread(nextClaimAt) ||
@@ -154,8 +154,9 @@ export function ClaimUsdc() {
     claimed,
     confirming: action.confirming,
     connected: connection.isConnected,
+    chainLabel,
     eligibility: eligibility?.status,
-    onAnvil,
+    onChain,
     readsFailed,
     readsReady,
     simulating: action.simulating,
@@ -164,7 +165,7 @@ export function ClaimUsdc() {
 
   return (
     <div className="flex h-full min-w-0 flex-col gap-3">
-      {onAnvil && claimAmount.data !== undefined ? (
+      {onChain && claimAmount.data !== undefined ? (
         <p className="text-sm text-ink tabular-nums">
           Claim amount: {formatUsdc(claimAmount.data)} mUSDC
         </p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useReadContracts } from "wagmi";
-import { anvil, anvilNetworkLabel, contracts } from "@/config/contracts";
+import { chain, chainLabel, contracts } from "@/config/contracts";
 import {
   driverTokenAbi,
   officialPoolAbi,
@@ -12,7 +12,7 @@ import { burnedDvr } from "@/lib/burned-dvr";
 import { formatBps } from "@/lib/format-bps";
 import { formatDvr } from "@/lib/format-dvr";
 
-const anvilContracts = contracts[anvil.id];
+const chainContracts = contracts[chain.id];
 
 export function TokenFigures() {
   const figures = useReadContracts({
@@ -20,44 +20,44 @@ export function TokenFigures() {
     contracts: [
       {
         abi: driverTokenAbi,
-        address: anvilContracts.driverToken,
-        chainId: anvil.id,
+        address: chainContracts.driverToken,
+        chainId: chain.id,
         functionName: "totalSupply",
       },
       {
         abi: driverTokenAbi,
-        address: anvilContracts.driverToken,
-        chainId: anvil.id,
+        address: chainContracts.driverToken,
+        chainId: chain.id,
         functionName: "MAX_SUPPLY",
       },
       {
         abi: driverTokenAbi,
-        address: anvilContracts.driverToken,
-        chainId: anvil.id,
+        address: chainContracts.driverToken,
+        chainId: chain.id,
         functionName: "totalMinted",
       },
       {
         abi: officialPoolAbi,
-        address: anvilContracts.officialPool,
-        chainId: anvil.id,
+        address: chainContracts.officialPool,
+        chainId: chain.id,
         functionName: "taxBps",
       },
       {
         abi: taxSplitterAbi,
-        address: anvilContracts.taxSplitter,
-        chainId: anvil.id,
+        address: chainContracts.taxSplitter,
+        chainId: chain.id,
         functionName: "FUND_1_BPS",
       },
       {
         abi: taxSplitterAbi,
-        address: anvilContracts.taxSplitter,
-        chainId: anvil.id,
+        address: chainContracts.taxSplitter,
+        chainId: chain.id,
         functionName: "FUND_2_BPS",
       },
       {
         abi: taxSplitterAbi,
-        address: anvilContracts.taxSplitter,
-        chainId: anvil.id,
+        address: chainContracts.taxSplitter,
+        chainId: chain.id,
         functionName: "FUND_3_BPS",
       },
     ],
@@ -73,7 +73,7 @@ export function TokenFigures() {
     minted !== undefined && supply !== undefined
       ? burnedDvr(minted, supply)
       : undefined;
-  const explorer = addressExplorer(anvil, anvilContracts.driverToken);
+  const explorer = addressExplorer(chain, chainContracts.driverToken);
   const failed = figures.isError && figures.data === undefined;
 
   return (
@@ -96,12 +96,12 @@ export function TokenFigures() {
         <div>
           <dt className="text-ink-muted">Token contract</dt>
           <dd className="break-all font-mono text-sm text-ink">
-            {anvilContracts.driverToken}
+            {chainContracts.driverToken}
           </dd>
         </div>
         <div>
           <dt className="text-ink-muted">Network</dt>
-          <dd className="text-ink">{anvilNetworkLabel}</dd>
+          <dd className="text-ink">{chainLabel}</dd>
         </div>
         <div>
           <dt className="text-ink-muted">Explorer</dt>

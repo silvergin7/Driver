@@ -11,7 +11,8 @@ import {
 } from "viem";
 import { useConfig, useConnection, useReadContract } from "wagmi";
 import { readContract } from "wagmi/actions";
-import { anvil, contracts } from "@/config/contracts";
+import { chain, chainLabel, contracts } from "@/config/contracts";
+import { switchPrompt } from "@/lib/switch-prompt";
 import {
   cruiseControlAbi,
   degenDriverAbi,
@@ -20,7 +21,7 @@ import {
   officialPoolAbi,
   roundScheduleAbi,
 } from "@/generated/contracts";
-import { useAnvilAction } from "@/hooks/use-anvil-action";
+import { useChainAction } from "@/hooks/use-chain-action";
 import {
   actionErrorMessage,
   actionReceiptErrorMessage,
@@ -38,7 +39,7 @@ import {
 import { ownerCardView } from "@/lib/owner-card";
 import { slippageBps } from "@/lib/slippage";
 
-const anvilContracts = contracts[anvil.id];
+const chainContracts = contracts[chain.id];
 const failed = "The transaction failed.";
 const reverted = "The transaction reverted.";
 const day = 86_400n;
@@ -75,9 +76,9 @@ export function OwnerControls() {
   const connection = useConnection();
   const config = useConfig();
   const connected = connection.isConnected;
-  const onAnvil = connected && connection.chainId === anvil.id;
+  const onChain = connected && connection.chainId === chain.id;
   const readAddress = connected ? connection.address : undefined;
-  const actionAddress = onAnvil ? connection.address : undefined;
+  const actionAddress = onChain ? connection.address : undefined;
   const identity = `${readAddress ?? "disconnected"}:${connection.chainId ?? "none"}`;
   const [notice, setNotice] = useState<string>();
   const [quoteError, setQuoteError] = useState<string>();
@@ -90,52 +91,52 @@ export function OwnerControls() {
 
   const cruiseOwner = useReadContract({
     abi: cruiseControlAbi,
-    address: anvilContracts.cruiseControl,
-    chainId: anvil.id,
+    address: chainContracts.cruiseControl,
+    chainId: chain.id,
     functionName: "owner",
     query: { enabled: readAddress !== undefined },
   });
   const degenOwner = useReadContract({
     abi: degenDriverAbi,
-    address: anvilContracts.degenDriver,
-    chainId: anvil.id,
+    address: chainContracts.degenDriver,
+    chainId: chain.id,
     functionName: "owner",
     query: { enabled: readAddress !== undefined },
   });
   const clockOwner = useReadContract({
     abi: demoDriverClockAbi,
-    address: anvilContracts.demoDriverClock,
-    chainId: anvil.id,
+    address: chainContracts.demoDriverClock,
+    chainId: chain.id,
     functionName: "owner",
     query: { enabled: readAddress !== undefined },
   });
   const maxAdvance = useReadContract({
     abi: demoDriverClockAbi,
-    address: anvilContracts.demoDriverClock,
-    chainId: anvil.id,
+    address: chainContracts.demoDriverClock,
+    chainId: chain.id,
     functionName: "MAX_ADVANCE",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const epoch = useReadContract({
     abi: roundScheduleAbi,
-    address: anvilContracts.roundSchedule,
-    chainId: anvil.id,
+    address: chainContracts.roundSchedule,
+    chainId: chain.id,
     functionName: "i_epoch",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const cruiseReady = useReadContract({
     abi: cruiseControlAbi,
-    address: anvilContracts.cruiseControl,
-    chainId: anvil.id,
+    address: chainContracts.cruiseControl,
+    chainId: chain.id,
     functionName: "harvestableRound",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const degenReady = useReadContract({
     abi: degenDriverAbi,
-    address: anvilContracts.degenDriver,
-    chainId: anvil.id,
+    address: chainContracts.degenDriver,
+    chainId: chain.id,
     functionName: "harvestableRound",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
 
   const ownsCruise =
@@ -151,30 +152,30 @@ export function OwnerControls() {
     clockOwner.data !== undefined &&
     getAddress(clockOwner.data) === getAddress(readAddress);
 
-  const harvestCruise = useAnvilAction({
+  const harvestCruise = useChainAction({
     abi: cruiseControlAbi,
     account: ownsCruise ? actionAddress : undefined,
-    address: anvilContracts.cruiseControl,
+    address: chainContracts.cruiseControl,
     args: [0n] as const,
     describeError,
     describeReceiptError,
     functionName: "harvest",
     scope: identity,
   });
-  const harvestDegen = useAnvilAction({
+  const harvestDegen = useChainAction({
     abi: degenDriverAbi,
     account: ownsDegen ? actionAddress : undefined,
-    address: anvilContracts.degenDriver,
+    address: chainContracts.degenDriver,
     args: [0n] as const,
     describeError,
     describeReceiptError,
     functionName: "harvest",
     scope: identity,
   });
-  const skip = useAnvilAction({
+  const skip = useChainAction({
     abi: demoDriverClockAbi,
     account: ownsClock ? actionAddress : undefined,
-    address: anvilContracts.demoDriverClock,
+    address: chainContracts.demoDriverClock,
     args: [epoch.data ?? 1n] as const,
     describeError,
     describeReceiptError,
@@ -184,7 +185,7 @@ export function OwnerControls() {
 
   const view = ownerCardView({
     connected,
-    onAnvil,
+    onChain,
     ownsAny: ownsCruise || ownsDegen || ownsClock,
   });
   if (view === "hidden") {
@@ -193,7 +194,9 @@ export function OwnerControls() {
   if (view === "switch") {
     return (
       <Card className="w-fit max-w-full self-center" title="Owner">
-        <p className="text-sm text-ink-muted">Switch to Anvil to harvest.</p>
+        <p className="text-sm text-ink-muted">
+          {switchPrompt(chainLabel, "to harvest.")}
+        </p>
       </Card>
     );
   }
@@ -215,7 +218,7 @@ export function OwnerControls() {
     setQuoteError(undefined);
     const abi = fund === "1" ? cruiseControlAbi : degenDriverAbi;
     const fundAddress =
-      fund === "1" ? anvilContracts.cruiseControl : anvilContracts.degenDriver;
+      fund === "1" ? chainContracts.cruiseControl : chainContracts.degenDriver;
     const action = fund === "1" ? harvestCruise : harvestDegen;
     let plan: BuybackPlan;
     try {
@@ -244,25 +247,25 @@ export function OwnerControls() {
     const heldRewards = await readContract(config, {
       abi,
       address: fundAddress,
-      chainId: anvil.id,
+      chainId: chain.id,
       functionName: "heldRewards",
     });
     const pendingRewards = await readContract(config, {
       abi,
       address: fundAddress,
-      chainId: anvil.id,
+      chainId: chain.id,
       functionName: "pendingRewards",
     });
     const pendingBuyback = await readContract(config, {
       abi,
       address: fundAddress,
-      chainId: anvil.id,
+      chainId: chain.id,
       functionName: "pendingBuyback",
     });
     const activeFarm = await readContract(config, {
       abi,
       address: fundAddress,
-      chainId: anvil.id,
+      chainId: chain.id,
       functionName: "activeFarm",
     });
     const hasActiveFarm = getAddress(activeFarm) !== zeroAddress;
@@ -270,7 +273,7 @@ export function OwnerControls() {
       ? await readContract(config, {
           abi: mockFarmAbi,
           address: activeFarm,
-          chainId: anvil.id,
+          chainId: chain.id,
           functionName: "rewardReserve",
         })
       : 0n;
@@ -286,9 +289,9 @@ export function OwnerControls() {
       try {
         const quoted = await readContract(config, {
           abi: officialPoolAbi,
-          address: anvilContracts.officialPool,
+          address: chainContracts.officialPool,
           args: [0, spend],
-          chainId: anvil.id,
+          chainId: chain.id,
           functionName: "quoteExactInput",
         });
         quote = {

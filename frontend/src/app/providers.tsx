@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { WagmiProvider } from "wagmi";
 import { wagmiConfig } from "@/config/wagmi";
-import { useAnvilBlockRefresh } from "@/hooks/use-anvil-block";
+import { useChainBlockRefresh } from "@/hooks/use-chain-block";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -12,13 +12,13 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <AnvilRefresh>{children}</AnvilRefresh>
+        <ChainRefresh>{children}</ChainRefresh>
       </QueryClientProvider>
     </WagmiProvider>
   );
 }
 
-function AnvilRefresh({ children }: { children: ReactNode }) {
-  useAnvilBlockRefresh();
+function ChainRefresh({ children }: { children: ReactNode }) {
+  useChainBlockRefresh();
   return children;
 }

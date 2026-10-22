@@ -1,11 +1,13 @@
 import type { ClaimEligibility } from "./claim-eligibility";
+import { switchPrompt } from "./switch-prompt";
 
 export type ClaimStatusInput = {
+  chainLabel: string;
   claimed: string | undefined;
   confirming: boolean;
   connected: boolean;
   eligibility: ClaimEligibility["status"] | undefined;
-  onAnvil: boolean;
+  onChain: boolean;
   readsFailed: boolean;
   readsReady: boolean;
   simulating: boolean;
@@ -16,8 +18,8 @@ export function claimStatus(input: ClaimStatusInput): string | undefined {
   if (!input.connected) {
     return "Connect a wallet to claim.";
   }
-  if (!input.onAnvil) {
-    return "Switch to Anvil to claim.";
+  if (!input.onChain) {
+    return switchPrompt(input.chainLabel, "to claim.");
   }
   if (input.readsFailed) {
     return "Claim status unavailable.";
