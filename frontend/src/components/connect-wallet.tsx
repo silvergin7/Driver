@@ -15,7 +15,8 @@ import {
   useDisconnect,
   useSwitchChain,
 } from "wagmi";
-import { anvil } from "@/config/contracts";
+import { chain, chainLabel } from "@/config/contracts";
+import { switchPrompt } from "@/lib/switch-prompt";
 import { actionButtonClass } from "@/lib/control-class";
 import { switchAccountError } from "@/lib/switch-account";
 import { walletAlertText } from "@/lib/wallet-alert";
@@ -60,7 +61,7 @@ export function useWalletControls() {
     setAccountAlert(undefined);
   }
   const connector = connectors[0];
-  const onAnvil = connection.isConnected && connection.chainId === anvil.id;
+  const onChain = connection.isConnected && connection.chainId === chain.id;
   const busy =
     connect.isPending ||
     connection.status === "connecting" ||
@@ -78,7 +79,7 @@ export function useWalletControls() {
     connectError,
     switchError,
     connection.isConnected,
-    onAnvil,
+    onChain,
   );
 
   async function switchAccount() {
@@ -150,7 +151,7 @@ export function useWalletControls() {
     switchChain,
     switchAccount,
     busy,
-    onAnvil,
+    onChain,
     alertMessage,
     accountAlert: connection.isConnected ? accountAlert : undefined,
     connectError,
@@ -246,7 +247,7 @@ function WalletMarkup({
     switchChain,
     switchAccount,
     busy,
-    onAnvil,
+    onChain,
     alertMessage,
     accountAlert,
     connectError,
@@ -273,20 +274,20 @@ function WalletMarkup({
             </button>
           ) : (
             <>
-              {!onAnvil ? (
+              {!onChain ? (
                 <button
                   type="button"
-                  className="min-h-11 whitespace-nowrap rounded-md bg-brand px-2 py-2 text-sm text-on-brand disabled:border disabled:border-line disabled:bg-disabled-bg disabled:text-ink-muted md:px-3 md:text-base"
+                  className="min-h-11 whitespace-nowrap rounded-md bg-brand px-1.5 py-2 text-sm text-on-brand disabled:border disabled:border-line disabled:bg-disabled-bg disabled:text-ink-muted md:px-3 md:text-base"
                   disabled={busy}
-                  onClick={() => switchChain.mutate({ chainId: anvil.id })}
+                  onClick={() => switchChain.mutate({ chainId: chain.id })}
                 >
-                  Switch to Anvil
+                  {switchPrompt(chainLabel)}
                 </button>
               ) : null}
               {connection.address !== undefined ? (
                 <AccountButton
                   address={connection.address}
-                  wideOnly={!onAnvil}
+                  wideOnly={!onChain}
                   open={menu.open}
                   onToggle={menu.toggle}
                   onClose={menu.close}
@@ -335,21 +336,21 @@ function WalletMarkup({
             Connect wallet
           </button>
         )}
-        {connection.isConnected && !onAnvil ? (
+        {connection.isConnected && !onChain ? (
           <button
             type="button"
             className={actionButtonClass()}
             disabled={busy}
-            onClick={() => switchChain.mutate({ chainId: anvil.id })}
+            onClick={() => switchChain.mutate({ chainId: chain.id })}
           >
-            Switch to Anvil
+            {switchPrompt(chainLabel)}
           </button>
         ) : null}
       </div>
       {connectError && !connection.isConnected ? (
         <p role="alert">{connectError}</p>
       ) : null}
-      {switchError && connection.isConnected && !onAnvil ? (
+      {switchError && connection.isConnected && !onChain ? (
         <p role="alert">{switchError}</p>
       ) : null}
     </>

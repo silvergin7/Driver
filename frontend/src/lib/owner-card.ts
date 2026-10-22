@@ -2,13 +2,13 @@ export type OwnerCardView = "hidden" | "switch" | "controls";
 
 export function ownerCardView(input: {
   connected: boolean;
-  onAnvil: boolean;
+  onChain: boolean;
   ownsAny: boolean;
 }): OwnerCardView {
   if (!input.connected || !input.ownsAny) {
     return "hidden";
   }
-  if (!input.onAnvil) {
+  if (!input.onChain) {
     return "switch";
   }
   return "controls";

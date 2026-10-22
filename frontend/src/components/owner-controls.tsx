@@ -9,9 +9,11 @@ import {
   type Abi,
   type Address,
 } from "viem";
+import { sepolia } from "viem/chains";
 import { useConfig, useConnection, useReadContract } from "wagmi";
 import { readContract } from "wagmi/actions";
-import { anvil, contracts } from "@/config/contracts";
+import { chain, chainLabel, contracts } from "@/config/contracts";
+import { switchPrompt } from "@/lib/switch-prompt";
 import {
   cruiseControlAbi,
   degenDriverAbi,
@@ -20,12 +22,18 @@ import {
   officialPoolAbi,
   roundScheduleAbi,
 } from "@/generated/contracts";
-import { useAnvilAction } from "@/hooks/use-anvil-action";
+import { useChainAction } from "@/hooks/use-chain-action";
 import {
   actionErrorMessage,
   actionReceiptErrorMessage,
 } from "@/lib/action-errors";
+import { TransactionLink } from "@/components/transaction-link";
 import { actionButtonClass } from "@/lib/control-class";
+import { addressExplorer } from "@/lib/explorer";
+import {
+  ownerActionTarget,
+  type OwnerActionTargetInput,
+} from "@/lib/owner-action-target";
 import { Card } from "@/components/ui/card";
 import { StatList } from "@/components/ui/stat-list";
 import {
@@ -38,7 +46,7 @@ import {
 import { ownerCardView } from "@/lib/owner-card";
 import { slippageBps } from "@/lib/slippage";
 
-const anvilContracts = contracts[anvil.id];
+const chainContracts = contracts[chain.id];
 const failed = "The transaction failed.";
 const reverted = "The transaction reverted.";
 const day = 86_400n;
@@ -58,6 +66,28 @@ function describeReceiptError(error: unknown): string {
   return actionReceiptErrorMessage(error, harvestAbis, reverted);
 }
 
+function OwnerActionLine({ action }: { action: OwnerActionTargetInput }) {
+  const target = ownerActionTarget(action);
+  const explorer = addressExplorer(chain, target.address);
+  return (
+    <p className="max-w-full text-sm text-ink-muted">
+      {target.lead}
+      {explorer.kind === "link" ? (
+        <a
+          className="text-sign underline"
+          href={explorer.href}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {target.shortAddress}
+        </a>
+      ) : (
+        target.shortAddress
+      )}
+    </p>
+  );
+}
+
 function revertName(error: unknown): string | undefined {
   if (!(error instanceof BaseError)) {
     return undefined;
@@ -75,67 +105,69 @@ export function OwnerControls() {
   const connection = useConnection();
   const config = useConfig();
   const connected = connection.isConnected;
-  const onAnvil = connected && connection.chainId === anvil.id;
+  const onChain = connected && connection.chainId === chain.id;
   const readAddress = connected ? connection.address : undefined;
-  const actionAddress = onAnvil ? connection.address : undefined;
+  const actionAddress = onChain ? connection.address : undefined;
   const identity = `${readAddress ?? "disconnected"}:${connection.chainId ?? "none"}`;
   const [notice, setNotice] = useState<string>();
   const [quoteError, setQuoteError] = useState<string>();
   const [noticeScope, setNoticeScope] = useState(identity);
+  const [lastAction, setLastAction] = useState<"fund-1" | "fund-2" | "skip">();
   if (noticeScope !== identity) {
     setNoticeScope(identity);
     setNotice(undefined);
     setQuoteError(undefined);
+    setLastAction(undefined);
   }
 
   const cruiseOwner = useReadContract({
     abi: cruiseControlAbi,
-    address: anvilContracts.cruiseControl,
-    chainId: anvil.id,
+    address: chainContracts.cruiseControl,
+    chainId: chain.id,
     functionName: "owner",
     query: { enabled: readAddress !== undefined },
   });
   const degenOwner = useReadContract({
     abi: degenDriverAbi,
-    address: anvilContracts.degenDriver,
-    chainId: anvil.id,
+    address: chainContracts.degenDriver,
+    chainId: chain.id,
     functionName: "owner",
     query: { enabled: readAddress !== undefined },
   });
   const clockOwner = useReadContract({
     abi: demoDriverClockAbi,
-    address: anvilContracts.demoDriverClock,
-    chainId: anvil.id,
+    address: chainContracts.demoDriverClock,
+    chainId: chain.id,
     functionName: "owner",
     query: { enabled: readAddress !== undefined },
   });
   const maxAdvance = useReadContract({
     abi: demoDriverClockAbi,
-    address: anvilContracts.demoDriverClock,
-    chainId: anvil.id,
+    address: chainContracts.demoDriverClock,
+    chainId: chain.id,
     functionName: "MAX_ADVANCE",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const epoch = useReadContract({
     abi: roundScheduleAbi,
-    address: anvilContracts.roundSchedule,
-    chainId: anvil.id,
+    address: chainContracts.roundSchedule,
+    chainId: chain.id,
     functionName: "i_epoch",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const cruiseReady = useReadContract({
     abi: cruiseControlAbi,
-    address: anvilContracts.cruiseControl,
-    chainId: anvil.id,
+    address: chainContracts.cruiseControl,
+    chainId: chain.id,
     functionName: "harvestableRound",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const degenReady = useReadContract({
     abi: degenDriverAbi,
-    address: anvilContracts.degenDriver,
-    chainId: anvil.id,
+    address: chainContracts.degenDriver,
+    chainId: chain.id,
     functionName: "harvestableRound",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
 
   const ownsCruise =
@@ -151,30 +183,30 @@ export function OwnerControls() {
     clockOwner.data !== undefined &&
     getAddress(clockOwner.data) === getAddress(readAddress);
 
-  const harvestCruise = useAnvilAction({
+  const harvestCruise = useChainAction({
     abi: cruiseControlAbi,
     account: ownsCruise ? actionAddress : undefined,
-    address: anvilContracts.cruiseControl,
+    address: chainContracts.cruiseControl,
     args: [0n] as const,
     describeError,
     describeReceiptError,
     functionName: "harvest",
     scope: identity,
   });
-  const harvestDegen = useAnvilAction({
+  const harvestDegen = useChainAction({
     abi: degenDriverAbi,
     account: ownsDegen ? actionAddress : undefined,
-    address: anvilContracts.degenDriver,
+    address: chainContracts.degenDriver,
     args: [0n] as const,
     describeError,
     describeReceiptError,
     functionName: "harvest",
     scope: identity,
   });
-  const skip = useAnvilAction({
+  const skip = useChainAction({
     abi: demoDriverClockAbi,
     account: ownsClock ? actionAddress : undefined,
-    address: anvilContracts.demoDriverClock,
+    address: chainContracts.demoDriverClock,
     args: [epoch.data ?? 1n] as const,
     describeError,
     describeReceiptError,
@@ -184,7 +216,7 @@ export function OwnerControls() {
 
   const view = ownerCardView({
     connected,
-    onAnvil,
+    onChain,
     ownsAny: ownsCruise || ownsDegen || ownsClock,
   });
   if (view === "hidden") {
@@ -193,7 +225,9 @@ export function OwnerControls() {
   if (view === "switch") {
     return (
       <Card className="w-fit max-w-full self-center" title="Owner">
-        <p className="text-sm text-ink-muted">Switch to Anvil to harvest.</p>
+        <p className="text-sm text-ink-muted">
+          {switchPrompt(chainLabel, "to harvest.")}
+        </p>
       </Card>
     );
   }
@@ -215,7 +249,7 @@ export function OwnerControls() {
     setQuoteError(undefined);
     const abi = fund === "1" ? cruiseControlAbi : degenDriverAbi;
     const fundAddress =
-      fund === "1" ? anvilContracts.cruiseControl : anvilContracts.degenDriver;
+      fund === "1" ? chainContracts.cruiseControl : chainContracts.degenDriver;
     const action = fund === "1" ? harvestCruise : harvestDegen;
     let plan: BuybackPlan;
     try {
@@ -231,6 +265,7 @@ export function OwnerControls() {
       setQuoteError("The buyback quote failed.");
       return;
     }
+    setLastAction(fund === "1" ? "fund-1" : "fund-2");
     const harvested = await action.send([plan.minDvrOut]);
     if (harvested) {
       setNotice(`Harvested Fund ${fund}.`);
@@ -244,25 +279,25 @@ export function OwnerControls() {
     const heldRewards = await readContract(config, {
       abi,
       address: fundAddress,
-      chainId: anvil.id,
+      chainId: chain.id,
       functionName: "heldRewards",
     });
     const pendingRewards = await readContract(config, {
       abi,
       address: fundAddress,
-      chainId: anvil.id,
+      chainId: chain.id,
       functionName: "pendingRewards",
     });
     const pendingBuyback = await readContract(config, {
       abi,
       address: fundAddress,
-      chainId: anvil.id,
+      chainId: chain.id,
       functionName: "pendingBuyback",
     });
     const activeFarm = await readContract(config, {
       abi,
       address: fundAddress,
-      chainId: anvil.id,
+      chainId: chain.id,
       functionName: "activeFarm",
     });
     const hasActiveFarm = getAddress(activeFarm) !== zeroAddress;
@@ -270,7 +305,7 @@ export function OwnerControls() {
       ? await readContract(config, {
           abi: mockFarmAbi,
           address: activeFarm,
-          chainId: anvil.id,
+          chainId: chain.id,
           functionName: "rewardReserve",
         })
       : 0n;
@@ -286,9 +321,9 @@ export function OwnerControls() {
       try {
         const quoted = await readContract(config, {
           abi: officialPoolAbi,
-          address: anvilContracts.officialPool,
+          address: chainContracts.officialPool,
           args: [0, spend],
-          chainId: anvil.id,
+          chainId: chain.id,
           functionName: "quoteExactInput",
         });
         quote = {
@@ -320,6 +355,7 @@ export function OwnerControls() {
     }
     setNotice(undefined);
     setQuoteError(undefined);
+    setLastAction("skip");
     const advanced = await skip.send([epoch.data]);
     if (advanced) {
       setNotice("Demo clock moved forward.");
@@ -334,46 +370,81 @@ export function OwnerControls() {
 
   return (
     <Card className="w-fit max-w-full self-center" title="Owner">
+      {chain.id === sepolia.id ? (
+        <p className="text-sm text-ink-muted">
+          A skip or a harvest on this demo clock is permanent.
+        </p>
+      ) : null}
       <StatList
         layout="inline"
         rows={[{ label: "Slippage", value: `${slippageBps / 100n}%` }]}
       />
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex max-w-full flex-col items-start gap-3">
         {ownsCruise ? (
-          <button
-            type="button"
-            className={actionButtonClass()}
-            disabled={busy || cruiseReady.data?.[0] !== true}
-            onClick={() => {
-              void onHarvest("1");
-            }}
-          >
-            Harvest Fund 1
-          </button>
+          <div className="flex max-w-full flex-col items-start gap-1">
+            <button
+              type="button"
+              className={actionButtonClass()}
+              disabled={busy || cruiseReady.data?.[0] !== true}
+              onClick={() => {
+                void onHarvest("1");
+              }}
+            >
+              Harvest Fund 1
+            </button>
+            <OwnerActionLine
+              action={{
+                kind: "harvest",
+                contractName: "CruiseControl",
+                address: chainContracts.cruiseControl,
+              }}
+            />
+          </div>
         ) : null}
         {ownsDegen ? (
-          <button
-            type="button"
-            className={actionButtonClass()}
-            disabled={busy || degenReady.data?.[0] !== true}
-            onClick={() => {
-              void onHarvest("2");
-            }}
-          >
-            Harvest Fund 2
-          </button>
+          <div className="flex max-w-full flex-col items-start gap-1">
+            <button
+              type="button"
+              className={actionButtonClass()}
+              disabled={busy || degenReady.data?.[0] !== true}
+              onClick={() => {
+                void onHarvest("2");
+              }}
+            >
+              Harvest Fund 2
+            </button>
+            <OwnerActionLine
+              action={{
+                kind: "harvest",
+                contractName: "DegenDriver",
+                address: chainContracts.degenDriver,
+              }}
+            />
+          </div>
         ) : null}
         {ownsClock ? (
-          <button
-            type="button"
-            className={actionButtonClass()}
-            disabled={busy || epoch.data === undefined || skipTooLarge}
-            onClick={() => {
-              void onSkip();
-            }}
-          >
-            {skipLabel}
-          </button>
+          <div className="flex max-w-full flex-col items-start gap-1">
+            <button
+              type="button"
+              className={actionButtonClass()}
+              disabled={busy || epoch.data === undefined || skipTooLarge}
+              onClick={() => {
+                void onSkip();
+              }}
+            >
+              {skipLabel}
+            </button>
+            {epoch.data !== undefined ? (
+              <OwnerActionLine
+                action={{
+                  kind: "advanceTime",
+                  contractName: "DemoDriverClock",
+                  address: chainContracts.demoDriverClock,
+                  seconds: epoch.data,
+                }}
+              />
+            ) : null}
+          </div>
         ) : null}
       </div>
       {harvestCruise.simulating || harvestDegen.simulating || skip.simulating ? (
@@ -387,6 +458,26 @@ export function OwnerControls() {
       ) : null}
       {skip.confirming ? <p className="text-sm text-ink-muted">Confirming the clock skip.</p> : null}
       {notice && !busy ? <p className="text-sm text-ink-muted">{notice}</p> : null}
+      <TransactionLink
+        action={
+          lastAction === "fund-1"
+            ? "Fund 1 harvest"
+            : lastAction === "fund-2"
+              ? "Fund 2 harvest"
+              : lastAction === "skip"
+                ? "clock skip"
+                : undefined
+        }
+        hash={
+          lastAction === "fund-1" && harvestCruise.isSuccess
+            ? harvestCruise.hash
+            : lastAction === "fund-2" && harvestDegen.isSuccess
+              ? harvestDegen.hash
+              : lastAction === "skip" && skip.isSuccess
+                ? skip.hash
+                : undefined
+        }
+      />
       {errorMessage ? <p role="alert">{errorMessage}</p> : null}
     </Card>
   );

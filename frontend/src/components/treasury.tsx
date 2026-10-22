@@ -2,7 +2,8 @@
 
 import { getAddress, isAddress, zeroAddress, type Address } from "viem";
 import { useConnection, useReadContract, useReadContracts } from "wagmi";
-import { anvil, contracts } from "@/config/contracts";
+import { chain, chainLabel, contracts } from "@/config/contracts";
+import { switchPrompt } from "@/lib/switch-prompt";
 import {
   cruiseControlAbi,
   degenDriverAbi,
@@ -20,25 +21,25 @@ import { BigStat } from "@/components/ui/big-stat";
 import { Card } from "@/components/ui/card";
 import { StatList } from "@/components/ui/stat-list";
 
-const anvilContracts = contracts[anvil.id];
+const chainContracts = contracts[chain.id];
 
 const treasurySubtitle =
   "Cruise Control never goes above 5%. Degen Driver drives as fast as the instructors allow.";
 
 export function Treasury() {
   const connection = useConnection();
-  const onAnvil = connection.isConnected && connection.chainId === anvil.id;
-  const cruiseCalls = fundCalls(cruiseControlAbi, anvilContracts.cruiseControl);
-  const degenCalls = fundCalls(degenDriverAbi, anvilContracts.degenDriver);
+  const onChain = connection.isConnected && connection.chainId === chain.id;
+  const cruiseCalls = fundCalls(cruiseControlAbi, chainContracts.cruiseControl);
+  const degenCalls = fundCalls(degenDriverAbi, chainContracts.degenDriver);
   const cruise = useReadContracts({
     allowFailure: false,
     contracts: cruiseCalls,
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const degen = useReadContracts({
     allowFailure: false,
     contracts: degenCalls,
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const cruiseFarm = fundAddress(cruise.data?.[3]);
   const degenFarm = fundAddress(degen.data?.[3]);
@@ -46,17 +47,17 @@ export function Treasury() {
   const degenFarmState = useFarmState(degenFarm);
   const minted = useReadContract({
     abi: driverTokenAbi,
-    address: anvilContracts.driverToken,
-    chainId: anvil.id,
+    address: chainContracts.driverToken,
+    chainId: chain.id,
     functionName: "totalMinted",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
   const supply = useReadContract({
     abi: driverTokenAbi,
-    address: anvilContracts.driverToken,
-    chainId: anvil.id,
+    address: chainContracts.driverToken,
+    chainId: chain.id,
     functionName: "totalSupply",
-    query: { enabled: onAnvil },
+    query: { enabled: onChain },
   });
 
   if (!connection.isConnected) {
@@ -66,10 +67,12 @@ export function Treasury() {
       </Card>
     );
   }
-  if (!onAnvil) {
+  if (!onChain) {
     return (
       <Card className="w-full" title="Treasury" subtitle={treasurySubtitle}>
-        <p className="text-sm text-ink-muted">Switch to Anvil to see the funds.</p>
+        <p className="text-sm text-ink-muted">
+          {switchPrompt(chainLabel, "to see the funds.")}
+        </p>
       </Card>
     );
   }
@@ -145,21 +148,21 @@ function useFarmState(farm: Address | undefined) {
   const apr = useReadContract({
     abi: mockFarmAbi,
     address,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "aprBps",
     query: { enabled },
   });
   const paused = useReadContract({
     abi: mockFarmAbi,
     address,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "paused",
     query: { enabled },
   });
   const reserve = useReadContract({
     abi: mockFarmAbi,
     address,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "rewardReserve",
     query: { enabled },
   });
@@ -270,7 +273,7 @@ function viewCall(
   return {
     abi,
     address,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName,
   };
 }

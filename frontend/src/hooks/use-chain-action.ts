@@ -15,9 +15,9 @@ import {
   useWriteContract,
 } from "wagmi";
 import { simulateContract } from "wagmi/actions";
-import { anvil } from "@/config/contracts";
+import { chain } from "@/config/contracts";
 
-export function useAnvilAction<
+export function useChainAction<
   const abi extends Abi,
   functionName extends ContractFunctionName<abi, "nonpayable" | "payable">,
 >(options: {
@@ -64,7 +64,7 @@ export function useAnvilAction<
   }, [options.scope]);
 
   const receipt = useWaitForTransactionReceipt({
-    chainId: anvil.id,
+    chainId: chain.id,
     hash: write.data,
   });
 
@@ -115,7 +115,7 @@ export function useAnvilAction<
       abi: options.abi,
       account: options.account,
       address: options.address,
-      chainId: anvil.id,
+      chainId: chain.id,
       functionName: options.functionName,
       ...(args === undefined ? {} : { args }),
     };
@@ -148,6 +148,7 @@ export function useAnvilAction<
     confirming,
     busy,
     errorMessage,
+    hash: write.data,
     isSuccess: receipt.isSuccess,
     receipt,
   };

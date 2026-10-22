@@ -4,7 +4,8 @@ import { useState } from "react";
 import type { Abi, Address } from "viem";
 import { zeroAddress } from "viem";
 import { useConnection, useReadContract } from "wagmi";
-import { anvil, contracts } from "@/config/contracts";
+import { chain, chainLabel, contracts } from "@/config/contracts";
+import { switchPrompt } from "@/lib/switch-prompt";
 import {
   degenDriverAbi,
   demoDriverClockAbi,
@@ -13,11 +14,12 @@ import {
   mockFarmAbi,
   roundScheduleAbi,
 } from "@/generated/contracts";
-import { useAnvilAction } from "@/hooks/use-anvil-action";
+import { useChainAction } from "@/hooks/use-chain-action";
 import {
   actionErrorMessage,
   actionReceiptErrorMessage,
 } from "@/lib/action-errors";
+import { TransactionLink } from "@/components/transaction-link";
 import {
   actionButtonClass,
   inputClass,
@@ -31,7 +33,7 @@ import { formatCountdown } from "@/lib/countdown";
 import { parseTokenAmount, type ParsedAmount } from "@/lib/parse-amount";
 import { roundChoice } from "@/lib/round-choice";
 
-const anvilContracts = contracts[anvil.id];
+const chainContracts = contracts[chain.id];
 const voteAbi = driverVoteAbi as Abi;
 const tokenAbi = driverTokenAbi as Abi;
 const failed = "The transaction failed.";
@@ -48,14 +50,14 @@ function describeReceiptError(error: unknown): string {
 function useListedFarm(
   index: number,
   count: bigint | undefined,
-  onAnvil: boolean,
+  onChain: boolean,
 ) {
-  const listed = onAnvil && count !== undefined && count > BigInt(index);
+  const listed = onChain && count !== undefined && count > BigInt(index);
   const strategy = useReadContract({
     abi: degenDriverAbi,
-    address: anvilContracts.degenDriver,
+    address: chainContracts.degenDriver,
     args: [BigInt(index)] as const,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "strategyAt",
     query: { enabled: listed },
   });
@@ -63,15 +65,15 @@ function useListedFarm(
   const apr = useReadContract({
     abi: mockFarmAbi,
     address: farm ?? zeroAddress,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "aprBps",
     query: { enabled: farm !== undefined },
   });
   const tally = useReadContract({
     abi: driverVoteAbi,
-    address: anvilContracts.driverVote,
+    address: chainContracts.driverVote,
     args: [farm ?? zeroAddress] as const,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "openTally",
     query: { enabled: farm !== undefined },
   });
@@ -80,8 +82,8 @@ function useListedFarm(
 
 export function LockVote() {
   const connection = useConnection();
-  const onAnvil = connection.isConnected && connection.chainId === anvil.id;
-  const address = onAnvil ? connection.address : undefined;
+  const onChain = connection.isConnected && connection.chainId === chain.id;
+  const address = onChain ? connection.address : undefined;
   const identity = `${address ?? "disconnected"}:${connection.chainId ?? "none"}`;
   const [lockText, setLockText] = useState("");
   const [unlockText, setUnlockText] = useState("");
@@ -99,9 +101,9 @@ export function LockVote() {
 
   const balanceParameters = {
     abi: driverTokenAbi,
-    address: anvilContracts.driverToken,
+    address: chainContracts.driverToken,
     args: accountArgs,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "balanceOf",
   } as const;
   const balance = useReadContract({
@@ -112,12 +114,12 @@ export function LockVote() {
   });
   const allowanceParameters = {
     abi: driverTokenAbi,
-    address: anvilContracts.driverToken,
+    address: chainContracts.driverToken,
     args:
       address === undefined
         ? undefined
-        : ([address, anvilContracts.driverVote] as const),
-    chainId: anvil.id,
+        : ([address, chainContracts.driverVote] as const),
+    chainId: chain.id,
     functionName: "allowance",
   } as const;
   const allowance = useReadContract({
@@ -128,9 +130,9 @@ export function LockVote() {
   });
   const lockedParameters = {
     abi: driverVoteAbi,
-    address: anvilContracts.driverVote,
+    address: chainContracts.driverVote,
     args: accountArgs,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "locked",
   } as const;
   const locked = useReadContract({
@@ -141,9 +143,9 @@ export function LockVote() {
   });
   const unlockParameters = {
     abi: driverVoteAbi,
-    address: anvilContracts.driverVote,
+    address: chainContracts.driverVote,
     args: accountArgs,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "unlockStatus",
   } as const;
   const unlockState = useReadContract({
@@ -154,48 +156,48 @@ export function LockVote() {
   });
   const roundParameters = {
     abi: roundScheduleAbi,
-    address: anvilContracts.roundSchedule,
-    chainId: anvil.id,
+    address: chainContracts.roundSchedule,
+    chainId: chain.id,
     functionName: "currentRound",
   } as const;
   const round = useReadContract({
     ...roundParameters,
     query: {
-      enabled: onAnvil,
+      enabled: onChain,
     },
   });
   const clockParameters = {
     abi: demoDriverClockAbi,
-    address: anvilContracts.demoDriverClock,
-    chainId: anvil.id,
+    address: chainContracts.demoDriverClock,
+    chainId: chain.id,
     functionName: "currentTime",
   } as const;
   const clock = useReadContract({
     ...clockParameters,
     query: {
-      enabled: onAnvil,
+      enabled: onChain,
     },
   });
   const countParameters = {
     abi: degenDriverAbi,
-    address: anvilContracts.degenDriver,
-    chainId: anvil.id,
+    address: chainContracts.degenDriver,
+    chainId: chain.id,
     functionName: "strategyCount",
   } as const;
   const strategyCount = useReadContract({
     ...countParameters,
     query: {
-      enabled: onAnvil,
+      enabled: onChain,
     },
   });
   const voteParameters = {
     abi: driverVoteAbi,
-    address: anvilContracts.driverVote,
+    address: chainContracts.driverVote,
     args:
       address === undefined || round.data === undefined
         ? undefined
         : ([round.data, address] as const),
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "voteOf",
   } as const;
   const voteOf = useReadContract({
@@ -206,35 +208,35 @@ export function LockVote() {
   });
   const openLeaderParameters = {
     abi: driverVoteAbi,
-    address: anvilContracts.driverVote,
+    address: chainContracts.driverVote,
     args: [round.data ?? 0n] as const,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "leader",
   } as const;
   const openLeader = useReadContract({
     ...openLeaderParameters,
     query: {
-      enabled: onAnvil && round.data !== undefined,
+      enabled: onChain && round.data !== undefined,
     },
   });
   const closedRound = round.data !== undefined && round.data > 0n ? round.data - 1n : 0n;
   const closedLeaderParameters = {
     abi: driverVoteAbi,
-    address: anvilContracts.driverVote,
+    address: chainContracts.driverVote,
     args: [closedRound] as const,
-    chainId: anvil.id,
+    chainId: chain.id,
     functionName: "leader",
   } as const;
   const closedLeader = useReadContract({
     ...closedLeaderParameters,
     query: {
-      enabled: onAnvil && round.data !== undefined && round.data > 0n,
+      enabled: onChain && round.data !== undefined && round.data > 0n,
     },
   });
 
-  const farm0 = useListedFarm(0, strategyCount.data, onAnvil);
-  const farm1 = useListedFarm(1, strategyCount.data, onAnvil);
-  const farm2 = useListedFarm(2, strategyCount.data, onAnvil);
+  const farm0 = useListedFarm(0, strategyCount.data, onChain);
+  const farm1 = useListedFarm(1, strategyCount.data, onChain);
+  const farm2 = useListedFarm(2, strategyCount.data, onChain);
   const listed = [farm0, farm1, farm2].filter(
     (farm) => farm.farm !== undefined,
   );
@@ -248,40 +250,40 @@ export function LockVote() {
     unlockParsed.status === "amount" ? unlockParsed.amount : 0n;
   const voteFarm = selected ?? listed[0]?.farm ?? zeroAddress;
 
-  const approve = useAnvilAction({
+  const approve = useChainAction({
     abi: driverTokenAbi,
     account: address,
-    address: anvilContracts.driverToken,
-    args: [anvilContracts.driverVote, lockAmount] as const,
+    address: chainContracts.driverToken,
+    args: [chainContracts.driverVote, lockAmount] as const,
     describeError,
     describeReceiptError,
     functionName: "approve",
     scope: identity,
   });
-  const lock = useAnvilAction({
+  const lock = useChainAction({
     abi: driverVoteAbi,
     account: address,
-    address: anvilContracts.driverVote,
+    address: chainContracts.driverVote,
     args: [lockAmount] as const,
     describeError,
     describeReceiptError,
     functionName: "lock",
     scope: identity,
   });
-  const unlock = useAnvilAction({
+  const unlock = useChainAction({
     abi: driverVoteAbi,
     account: address,
-    address: anvilContracts.driverVote,
+    address: chainContracts.driverVote,
     args: [unlockAmount] as const,
     describeError,
     describeReceiptError,
     functionName: "unlock",
     scope: identity,
   });
-  const vote = useAnvilAction({
+  const vote = useChainAction({
     abi: driverVoteAbi,
     account: address,
-    address: anvilContracts.driverVote,
+    address: chainContracts.driverVote,
     args: [voteFarm] as const,
     describeError,
     describeReceiptError,
@@ -309,7 +311,7 @@ export function LockVote() {
     openLeader.data !== undefined &&
     (round.data === 0n || closedLeader.data !== undefined);
   const readsFailed =
-    onAnvil &&
+    onChain &&
     (unread(balance) ||
       unread(allowance) ||
       unread(locked) ||
@@ -422,8 +424,8 @@ export function LockVote() {
   let status: string | undefined;
   if (!connection.isConnected) {
     status = "Connect a wallet to lock and vote.";
-  } else if (!onAnvil) {
-    status = "Switch to Anvil to lock and vote.";
+  } else if (!onChain) {
+    status = switchPrompt(chainLabel, "to lock and vote.");
   } else if (readsFailed || countTooLong) {
     status = countTooLong
       ? "The farm list is longer than this page can show."
@@ -461,14 +463,16 @@ export function LockVote() {
       ? `Unlocks in ${formatCountdown(unlockState.data[1], clock.data)}`
       : undefined;
 
-  if (connection.isConnected && !onAnvil) {
+  if (connection.isConnected && !onChain) {
     return (
       <Card
         className="w-full"
         title="Lock and vote"
         subtitle="Instructors vote on Degen Driver's speed."
       >
-        <p className="text-sm text-ink-muted">Switch to Anvil to lock and vote.</p>
+        <p className="text-sm text-ink-muted">
+          {switchPrompt(chainLabel, "to lock and vote.")}
+        </p>
       </Card>
     );
   }
@@ -599,6 +603,17 @@ export function LockVote() {
         </div>
       </div>
       {status ? <p className="text-sm text-ink-muted">{status}</p> : null}
+      <TransactionLink
+        hash={
+          lastAction === "lock" && lock.isSuccess
+            ? lock.hash
+            : lastAction === "unlock" && unlock.isSuccess
+              ? unlock.hash
+              : lastAction === "vote" && vote.isSuccess
+                ? vote.hash
+                : undefined
+        }
+      />
       {lockReason && !busy ? <p className="text-sm text-ink-muted">{lockReason}</p> : null}
       {unlockReason && !busy ? <p className="text-sm text-ink-muted">{unlockReason}</p> : null}
       {voteReason && !busy ? <p className="text-sm text-ink-muted">{voteReason}</p> : null}
