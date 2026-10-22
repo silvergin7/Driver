@@ -66,4 +66,4 @@ Deployment Protection is Standard Protection with Vercel Authentication. The pro
 
 Do not commit `.vercel`. `frontend/.vercel/` and `/.vercel/` are gitignored.
 
-The production domain is the one listed under the project's Domains settings after the first deploy. The root README records it later.
+The production site is https://driver-dvr.vercel.app. The root README explains the project.
