@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ConnectWallet } from "@/components/connect-wallet";
 import { PageScene } from "@/components/page-scene";
-import { RoadSign } from "@/components/road-sign";
 import { actionButtonClass } from "@/lib/control-class";
 
 export default function Home() {
@@ -24,23 +23,14 @@ export default function Home() {
             >
               Drive the treasury
             </Link>
+            <Link
+              href="/simulation"
+              className={`${actionButtonClass()} inline-flex items-center`}
+            >
+              How it works
+            </Link>
             <ConnectWallet compact />
           </div>
-        </section>
-        <section className="flex flex-col gap-4">
-          <h2 className="text-2xl font-semibold text-ink">How it works</h2>
-          <div aria-hidden="true" className="border-t-2 border-dashed border-line" />
-          <ol className="grid gap-4 md:grid-cols-3">
-            <RoadSign marker="1">The treasury is the student driver.</RoadSign>
-            <RoadSign marker="2">
-              Cruise Control never goes above 5%. Instructors vote each month on how
-              fast Degen Driver may drive.
-            </RoadSign>
-            <RoadSign marker="3">
-              Once a month the harvest is the driving test. What the car earned gets
-              refuelled, and the rest burns DVR.
-            </RoadSign>
-          </ol>
         </section>
       </main>
     </>
