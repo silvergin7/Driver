@@ -72,7 +72,7 @@ contract SimulateDriver is Script {
             for (uint256 lockIndex; lockIndex < 2; ++lockIndex) {
                 for (uint256 voteIndex; voteIndex < votes.length; ++voteIndex) {
                     vm.revertToState(snap);
-                    bool lockAll = lockIndex == 1;
+                    bool lockAll = _lockAll(lockIndex);
                     Outcome memory outcome = _play(swaps[swapIndex] * 10 ** 6, lockAll, uint8(voteIndex));
                     runs[index] =
                         _runJson(swaps[swapIndex] * 10 ** 6, lockAll ? "all" : "half", votes[voteIndex], outcome.steps);
@@ -104,6 +104,34 @@ contract SimulateDriver is Script {
         drift = address(outcome.deployed.drift);
         firstMove = outcome.firstRebalance;
         secondMove = outcome.secondRebalance;
+    }
+
+    /// @notice Plays one choice and returns the lock plus Fund 2's farm.
+    /// @dev `lockIndex` 0 locks half and 1 locks all. `voteIndex` 1 votes Autobahn.
+    /// Reverts with {SimulateDriver__LocalOnly} before any deploy when the chain is not Anvil.
+    /// @param swapWhole mUSDC spent on the buy, in whole tokens.
+    /// @param lockIndex 0 for half of the DVR held, 1 for all of it.
+    /// @param voteIndex 0 Highway, 1 Autobahn, 2 Drift.
+    /// @return walletDvr DVR still in the wallet after the lock.
+    /// @return lockedDvr DVR locked for the vote.
+    /// @return activeFarm Fund 2's farm after the second harvest.
+    /// @return autobahn The Autobahn farm from that deploy.
+    function previewChoice(uint256 swapWhole, uint256 lockIndex, uint8 voteIndex)
+        external
+        returns (uint256 walletDvr, uint256 lockedDvr, address activeFarm, address autobahn)
+    {
+        _requireLocal();
+        vm.warp(START);
+        Outcome memory outcome = _play(swapWhole * 10 ** 6, _lockAll(lockIndex), voteIndex);
+        walletDvr = outcome.steps[3].walletDvr;
+        lockedDvr = outcome.steps[3].lockedDvr;
+        activeFarm = address(outcome.deployed.degenDriver.activeFarm());
+        autobahn = address(outcome.deployed.autobahn);
+    }
+
+    /// @dev The loop's lock flag. Index 1 locks every DVR the visitor holds.
+    function _lockAll(uint256 lockIndex) private pure returns (bool) {
+        return lockIndex == 1;
     }
 
     /// @dev Deploys a fresh demo and walks one visitor through two epochs.

@@ -16,6 +16,19 @@ contract SimulateDriverTest is Test {
         assertEq(supply + burned, 1_000_000 ether);
     }
 
+    function test_HalfLockKeepsHalfTheDvr() public {
+        (uint256 walletDvr, uint256 lockedDvr,,) = new SimulateDriver().previewChoice(25, 0, 0);
+
+        assertGt(lockedDvr, 0);
+        assertTrue(walletDvr == lockedDvr || walletDvr == lockedDvr + 1);
+    }
+
+    function test_AutobahnRunUsesTheAutobahnFarm() public {
+        (,, address activeFarm, address autobahn) = new SimulateDriver().previewChoice(25, 1, 1);
+
+        assertEq(activeFarm, autobahn);
+    }
+
     function test_RevertWhen_PreviewOnMainnet() public {
         SimulateDriver simulator = new SimulateDriver();
         vm.chainId(1);
