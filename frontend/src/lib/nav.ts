@@ -5,6 +5,7 @@ export const navItems = [
   { href: "/swap", label: "Swap" },
   { href: "/token", label: "Token" },
   { href: "/community", label: "Community" },
+  { href: "/simulation", label: "Simulation" },
 ] as const;
 
 export function isCurrentPage(pathname: string, href: string): boolean {

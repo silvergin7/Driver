@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { isCurrentPage, navItems } from "./nav";
 
 describe("navItems", () => {
-  it("lists the six routes in order", () => {
+  it("lists the seven routes in order", () => {
     expect(navItems.map((item) => item.href)).toEqual([
       "/",
       "/game",
@@ -10,6 +10,7 @@ describe("navItems", () => {
       "/swap",
       "/token",
       "/community",
+      "/simulation",
     ]);
     expect(navItems.map((item) => item.label)).toEqual([
       "Home",
@@ -18,6 +19,7 @@ describe("navItems", () => {
       "Swap",
       "Token",
       "Community",
+      "Simulation",
     ]);
   });
 });
@@ -38,5 +40,7 @@ describe("isCurrentPage", () => {
     expect(isCurrentPage("/faucet", "/faucet")).toBe(true);
     expect(isCurrentPage("/swap", "/swap")).toBe(true);
     expect(isCurrentPage("/community", "/community")).toBe(true);
+    expect(isCurrentPage("/simulation", "/simulation")).toBe(true);
+    expect(isCurrentPage("/simulation/extra", "/simulation")).toBe(false);
   });
 });
