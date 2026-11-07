@@ -53,9 +53,31 @@ This is only for the archived Sepolia demo. Sepolia ETH is free test money for n
 - DVR and mUSDC are pretend. They have no real value. On mainnet the network fee is real ETH.
 - The demo has its own clock, so we can show a month passing. The owner can skip it forward a month, never back. Faucet waits still use real time.
 
+## Contracts
+
+The live contracts on Ethereum mainnet. All 15 are verified on Etherscan. Click an address to open it.
+
+| What | Address |
+| --- | --- |
+| Driver token | [`0x5134d2D8429c11621639409B2E4f75fdf4940210`](https://etherscan.io/address/0x5134d2D8429c11621639409B2E4f75fdf4940210) |
+| DVR faucet | [`0x9eF50719977006265879420Ce3B7F9136d413E29`](https://etherscan.io/address/0x9eF50719977006265879420Ce3B7F9136d413E29) |
+| Mock USDC | [`0x1e21AfBDF66D95CeAAF645e3E2ffA026c91Fe701`](https://etherscan.io/address/0x1e21AfBDF66D95CeAAF645e3E2ffA026c91Fe701) |
+| mUSDC faucet | [`0x9510f5fCEb0a3B3A39E5e40C0Ba9Da14A6527937`](https://etherscan.io/address/0x9510f5fCEb0a3B3A39E5e40C0Ba9Da14A6527937) |
+| Demo clock | [`0x11aAa0614aF8E708db4D8673CAd74339bbE47CF2`](https://etherscan.io/address/0x11aAa0614aF8E708db4D8673CAd74339bbE47CF2) |
+| Tax splitter | [`0xa2dCf3b3F12eEF1BcD604Ea8D6dBb76Ce2b256e3`](https://etherscan.io/address/0xa2dCf3b3F12eEF1BcD604Ea8D6dBb76Ce2b256e3) |
+| Official pool | [`0x72D06D1B5f72dCC3136bD5A5580A93efaC54525b`](https://etherscan.io/address/0x72D06D1B5f72dCC3136bD5A5580A93efaC54525b) |
+| Cruise farm (5% a year) | [`0x730C2257c8d34837062909d7E9cA5EAc504d034a`](https://etherscan.io/address/0x730C2257c8d34837062909d7E9cA5EAc504d034a) |
+| Highway farm (40% a year) | [`0xa1Dce3a58314CC296FE97E565664872aF1ff113A`](https://etherscan.io/address/0xa1Dce3a58314CC296FE97E565664872aF1ff113A) |
+| Autobahn farm (80% a year) | [`0x3a9Bdc55C6C15Ede1132a105A0752176e44c242c`](https://etherscan.io/address/0x3a9Bdc55C6C15Ede1132a105A0752176e44c242c) |
+| Drift farm (160% a year) | [`0x95826BdceD66Bd3feD75a79c5c3dB95117f9CE9E`](https://etherscan.io/address/0x95826BdceD66Bd3feD75a79c5c3dB95117f9CE9E) |
+| Round schedule | [`0xA0403ffEbdAaE3858C6094cC41ebB0e2d3363b3A`](https://etherscan.io/address/0xA0403ffEbdAaE3858C6094cC41ebB0e2d3363b3A) |
+| Cruise Control | [`0xD0C3f35B0492e1044edEC2f0D6367dA03c6a5a33`](https://etherscan.io/address/0xD0C3f35B0492e1044edEC2f0D6367dA03c6a5a33) |
+| Degen Driver | [`0x169cBb6f092A93d10d64e3F34f0629915b9D38f5`](https://etherscan.io/address/0x169cBb6f092A93d10d64e3F34f0629915b9D38f5) |
+| Vote | [`0xF709CCd48Dab0Af9Aa0e249D6fca6e95473bC5d8`](https://etherscan.io/address/0xF709CCd48Dab0Af9Aa0e249D6fca6e95473bC5d8) |
+
 ## Archived Sepolia demo
 
-These are the original contracts, tag v0.1.0 and branch archive/sepolia-demo. All 15 are verified on Etherscan. Click an address to open it. The mainnet addresses will be added here after that deployment.
+These are the original contracts, tag v0.1.0 and branch archive/sepolia-demo. All 15 are verified on Etherscan. Click an address to open it.
 
 | What | Address |
 | --- | --- |
