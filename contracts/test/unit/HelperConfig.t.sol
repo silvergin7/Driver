@@ -65,7 +65,9 @@ contract HelperConfigTest is Test {
 
     function test_AnvilGetConfigIgnoresSepoliaEnv() public {
         address sepoliaDeployer = makeAddr("sepoliaDeployer");
+        address mainnetDeployer = makeAddr("mainnetDeployer");
         vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(sepoliaDeployer));
+        vm.setEnv("MAINNET_DEPLOYER", vm.toString(mainnetDeployer));
         HelperConfig helper = new HelperConfig();
 
         assertEq(block.chainid, helper.ANVIL_CHAIN_ID());
@@ -85,6 +87,99 @@ contract HelperConfigTest is Test {
         HelperConfig.NetworkConfig memory config = helper.getConfig();
         assertEq(config.deployer, sepoliaDeployer);
         assertTrue(config.profile == HelperConfig.DeployProfile.Demo);
+    }
+
+    function test_SepoliaGetConfigIgnoresMainnetDeployer() public {
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
+        address mainnetDeployer = makeAddr("mainnetDeployer");
+        vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(sepoliaDeployer));
+        vm.setEnv("MAINNET_DEPLOYER", vm.toString(mainnetDeployer));
+        vm.setEnv("DEPLOY_PROFILE", "demo");
+        vm.chainId(11_155_111);
+        HelperConfig helper = new HelperConfig();
+
+        HelperConfig.NetworkConfig memory config = helper.getConfig();
+        assertEq(config.deployer, sepoliaDeployer);
+        assertTrue(config.profile == HelperConfig.DeployProfile.Demo);
+    }
+
+    function test_MainnetConfigForReturnsGivenDeployer() public {
+        HelperConfig helper = new HelperConfig();
+        address mainnetDeployer = makeAddr("mainnetDeployer");
+
+        HelperConfig.NetworkConfig memory demo =
+            helper.configFor(helper.MAINNET_CHAIN_ID(), mainnetDeployer, HelperConfig.DeployProfile.Demo);
+        assertEq(demo.deployer, mainnetDeployer);
+        assertTrue(demo.profile == HelperConfig.DeployProfile.Demo);
+
+        HelperConfig.NetworkConfig memory production =
+            helper.configFor(helper.MAINNET_CHAIN_ID(), mainnetDeployer, HelperConfig.DeployProfile.Production);
+        assertEq(production.deployer, mainnetDeployer);
+        assertTrue(production.profile == HelperConfig.DeployProfile.Production);
+    }
+
+    function test_MainnetProfileValueDemo() public {
+        HelperConfig helper = new HelperConfig();
+        address mainnetDeployer = makeAddr("mainnetDeployer");
+
+        HelperConfig.NetworkConfig memory config = helper.mainnetConfigFor(mainnetDeployer, "demo");
+        assertEq(config.deployer, mainnetDeployer);
+        assertTrue(config.profile == HelperConfig.DeployProfile.Demo);
+    }
+
+    function test_MainnetProfileValueProduction() public {
+        HelperConfig helper = new HelperConfig();
+        address mainnetDeployer = makeAddr("mainnetDeployer");
+
+        HelperConfig.NetworkConfig memory config = helper.mainnetConfigFor(mainnetDeployer, "production");
+        assertEq(config.deployer, mainnetDeployer);
+        assertTrue(config.profile == HelperConfig.DeployProfile.Production);
+    }
+
+    function test_MainnetGetConfigReturnsEnvDeployer() public {
+        address mainnetDeployer = makeAddr("mainnetDeployer");
+        address sepoliaDeployer = makeAddr("sepoliaDeployer");
+        vm.setEnv("MAINNET_DEPLOYER", vm.toString(mainnetDeployer));
+        vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(sepoliaDeployer));
+        vm.setEnv("DEPLOY_PROFILE", "demo");
+        vm.chainId(1);
+        HelperConfig helper = new HelperConfig();
+
+        assertEq(block.chainid, helper.MAINNET_CHAIN_ID());
+        HelperConfig.NetworkConfig memory config = helper.getConfig();
+        assertEq(config.deployer, mainnetDeployer);
+        assertTrue(config.profile == HelperConfig.DeployProfile.Demo);
+    }
+
+    function test_RevertWhen_MainnetDeployerIsZero() public {
+        HelperConfig helper = new HelperConfig();
+        uint256 mainnetChainId = helper.MAINNET_CHAIN_ID();
+
+        vm.expectRevert(HelperConfig.HelperConfig__MainnetDeployerNotSet.selector);
+        helper.configFor(mainnetChainId, address(0), HelperConfig.DeployProfile.Demo);
+    }
+
+    function test_RevertWhen_MainnetDeployerIsZeroAndProfileIsInvalid() public {
+        HelperConfig helper = new HelperConfig();
+
+        vm.expectRevert(HelperConfig.HelperConfig__MainnetDeployerNotSet.selector);
+        helper.mainnetConfigFor(address(0), "demo\r");
+    }
+
+    function test_RevertWhen_MainnetProfileIsEmpty() public {
+        HelperConfig helper = new HelperConfig();
+        address mainnetDeployer = makeAddr("mainnetDeployer");
+
+        vm.expectRevert(HelperConfig.HelperConfig__DeployProfileNotSet.selector);
+        helper.mainnetConfigFor(mainnetDeployer, "");
+    }
+
+    function test_RevertWhen_MainnetProfileIsWrongCase() public {
+        HelperConfig helper = new HelperConfig();
+        address mainnetDeployer = makeAddr("mainnetDeployer");
+
+        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__DeployProfileInvalid.selector, "Demo"));
+        helper.mainnetConfigFor(mainnetDeployer, "Demo");
     }
 
     function test_AllocationConstantsSumToMaxSupply() public {
@@ -213,15 +308,15 @@ contract HelperConfigTest is Test {
     function test_RevertWhen_ChainIsNotConfigured() public {
         HelperConfig helper = new HelperConfig();
 
-        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__ChainNotSupported.selector, 1));
-        helper.configFor(1, address(0), HelperConfig.DeployProfile.Demo);
+        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__ChainNotSupported.selector, 2));
+        helper.configFor(2, address(0), HelperConfig.DeployProfile.Demo);
     }
 
     function test_RevertWhen_GetConfigChainIsNotConfigured() public {
         HelperConfig helper = new HelperConfig();
 
-        vm.chainId(1);
-        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__ChainNotSupported.selector, 1));
+        vm.chainId(2);
+        vm.expectRevert(abi.encodeWithSelector(HelperConfig.HelperConfig__ChainNotSupported.selector, 2));
         helper.getConfig();
     }
 

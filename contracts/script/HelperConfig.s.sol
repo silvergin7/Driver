@@ -4,7 +4,7 @@ pragma solidity 0.8.30;
 import {Script} from "forge-std/Script.sol";
 
 /// @title HelperConfig
-/// @notice Per-chain deploy parameters for Anvil and Sepolia.
+/// @notice Per-chain deploy parameters for Anvil, Sepolia, and mainnet.
 contract HelperConfig is Script {
     /// @notice Which clock a deploy creates. Production is the fixed clock. Demo can be advanced.
     enum DeployProfile {
@@ -22,6 +22,9 @@ contract HelperConfig is Script {
 
     /// @notice Chain id of Ethereum Sepolia.
     uint256 public constant SEPOLIA_CHAIN_ID = 11_155_111;
+
+    /// @notice Chain id of Ethereum mainnet.
+    uint256 public constant MAINNET_CHAIN_ID = 1;
 
     /// @notice Anvil default account 0.
     address public constant ANVIL_DEPLOYER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
@@ -117,20 +120,23 @@ contract HelperConfig is Script {
     /// @notice Sepolia was selected and the deployer address was missing or zero.
     error HelperConfig__SepoliaDeployerNotSet();
 
-    /// @notice Sepolia was selected and `DEPLOY_PROFILE` was missing or empty.
+    /// @notice Mainnet was selected and the deployer address was missing or zero.
+    error HelperConfig__MainnetDeployerNotSet();
+
+    /// @notice `DEPLOY_PROFILE` was missing or empty.
     error HelperConfig__DeployProfileNotSet();
 
-    /// @notice Sepolia was selected and `DEPLOY_PROFILE` was not `production` or `demo`.
+    /// @notice `DEPLOY_PROFILE` was not `production` or `demo`.
     /// @param value The raw profile value.
     error HelperConfig__DeployProfileInvalid(string value);
 
     /// @notice Resolves deploy parameters for one chain and one profile.
-    /// @dev Anvil ignores `sepoliaDeployer` and keeps `profile`. Sepolia reverts when that address is zero.
+    /// @dev Anvil ignores `deployer` and keeps `profile`. Sepolia and mainnet revert when that address is zero.
     /// @param chainId Chain id to resolve.
-    /// @param sepoliaDeployer Deployer address used when `chainId` is Sepolia.
+    /// @param deployer Deployer address used when `chainId` is Sepolia or mainnet.
     /// @param profile Clock profile to store.
     /// @return config Deploy parameters for `chainId`.
-    function configFor(uint256 chainId, address sepoliaDeployer, DeployProfile profile)
+    function configFor(uint256 chainId, address deployer, DeployProfile profile)
         public
         pure
         returns (NetworkConfig memory config)
@@ -138,10 +144,15 @@ contract HelperConfig is Script {
         if (chainId == ANVIL_CHAIN_ID) {
             config = NetworkConfig({deployer: ANVIL_DEPLOYER, profile: profile});
         } else if (chainId == SEPOLIA_CHAIN_ID) {
-            if (sepoliaDeployer == address(0)) {
+            if (deployer == address(0)) {
                 revert HelperConfig__SepoliaDeployerNotSet();
             }
-            config = NetworkConfig({deployer: sepoliaDeployer, profile: profile});
+            config = NetworkConfig({deployer: deployer, profile: profile});
+        } else if (chainId == MAINNET_CHAIN_ID) {
+            if (deployer == address(0)) {
+                revert HelperConfig__MainnetDeployerNotSet();
+            }
+            config = NetworkConfig({deployer: deployer, profile: profile});
         } else {
             revert HelperConfig__ChainNotSupported(chainId);
         }
@@ -165,15 +176,36 @@ contract HelperConfig is Script {
         config = configFor(SEPOLIA_CHAIN_ID, sepoliaDeployer, _profileFrom(profileValue));
     }
 
+    /// @notice Resolves mainnet parameters from the deployer and the raw profile value.
+    /// @dev A zero deployer reverts {HelperConfig__MainnetDeployerNotSet} before the profile is read.
+    /// An empty value reverts {HelperConfig__DeployProfileNotSet}. Only the exact strings `production`
+    /// and `demo` are accepted.
+    /// @param mainnetDeployer Deployer address. Zero reverts.
+    /// @param profileValue Raw `DEPLOY_PROFILE` value.
+    /// @return config Mainnet deploy parameters.
+    function mainnetConfigFor(address mainnetDeployer, string memory profileValue)
+        public
+        pure
+        returns (NetworkConfig memory config)
+    {
+        if (mainnetDeployer == address(0)) {
+            revert HelperConfig__MainnetDeployerNotSet();
+        }
+        config = configFor(MAINNET_CHAIN_ID, mainnetDeployer, _profileFrom(profileValue));
+    }
+
     /// @notice Returns deploy parameters for the active chain.
     /// @dev Anvil selects {DeployProfile.Demo} and reads no environment variables. Sepolia reads
-    /// `SEPOLIA_DEPLOYER` and `DEPLOY_PROFILE`. Any other chain reverts and reads neither.
+    /// `SEPOLIA_DEPLOYER` and `DEPLOY_PROFILE`. Mainnet reads `MAINNET_DEPLOYER` and `DEPLOY_PROFILE`.
+    /// Any other chain reverts and reads neither.
     /// @return config Deploy parameters for this chain.
     function getConfig() public view returns (NetworkConfig memory config) {
         if (block.chainid == ANVIL_CHAIN_ID) {
             config = configFor(ANVIL_CHAIN_ID, address(0), DeployProfile.Demo);
         } else if (block.chainid == SEPOLIA_CHAIN_ID) {
             config = sepoliaConfigFor(vm.envOr("SEPOLIA_DEPLOYER", address(0)), vm.envOr("DEPLOY_PROFILE", string("")));
+        } else if (block.chainid == MAINNET_CHAIN_ID) {
+            config = mainnetConfigFor(vm.envOr("MAINNET_DEPLOYER", address(0)), vm.envOr("DEPLOY_PROFILE", string("")));
         } else {
             revert HelperConfig__ChainNotSupported(block.chainid);
         }
