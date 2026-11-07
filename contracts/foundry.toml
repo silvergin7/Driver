@@ -4,6 +4,7 @@ out = "out"
 libs = ["lib"]
 solc_version = "0.8.30"
 auto_detect_solc = false
+fs_permissions = [{ access = "write", path = "../frontend/src/content/simulation.json" }]
 
 [invariant]
 fail_on_revert = true
