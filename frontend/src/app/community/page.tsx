@@ -1,9 +1,11 @@
 import { PageScene } from "@/components/page-scene";
 import { RoadSign } from "@/components/road-sign";
+import { chainName } from "@/config/contracts";
+import { roadmapNetwork } from "@/lib/network-copy";
 
 const stops = [
   "Theory test passed (contracts tested).",
-  "First lesson on the open road (Sepolia).",
+  `First lesson on the open road (${roadmapNetwork(chainName)}).`,
   "Driving test (first harvest live).",
   "Driving licence (ambassador NFT).",
   "A licence for the highway too (Fund 3), if the instructors agree.",

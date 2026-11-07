@@ -5,7 +5,9 @@ import {
   chainNameFrom,
   contractFields,
   contractsFrom,
+  defaultMainnetRpcUrl,
   defaultSepoliaRpcUrl,
+  mainnetRpcFrom,
   pollingIntervalMs,
   sepoliaRpcFrom,
 } from "./chain";
@@ -44,6 +46,7 @@ describe("chainNameFrom", () => {
   it("accepts the exact chain names", () => {
     expect(chainNameFrom("anvil")).toBe("anvil");
     expect(chainNameFrom("sepolia")).toBe("sepolia");
+    expect(chainNameFrom("mainnet")).toBe("mainnet");
   });
 
   it.each([
@@ -53,9 +56,10 @@ describe("chainNameFrom", () => {
     ["sepolia ", 'Received "sepolia ".'],
     ["anvil ", 'Received "anvil ".'],
     ["sepolia\r", 'Received "sepolia\\r".'],
+    ["MAINNET", 'Received "MAINNET".'],
   ])("rejects %j", (value, received) => {
     expect(message(() => chainNameFrom(value))).toBe(
-      `NEXT_PUBLIC_CHAIN must be "anvil" or "sepolia". ${received}`,
+      `NEXT_PUBLIC_CHAIN must be "anvil", "sepolia", or "mainnet". ${received}`,
     );
   });
 });
@@ -73,10 +77,24 @@ describe("sepoliaRpcFrom", () => {
   });
 });
 
+describe("mainnetRpcFrom", () => {
+  it("uses the public default when the value is unset or empty", () => {
+    expect(mainnetRpcFrom(undefined)).toBe(defaultMainnetRpcUrl);
+    expect(mainnetRpcFrom("")).toBe(defaultMainnetRpcUrl);
+  });
+
+  it("keeps a configured url", () => {
+    expect(mainnetRpcFrom("http://127.0.0.1:8545")).toBe(
+      "http://127.0.0.1:8545",
+    );
+  });
+});
+
 describe("pollingIntervalMs", () => {
-  it("polls Anvil every second and Sepolia every four seconds", () => {
+  it("polls Anvil every second and the public chains every four seconds", () => {
     expect(pollingIntervalMs("anvil")).toBe(1_000);
     expect(pollingIntervalMs("sepolia")).toBe(4_000);
+    expect(pollingIntervalMs("mainnet")).toBe(4_000);
   });
 });
 
@@ -100,7 +118,7 @@ describe("contractsFrom", () => {
     );
   });
 
-  it.each([31337, 11155111])(
+  it.each([31337, 11155111, 1])(
     "requires DemoDriverClock on %s",
     (chainId) => {
       const book = deployment(chainId);

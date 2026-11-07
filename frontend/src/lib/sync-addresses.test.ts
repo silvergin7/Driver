@@ -9,6 +9,7 @@ import {
   writeAddressBook,
 } from "../../scripts/broadcast-addresses.mts";
 import { syncAnvilAddresses } from "../../scripts/sync-anvil-addresses.mts";
+import { syncMainnetAddresses } from "../../scripts/sync-mainnet-addresses.mts";
 
 const contractNames = [
   "DriverToken",
@@ -260,6 +261,18 @@ describe("writeAddressBook", () => {
     expect(writeAddressBook(combined, "11155111", sepolia)).toBe(combined);
   });
 
+  it("keeps Anvil and Sepolia byte-identical when mainnet is rewritten", () => {
+    const anvil = deployedAddresses(anvilBroadcast(), 31337);
+    const sepolia = deployedAddresses(creates(11155111), 11155111);
+    const mainnet = deployedAddresses(creates(1), 1);
+    const combined = writeAddressBook(
+      writeAddressBook(writeAddressBook(null, "31337", anvil), "11155111", sepolia),
+      "1",
+      mainnet,
+    );
+    expect(writeAddressBook(combined, "1", mainnet)).toBe(combined);
+  });
+
   it("throws when the Anvil deployment is absent", () => {
     expect(() => assertHasAnvil(null)).toThrow(BroadcastAddressError);
     expect(() => assertHasAnvil("{}\n")).toThrow(
@@ -302,6 +315,26 @@ describe("syncAnvilAddresses", () => {
     await writeFile(broadcastFile, `${JSON.stringify(anvilBroadcast())}\n`);
     await writeFile(outputFile, combined);
     await syncAnvilAddresses(broadcastFile, outputFile);
+    expect(await readFile(outputFile, "utf8")).toBe(combined);
+  });
+});
+
+describe("syncMainnetAddresses", () => {
+  it("rewrites mainnet and leaves the other chains in place", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "driver-sync-"));
+    const broadcastFile = join(directory, "broadcast.json");
+    const outputFile = join(directory, "addresses.json");
+    const anvil = deployedAddresses(anvilBroadcast(), 31337);
+    const sepolia = deployedAddresses(creates(11155111), 11155111);
+    const mainnet = deployedAddresses(creates(1), 1);
+    const combined = writeAddressBook(
+      writeAddressBook(writeAddressBook(null, "31337", anvil), "11155111", sepolia),
+      "1",
+      mainnet,
+    );
+    await writeFile(broadcastFile, `${JSON.stringify(creates(1))}\n`);
+    await writeFile(outputFile, combined);
+    await syncMainnetAddresses(broadcastFile, outputFile);
     expect(await readFile(outputFile, "utf8")).toBe(combined);
   });
 });

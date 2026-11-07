@@ -1,9 +1,10 @@
-import { foundry, sepolia } from "viem/chains";
+import { foundry, mainnet, sepolia } from "viem/chains";
 import addresses from "./addresses.json" with { type: "json" };
 import {
   chainLabels,
   chainNameFrom,
   contractsFrom,
+  mainnetRpcFrom,
   pollingIntervalMs,
   sepoliaRpcFrom,
   type ContractAddresses,
@@ -32,7 +33,26 @@ const sepoliaChain = {
   },
 };
 
-export const chain = chainName === "sepolia" ? sepoliaChain : anvil;
+const mainnetChain = {
+  ...mainnet,
+  rpcUrls: {
+    default: {
+      http: [mainnetRpcFrom(process.env.NEXT_PUBLIC_MAINNET_RPC_URL)],
+    },
+  },
+};
+
+function selectedChain() {
+  if (chainName === "mainnet") {
+    return mainnetChain;
+  }
+  if (chainName === "sepolia") {
+    return sepoliaChain;
+  }
+  return anvil;
+}
+
+export const chain = selectedChain();
 
 export const chainLabel = chainLabels[chainName];
 

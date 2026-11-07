@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { assertVercelChain } from "./vercel-chain";
 
 const guardMessage =
-  'A Vercel build must set NEXT_PUBLIC_CHAIN to "sepolia".';
+  'A Vercel build must set NEXT_PUBLIC_CHAIN to "sepolia" or "mainnet".';
 
 function message(run: () => void): string {
   try {
@@ -17,7 +17,7 @@ function message(run: () => void): string {
 }
 
 const quietVercel = [undefined, "", "0"] as const;
-const quietChain = [undefined, "", "anvil", "sepolia"] as const;
+const quietChain = [undefined, "", "anvil", "sepolia", "mainnet"] as const;
 
 describe("assertVercelChain", () => {
   it.each(
@@ -32,7 +32,11 @@ describe("assertVercelChain", () => {
     expect(() => assertVercelChain("1", "sepolia")).not.toThrow();
   });
 
-  it.each([undefined, "", "anvil", "SEPOLIA", "sepolia ", " anvil"])(
+  it("allows a Vercel build that selects mainnet", () => {
+    expect(() => assertVercelChain("1", "mainnet")).not.toThrow();
+  });
+
+  it.each([undefined, "", "anvil", "SEPOLIA", "sepolia ", " anvil", "MAINNET"])(
     "stops a Vercel build when the chain is %j",
     (chain) => {
       expect(message(() => assertVercelChain("1", chain))).toBe(guardMessage);
@@ -57,6 +61,14 @@ describe("next config guard", () => {
     vi.resetModules();
     vi.stubEnv("VERCEL", "1");
     vi.stubEnv("NEXT_PUBLIC_CHAIN", "sepolia");
+    const loaded = await import("../../next.config.ts");
+    expect(loaded.default.devIndicators).toBe(false);
+  });
+
+  it("loads the config for a mainnet Vercel build", async () => {
+    vi.resetModules();
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("NEXT_PUBLIC_CHAIN", "mainnet");
     const loaded = await import("../../next.config.ts");
     expect(loaded.default.devIndicators).toBe(false);
   });
