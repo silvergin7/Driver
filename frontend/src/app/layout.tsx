@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ThemeSync } from "@/components/theme-sync";
+import { WelcomeDialog } from "@/components/welcome-dialog";
 import { themeScript } from "@/lib/theme";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {children}
           </div>
           <SiteFooter />
+          <WelcomeDialog />
         </Providers>
       </body>
     </html>
