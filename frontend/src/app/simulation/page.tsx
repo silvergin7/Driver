@@ -1,3 +1,6 @@
+import { GuideGlossary } from "@/components/guide-glossary";
+import { GuideLoop } from "@/components/guide-loop";
+import { GuidePictures } from "@/components/guide-pictures";
 import { PageScene } from "@/components/page-scene";
 import { SimulationStepper } from "@/components/simulation-stepper";
 
@@ -14,7 +17,10 @@ export default function SimulationPage() {
             Simulation – nothing here is on-chain.
           </p>
         </div>
+        <GuideLoop />
         <SimulationStepper />
+        <GuidePictures />
+        <GuideGlossary />
       </main>
     </>
   );
