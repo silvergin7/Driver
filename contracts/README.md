@@ -14,6 +14,12 @@ cast wallet import sepolia-wallet --interactive
 
 Pass `--account sepolia-wallet` on Sepolia `forge` and `cast` commands.
 
+Mainnet uses the keystore `mainnet-wallet`.
+
+```shell
+cast wallet import mainnet-wallet --interactive
+```
+
 The project overview is in the root `README.md`.
 
 ## Build and test
@@ -37,7 +43,34 @@ In another, from this directory. The sender is the first local account.
 forge script script/DeployDriver.s.sol:DeployDriver --rpc-url http://127.0.0.1:8545 --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 ```
 
-The Sepolia contracts are already deployed. Their addresses are in the root README.
+The Sepolia contracts are the archived demo. Their addresses are in the root README, under tag v0.1.0 and branch archive/sepolia-demo.
+
+## Mainnet
+
+Put `MAINNET_RPC_URL`, `MAINNET_DEPLOYER`, `DEPLOY_PROFILE=demo`, and `ETHERSCAN_API_KEY` in the root `.env`. Do not commit that file, and do not write the deployer address into the repository.
+
+Forge does not load `.env` on its own. From the repository root:
+
+```shell
+set -a
+source .env
+set +a
+cd contracts
+```
+
+Verification stays on the broadcast command, with `--verify`. That is the command that verified the Sepolia contracts.
+
+Dry run, with no `--broadcast`. It shows the expected gas. Glamsterdam (EIP-8037) is live on Sepolia and not on mainnet, and mainnet has no activation date yet, so Forge's simulator matches the chain. If Glamsterdam activates on mainnet before the deploy, code deposits cost more and the total rises.
+
+```shell
+forge script script/DeployDriver.s.sol:DeployDriver --rpc-url mainnet --account mainnet-wallet --sender "$MAINNET_DEPLOYER" --chain mainnet
+```
+
+Then broadcast and verify together. `--skip-simulation` and `--slow` are the same flags as the Sepolia broadcast, and they are harmless here.
+
+```shell
+forge script script/DeployDriver.s.sol:DeployDriver --rpc-url mainnet --account mainnet-wallet --sender "$MAINNET_DEPLOYER" --chain mainnet --broadcast --verify --slow --skip-simulation
+```
 
 ## Known limits
 

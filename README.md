@@ -1,10 +1,12 @@
 # Driver ($DVR)
 
-Driver is a meme token made for practice. It runs on Sepolia, Ethereum's test network, so the tokens are free and have no real value.
+Driver is a meme token made for practice. It runs on Ethereum mainnet. The tokens are pretend and have no real value, but every action costs real gas.
 
 The idea is a driving school. The treasury is the student driver, and everyone who holds DVR is an instructor who votes on how fast it may drive.
 
-Try it at [driver-dvr.vercel.app](https://driver-dvr.vercel.app).
+Try it at [driver-dvr.vercel.app](https://driver-dvr.vercel.app). To see the whole loop first, over two months, open Simulation. That page needs no wallet and no gas, and nothing there is on-chain.
+
+The original demo stays on Sepolia, at tag v0.1.0 and branch archive/sepolia-demo.
 
 ## How it works
 
@@ -29,16 +31,18 @@ Try it at [driver-dvr.vercel.app](https://driver-dvr.vercel.app).
 ## Try it
 
 1. Install [MetaMask](https://metamask.io/download/), a wallet app that holds your tokens.
-2. In MetaMask, turn on test networks and pick Sepolia.
-3. Get a little free Sepolia ETH (see below). It pays the small fee that every action costs.
+2. In MetaMask, pick Ethereum, the main network.
+3. The wallet needs a little ETH. That pays the network fee. DVR and mUSDC are still free to claim, and they have no real value.
 4. Open the site, connect your wallet, and claim DVR and mUSDC.
 5. Swap in the pool, then lock some DVR and vote.
 
-MetaMask may warn you that this site looks unsafe. This often happens to new test sites on a shared vercel.app address. The site only asks you to connect, switch to Sepolia and use the contracts listed below, and you can check each one on Etherscan.
+Or skip the wallet and open Simulation. It walks through a claim, a swap, a vote, and two monthly harvests.
+
+MetaMask may warn you about this token. The site only asks you to connect, switch to Ethereum, and use the Driver contracts. Check a contract on Etherscan before you approve it.
 
 ## Getting Sepolia ETH
 
-Sepolia ETH is free test money for network fees. These two faucets don't need any real ETH:
+This is only for the archived Sepolia demo. Sepolia ETH is free test money for network fees. These two faucets don't need any real ETH:
 
 - [Google Cloud Web3 faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia): sign in with Google.
 - [pk910 faucet](https://sepolia-faucet.pk910.de/): no account. Paste your address and let the page work for a few minutes.
@@ -46,12 +50,12 @@ Sepolia ETH is free test money for network fees. These two faucets don't need an
 ## What's simplified
 
 - The risky farms pay more, but the funds can never lose the money they put in. Real risky investments can.
-- mUSDC is pretend. Nothing here has real value.
+- DVR and mUSDC are pretend. They have no real value. On mainnet the network fee is real ETH.
 - The demo has its own clock, so we can show a month passing. The owner can skip it forward a month, never back. Faucet waits still use real time.
 
-## Contracts on Sepolia
+## Archived Sepolia demo
 
-All 15 are verified on Etherscan. Click an address to open it.
+These are the original contracts, tag v0.1.0 and branch archive/sepolia-demo. All 15 are verified on Etherscan. Click an address to open it. The mainnet addresses will be added here after that deployment.
 
 | What | Address |
 | --- | --- |
