@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { useCarAudio } from "@/components/car-audio";
 import {
   darkTheme,
   lightTheme,
@@ -38,8 +39,9 @@ function ThemeIcon() {
   );
 }
 
-export function ThemeSwitch() {
+export function ThemeSwitch({ labelled = false }: { labelled?: boolean }) {
   const theme = useSyncExternalStore(subscribe, currentTheme, () => undefined);
+  const play = useCarAudio();
 
   if (theme === undefined) {
     return null;
@@ -51,17 +53,22 @@ export function ThemeSwitch() {
   function choose() {
     localStorage.setItem(themeStorageKey, next);
     document.documentElement.setAttribute("data-theme", next);
+    play("chime");
   }
 
   return (
     <button
       type="button"
-      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink hover:bg-surface"
+      className={
+        labelled
+          ? "inline-flex min-h-11 items-center text-ink"
+          : "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink hover:bg-surface"
+      }
       aria-label={label}
-      title={label}
+      title={labelled ? undefined : label}
       onClick={choose}
     >
-      <ThemeIcon />
+      {labelled ? label : <ThemeIcon />}
     </button>
   );
 }

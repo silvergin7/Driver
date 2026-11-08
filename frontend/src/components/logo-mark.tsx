@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef } from "react";
+import { useCarAudio } from "@/components/car-audio";
 import { logoRevFrames, logoRevMs, motionAllowed } from "@/lib/motion";
 import { shouldRev } from "@/lib/nav-drive";
 
@@ -93,6 +94,7 @@ export function CarTile() {
 
 export function LogoMark() {
   const rev = useRef<Animation | null>(null);
+  const play = useCarAudio();
 
   return (
     <Link
@@ -117,6 +119,7 @@ export function LogoMark() {
         if (!(car instanceof SVGElement)) {
           return;
         }
+        play("rev");
         rev.current?.cancel();
         rev.current = car.animate(logoRevFrames(), { duration: logoRevMs });
       }}

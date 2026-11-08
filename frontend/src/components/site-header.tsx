@@ -8,8 +8,10 @@ import {
   WalletBarAlert,
   useWalletControls,
 } from "@/components/connect-wallet";
+import { useCarAudio } from "@/components/car-audio";
 import { LogoMark } from "@/components/logo-mark";
 import { NavCar } from "@/components/nav-car";
+import { SoundToggle } from "@/components/sound-toggle";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { nextHeaderMenu, type HeaderMenu } from "@/lib/header-menu";
 import { motionAllowed } from "@/lib/motion";
@@ -19,6 +21,7 @@ import { driveEnds, shouldDrive, type Box } from "@/lib/nav-drive";
 export function SiteHeader() {
   const controls = useWalletControls();
   const pathname = usePathname();
+  const play = useCarAudio();
   const [menu, setMenu] = useState<HeaderMenu>("closed");
   const [menuPath, setMenuPath] = useState(pathname);
   if (pathname !== menuPath) {
@@ -30,7 +33,7 @@ export function SiteHeader() {
   }
   const navOpen = menu === "nav";
   const menuButton = useRef<HTMLButtonElement>(null);
-  const navMenu = useRef<HTMLElement>(null);
+  const navMenu = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const destination = useRef<string | null>(null);
   const tripCount = useRef(0);
@@ -76,6 +79,7 @@ export function SiteHeader() {
       toBox(event.currentTarget.getBoundingClientRect()),
     );
     setTrip({ id: tripCount.current, ...ends });
+    play("drive");
   }
 
   useEffect(() => {
@@ -162,7 +166,10 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
-          <ThemeSwitch />
+          <div className="hidden sm:contents">
+            <ThemeSwitch />
+            <SoundToggle />
+          </div>
           <button
             ref={menuButton}
             type="button"
@@ -187,21 +194,22 @@ export function SiteHeader() {
         </div>
       </div>
       {navOpen ? (
-        <nav
-          ref={navMenu}
-          id="site-menu"
-          aria-label="Pages"
-          className="flex flex-col gap-3 bg-background px-4 py-4 lg:hidden"
-        >
-          {navItems.map((item) => (
-            <PageLink
-              key={item.href}
-              href={item.href}
-              label={item.label}
-              onNavigate={() => setMenu("closed")}
-            />
-          ))}
-        </nav>
+        <div ref={navMenu} id="site-menu" className="bg-background px-4 py-4 lg:hidden">
+          <nav aria-label="Pages" className="flex flex-col gap-3">
+            {navItems.map((item) => (
+              <PageLink
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                onNavigate={() => setMenu("closed")}
+              />
+            ))}
+          </nav>
+          <div className="mt-3 flex flex-col gap-3 sm:hidden">
+            <ThemeSwitch labelled />
+            <SoundToggle labelled />
+          </div>
+        </div>
       ) : null}
       <WalletBarAlert message={controls.accountAlert ?? controls.alertMessage} />
     </header>
