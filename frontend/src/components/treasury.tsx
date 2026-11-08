@@ -17,6 +17,7 @@ import { formatDvr } from "@/lib/format-dvr";
 import { formatUsdc } from "@/lib/format-usdc";
 import { farmAprBps } from "@/lib/farm-apr";
 import { Badge } from "@/components/ui/badge";
+import { Speedometer } from "@/components/speedometer";
 import { BigStat } from "@/components/ui/big-stat";
 import { Card } from "@/components/ui/card";
 import { StatList } from "@/components/ui/stat-list";
@@ -120,14 +121,18 @@ export function Treasury() {
       {!failed && !ready ? <p className="text-sm text-ink-muted">Loading funds…</p> : null}
       <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
         <FundSummary
+          caption="Cap"
           data={cruise.data}
           farm={cruiseFarm}
+          max={500n}
           state={cruiseFarmState}
           title="Fund 1"
         />
         <FundSummary
+          caption="Speed"
           data={degen.data}
           farm={degenFarm}
+          max={16_000n}
           state={degenFarmState}
           title="Fund 2"
         />
@@ -185,11 +190,15 @@ function farmStateReady(
 
 function FundSummary({
   title,
+  caption,
+  max,
   data,
   farm,
   state,
 }: {
   title: string;
+  caption: string;
+  max: bigint;
   data: readonly unknown[] | undefined;
   farm: Address | undefined;
   state: ReturnType<typeof useFarmState>;
@@ -233,6 +242,7 @@ function FundSummary({
       <Badge>
         {active ? `${farmName} · ${formatBps(farmApr)} APR` : "No active farm"}
       </Badge>
+      <Speedometer caption={caption} max={max} value={farmApr} />
       <BigStat label="Value" value={`${formatUsdc(value)} mUSDC`} />
       <StatList
         rows={[
