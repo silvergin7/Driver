@@ -45,7 +45,7 @@ function Wheel({
   );
 }
 
-function CarMark({
+export function CarMark({
   className = "",
   spin = false,
 }: {
