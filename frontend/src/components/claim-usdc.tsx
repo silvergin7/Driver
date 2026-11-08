@@ -12,6 +12,7 @@ import {
 import { claimWindow } from "@/lib/claim-eligibility";
 import { claimStatus } from "@/lib/claim-status";
 import { FaucetPump } from "@/components/faucet-pump";
+import { publishConfirmed, useFailureToast } from "@/components/toaster";
 import { formatCountdown } from "@/lib/countdown";
 import { ringPresentation } from "@/lib/ring";
 import { claimFailedMessage, claimRevertedMessage } from "@/lib/faucet-errors";
@@ -186,6 +187,7 @@ export function ClaimUsdc() {
           period: cooldown.data,
         })
       : undefined;
+  useFailureToast(action.errorMessage);
 
   return (
     <FaucetPump
@@ -199,7 +201,11 @@ export function ClaimUsdc() {
       buttonLabel="Claim mUSDC"
       canClaim={canClaim}
       onClaim={() => {
-        void action.send();
+        void action.send().then((claimedOk) => {
+          if (claimedOk && claimAmount.data !== undefined) {
+            publishConfirmed(`Claimed ${formatUsdc(claimAmount.data)} mUSDC.`);
+          }
+        });
       }}
       status={status}
       hash={action.isSuccess ? action.hash : undefined}

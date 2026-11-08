@@ -20,6 +20,7 @@ import {
   actionReceiptErrorMessage,
 } from "@/lib/action-errors";
 import { TransactionLink } from "@/components/transaction-link";
+import { publishConfirmed, useFailureToast } from "@/components/toaster";
 import {
   actionButtonClass,
   inputClass,
@@ -382,10 +383,13 @@ export function LockVote() {
       if (!approved) {
         return;
       }
+      publishConfirmed("Approved.");
     }
     const lockedOk = await lock.send();
     if (lockedOk) {
-      setNotice(`Locked ${formatDvr(lockParsed.amount)} DVR.`);
+      const sentence = `Locked ${formatDvr(lockParsed.amount)} DVR.`;
+      setNotice(sentence);
+      publishConfirmed(sentence);
     }
   }
 
@@ -397,7 +401,9 @@ export function LockVote() {
     setNotice(undefined);
     const unlocked = await unlock.send();
     if (unlocked) {
-      setNotice(`Unlocked ${formatDvr(unlockParsed.amount)} DVR.`);
+      const sentence = `Unlocked ${formatDvr(unlockParsed.amount)} DVR.`;
+      setNotice(sentence);
+      publishConfirmed(sentence);
     }
   }
 
@@ -409,7 +415,9 @@ export function LockVote() {
     setNotice(undefined);
     const voted = await vote.send();
     if (voted) {
-      setNotice(`Voted for ${labels.get(selected) ?? selected}.`);
+      const sentence = `Voted for ${labels.get(selected) ?? selected}.`;
+      setNotice(sentence);
+      publishConfirmed(sentence);
     }
   }
 
@@ -421,6 +429,7 @@ export function LockVote() {
         : lastAction === "vote"
           ? vote.errorMessage
           : undefined;
+  useFailureToast(errorMessage);
   let status: string | undefined;
   if (!connection.isConnected) {
     status = "Connect a wallet to lock and vote.";

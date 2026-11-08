@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { CarAudioProvider } from "@/components/car-audio";
+import { Toaster } from "@/components/toaster";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ThemeSync } from "@/components/theme-sync";
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </div>
             <SiteFooter />
             <WelcomeDialog />
+            <Toaster />
           </CarAudioProvider>
         </Providers>
       </body>

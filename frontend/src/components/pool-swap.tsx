@@ -19,6 +19,7 @@ import {
 } from "@/lib/action-errors";
 import { Pump, readoutClass } from "@/components/pump-frame";
 import { TokenIcon } from "@/components/token-icon";
+import { publishConfirmed, useFailureToast } from "@/components/toaster";
 import { TransactionLink } from "@/components/transaction-link";
 import { formatDisplayAmount } from "@/lib/format-display";
 import { formatUsdc } from "@/lib/format-usdc";
@@ -231,6 +232,7 @@ export function PoolSwap() {
       if (!approved) {
         return;
       }
+      publishConfirmed("Approved.");
     }
     const swapped = await swap.send([
       buying ? 0 : 1,
@@ -239,7 +241,9 @@ export function PoolSwap() {
       latest.timestamp + deadlineBuffer,
     ]);
     if (swapped) {
-      setNotice(buying ? "Bought DVR." : "Sold DVR.");
+      const sentence = buying ? "Bought DVR." : "Sold DVR.";
+      setNotice(sentence);
+      publishConfirmed(sentence);
     }
   }
 
@@ -276,6 +280,13 @@ export function PoolSwap() {
         ? `${formatDisplayAmount(minAmountAfterSlippage(quotedOut), 18)} DVR`
         : `${formatDisplayAmount(minAmountAfterSlippage(quotedOut), 6)} mUSDC`
       : undefined;
+
+  const shownError =
+    actionError ??
+    approve.errorMessage ??
+    swap.errorMessage ??
+    (quote.isError ? describeError(quote.error) : undefined);
+  useFailureToast(shownError);
 
   if (connection.isConnected && !onChain) {
     return (

@@ -10,6 +10,7 @@ import {
 } from "@/lib/claim-eligibility";
 import { claimStatus } from "@/lib/claim-status";
 import { FaucetPump } from "@/components/faucet-pump";
+import { publishConfirmed, useFailureToast } from "@/components/toaster";
 import { formatCountdown } from "@/lib/countdown";
 import { ringPresentation } from "@/lib/ring";
 import { faucetErrorMessage, receiptErrorMessage } from "@/lib/faucet-errors";
@@ -189,6 +190,7 @@ export function ClaimTokens() {
           period: cooldown.data,
         })
       : undefined;
+  useFailureToast(action.errorMessage);
 
   return (
     <FaucetPump
@@ -202,7 +204,11 @@ export function ClaimTokens() {
       buttonLabel="Claim DVR"
       canClaim={canClaim}
       onClaim={() => {
-        void action.send();
+        void action.send().then((claimedOk) => {
+          if (claimedOk && claimAmount.data !== undefined) {
+            publishConfirmed(`Claimed ${formatDvr(claimAmount.data)} DVR.`);
+          }
+        });
       }}
       status={status}
       hash={action.isSuccess ? action.hash : undefined}

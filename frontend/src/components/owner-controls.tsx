@@ -28,6 +28,7 @@ import {
   actionReceiptErrorMessage,
 } from "@/lib/action-errors";
 import { TransactionLink } from "@/components/transaction-link";
+import { publishConfirmed, useFailureToast } from "@/components/toaster";
 import { actionButtonClass } from "@/lib/control-class";
 import { addressExplorer } from "@/lib/explorer";
 import {
@@ -219,6 +220,12 @@ export function OwnerControls() {
     onChain,
     ownsAny: ownsCruise || ownsDegen || ownsClock,
   });
+  const errorMessage =
+    quoteError ??
+    harvestCruise.errorMessage ??
+    harvestDegen.errorMessage ??
+    skip.errorMessage;
+  useFailureToast(view === "controls" ? errorMessage : undefined);
   if (view === "hidden") {
     return null;
   }
@@ -268,7 +275,9 @@ export function OwnerControls() {
     setLastAction(fund === "1" ? "fund-1" : "fund-2");
     const harvested = await action.send([plan.minDvrOut]);
     if (harvested) {
-      setNotice(`Harvested Fund ${fund}.`);
+      const sentence = `Harvested Fund ${fund}.`;
+      setNotice(sentence);
+      publishConfirmed(sentence);
     }
   }
 
@@ -358,15 +367,11 @@ export function OwnerControls() {
     setLastAction("skip");
     const advanced = await skip.send([epoch.data]);
     if (advanced) {
-      setNotice("Demo clock moved forward.");
+      const sentence = "Demo clock moved forward.";
+      setNotice(sentence);
+      publishConfirmed(sentence);
     }
   }
-
-  const errorMessage =
-    quoteError ??
-    harvestCruise.errorMessage ??
-    harvestDegen.errorMessage ??
-    skip.errorMessage;
 
   return (
     <Card className="w-fit max-w-full self-center" title="Owner">
