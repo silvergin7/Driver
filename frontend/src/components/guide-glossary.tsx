@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { glossary, glossaryTitle } from "@/lib/guide";
+import { glossaryTitle } from "@/lib/guide";
 import {
   glossaryChoice,
   glossaryHint,
-  glossaryPlaceholder,
+  glossaryOptions,
 } from "@/lib/glossary-choice";
 import { inputClass, sectionClass } from "@/lib/control-class";
 
@@ -28,10 +28,9 @@ export function GuideGlossary() {
           value={term}
           onChange={(event) => setTerm(event.target.value)}
         >
-          <option value="">{glossaryPlaceholder}</option>
-          {glossary.map((entry) => (
-            <option key={entry.term} value={entry.term}>
-              {entry.term}
+          {glossaryOptions().map((label, index) => (
+            <option key={label} value={index === 0 ? "" : label}>
+              {label}
             </option>
           ))}
         </select>
