@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Abi } from "viem";
 import { useConfig, useConnection, useReadContract } from "wagmi";
 import { getBlock, readContract } from "wagmi/actions";
@@ -17,16 +17,13 @@ import {
   actionErrorMessage,
   actionReceiptErrorMessage,
 } from "@/lib/action-errors";
-import {
-  choiceButtonClass,
-  fitActionButtonClass,
-  inputClass,
-} from "@/lib/control-class";
+import { Pump, readoutClass } from "@/components/pump-frame";
+import { TokenIcon } from "@/components/token-icon";
 import { TransactionLink } from "@/components/transaction-link";
-import { Card } from "@/components/ui/card";
-import { StatList } from "@/components/ui/stat-list";
-import { formatDvr } from "@/lib/format-dvr";
+import { formatDisplayAmount } from "@/lib/format-display";
 import { formatUsdc } from "@/lib/format-usdc";
+import { maxAmountText } from "@/lib/max-amount";
+import { motionAllowed } from "@/lib/motion";
 import { parseTokenAmount, type ParsedAmount } from "@/lib/parse-amount";
 import { minAmountAfterSlippage, slippageBps } from "@/lib/slippage";
 
@@ -161,6 +158,41 @@ export function PoolSwap() {
     quotedOut > 0n &&
     !quote.isError &&
     !busy;
+  const flipRef = useRef<HTMLButtonElement>(null);
+  const spin = useRef<Animation | null>(null);
+  const turn = useRef(0);
+
+  function fillMax(): void {
+    if (balance.data === undefined) {
+      return;
+    }
+    setText(maxAmountText(balance.data, buying ? 6 : 18));
+    setNotice(undefined);
+  }
+
+  function flip(): void {
+    setDirection(buying ? "sell" : "buy");
+    setText("");
+    setNotice(undefined);
+    const button = flipRef.current;
+    if (button === null) {
+      return;
+    }
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!motionAllowed(reduced)) {
+      return;
+    }
+    spin.current?.cancel();
+    const from = turn.current;
+    turn.current += 180;
+    spin.current = button.animate(
+      [
+        { transform: `rotate(${from}deg)` },
+        { transform: `rotate(${turn.current}deg)` },
+      ],
+      { duration: 300, easing: "ease-out", fill: "forwards" },
+    );
+  }
 
   async function onSwap(): Promise<void> {
     if (
@@ -234,99 +266,120 @@ export function PoolSwap() {
     status = notice;
   }
 
+  const getText =
+    quotedOut !== undefined && parsed.status === "amount"
+      ? formatDisplayAmount(quotedOut, buying ? 18 : 6)
+      : "0";
+  const minimum =
+    quotedOut !== undefined && parsed.status === "amount"
+      ? buying
+        ? `${formatDisplayAmount(minAmountAfterSlippage(quotedOut), 18)} DVR`
+        : `${formatDisplayAmount(minAmountAfterSlippage(quotedOut), 6)} mUSDC`
+      : undefined;
+
   if (connection.isConnected && !onChain) {
     return (
-      <Card title="Official pool">
+      <Pump title="Official pool" bandClass="bg-brand">
         <p className="text-sm text-ink-muted">{switchPrompt(chainLabel, "to swap.")}</p>
-      </Card>
+      </Pump>
     );
   }
 
-  const poolStats = [
-    taxBps.data !== undefined
-      ? { label: "Tax", value: `${taxBps.data / 100n}%` }
-      : undefined,
-    { label: "Slippage", value: `${slippageBps / 100n}%` },
-  ].filter((row): row is { label: string; value: string } => row !== undefined);
-
   return (
-    <Card title="Official pool">
-      <StatList rows={poolStats} />
-      <div className="flex gap-2">
-        <button
-          type="button"
-          aria-pressed={buying}
-          className={directionClass(buying)}
-          disabled={busy}
-          onClick={() => {
-            if (buying) {
-              return;
-            }
-            setDirection("buy");
-            setText("");
-            setNotice(undefined);
-          }}
-        >
-          Buy
-        </button>
-        <button
-          type="button"
-          aria-pressed={!buying}
-          className={directionClass(!buying)}
-          disabled={busy}
-          onClick={() => {
-            if (!buying) {
-              return;
-            }
-            setDirection("sell");
-            setText("");
-            setNotice(undefined);
-          }}
-        >
-          Sell
-        </button>
-      </div>
-      <div className="flex items-end gap-2">
-        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm text-ink-muted">
-          {buying ? "mUSDC to spend" : "DVR to spend"}
+    <Pump title="Official pool" bandClass="bg-brand">
+      <div className={`${readoutClass} overflow-hidden`}>
+        <p className="text-sm text-slate-300">You pay</p>
+        <div className="mt-2 flex min-w-0 items-center gap-2">
+          <TokenChip token={buying ? "musdc" : "dvr"} />
           <input
-            className={`${inputClass()} w-full`}
+            className="min-w-0 flex-1 overflow-x-auto bg-transparent font-mono text-2xl text-slate-50 outline-none sm:text-3xl"
             inputMode="decimal"
+            aria-label={buying ? "mUSDC to spend" : "DVR to spend"}
             value={text}
             onChange={(event) => {
               setText(event.target.value);
             }}
           />
-        </label>
-        <button
-          type="button"
-          className={`${fitActionButtonClass()} shrink-0 whitespace-nowrap`}
-          disabled={!canSwap}
-          onClick={() => {
-            void onSwap();
-          }}
-        >
-          {buying ? "Buy DVR" : "Sell DVR"}
-        </button>
+        </div>
+        <div className="my-3 flex items-center justify-center gap-2">
+          <button
+            ref={flipRef}
+            type="button"
+            aria-label="Flip direction"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-sign text-slate-50 disabled:opacity-40"
+            disabled={busy}
+            onClick={flip}
+          >
+            <FlipIcon />
+          </button>
+          <button
+            type="button"
+            className="h-11 shrink-0 rounded-full border border-slate-500 px-3 text-sm text-slate-50 disabled:opacity-40"
+            disabled={balance.data === undefined || busy}
+            onClick={fillMax}
+          >
+            Max
+          </button>
+        </div>
+        <p className="text-sm text-slate-300">You get</p>
+        <div className="mt-2 flex min-w-0 items-center gap-2">
+          <TokenChip token={buying ? "dvr" : "musdc"} />
+          <p className="min-w-0 flex-1 overflow-hidden font-mono text-2xl whitespace-nowrap text-ellipsis tabular-nums sm:text-3xl">
+            {getText}
+          </p>
+        </div>
       </div>
-      {quotedOut !== undefined && quotedTax !== undefined && parsed.status === "amount" ? (
-        <p className="text-sm text-ink tabular-nums">
-          Quote: {buying ? formatDvr(quotedOut) : formatUsdc(quotedOut)}{" "}
-          {buying ? "DVR" : "mUSDC"}, tax {formatUsdc(quotedTax)} mUSDC
-        </p>
-      ) : null}
-      {fund1Tax.data !== undefined &&
-      fund2Tax.data !== undefined &&
-      unassignedTax.data !== undefined ? (
-        <StatList
-          title="Tax collected"
-          rows={[
-            { label: "Fund 1", value: `${formatUsdc(fund1Tax.data)} mUSDC` },
-            { label: "Fund 2", value: `${formatUsdc(fund2Tax.data)} mUSDC` },
-            { label: "Unassigned", value: `${formatUsdc(unassignedTax.data)} mUSDC` },
-          ]}
-        />
-      ) : null}
+      <dl className="grid gap-2 border-t border-line pt-3 text-sm sm:grid-cols-2">
+        {taxBps.data !== undefined ? (
+          <div>
+            <dt className="text-ink-muted">Tax</dt>
+            <dd className="text-ink">
+              {`${taxBps.data / 100n}% tax`}
+              {quotedTax !== undefined && parsed.status === "amount"
+                ? ` · ${formatUsdc(quotedTax)} mUSDC`
+                : ""}
+            </dd>
+          </div>
+        ) : null}
+        <div>
+          <dt className="text-ink-muted">Slippage</dt>
+          <dd className="text-ink">{`${slippageBps / 100n}%`}</dd>
+        </div>
+        {minimum !== undefined ? (
+          <div>
+            <dt className="text-ink-muted">{"Minimum you'll get"}</dt>
+            <dd className="text-ink">{minimum}</dd>
+          </div>
+        ) : null}
+        {fund1Tax.data !== undefined &&
+        fund2Tax.data !== undefined &&
+        unassignedTax.data !== undefined ? (
+          <>
+            <div>
+              <dt className="text-ink-muted">Fund 1</dt>
+              <dd className="text-ink">{`${formatUsdc(fund1Tax.data)} mUSDC`}</dd>
+            </div>
+            <div>
+              <dt className="text-ink-muted">Fund 2</dt>
+              <dd className="text-ink">{`${formatUsdc(fund2Tax.data)} mUSDC`}</dd>
+            </div>
+            <div>
+              <dt className="text-ink-muted">Unassigned</dt>
+              <dd className="text-ink">{`${formatUsdc(unassignedTax.data)} mUSDC`}</dd>
+            </div>
+          </>
+        ) : null}
+      </dl>
+      <button
+        type="button"
+        className="min-h-12 w-full rounded-md bg-brand px-3 py-2 text-lg text-on-brand disabled:border disabled:border-line disabled:bg-disabled-bg disabled:text-ink-muted"
+        disabled={!canSwap}
+        onClick={() => {
+          void onSwap();
+        }}
+      >
+        Swap
+      </button>
       {status ? <p className="text-sm text-ink-muted">{status}</p> : null}
       <TransactionLink hash={swap.isSuccess ? swap.hash : undefined} />
       {amountReason && !busy ? <p className="text-sm text-ink-muted">{amountReason}</p> : null}
@@ -334,12 +387,10 @@ export function PoolSwap() {
         <p className="text-sm text-ink-muted">The swap would return no tokens.</p>
       ) : null}
       {actionError ?? approve.errorMessage ?? swap.errorMessage ? (
-        <p role="alert">
-          {actionError ?? approve.errorMessage ?? swap.errorMessage}
-        </p>
+        <p role="alert">{actionError ?? approve.errorMessage ?? swap.errorMessage}</p>
       ) : null}
       {quote.isError ? <p role="alert">{describeError(quote.error)}</p> : null}
-    </Card>
+    </Pump>
   );
 }
 
@@ -354,8 +405,28 @@ function useAccrued(fundId: 0 | 1 | 2, enabled: boolean) {
   });
 }
 
-function directionClass(pressed: boolean): string {
-  return choiceButtonClass(pressed);
+function TokenChip({ token }: { token: "dvr" | "musdc" }) {
+  return (
+    <span className="inline-flex h-11 shrink-0 items-center gap-1 rounded-full border border-slate-500 px-2 text-sm font-semibold text-slate-50">
+      <TokenIcon token={token} className={token === "dvr" ? "h-5 w-7" : "h-5 w-5"} />
+      {token === "dvr" ? "DVR" : "mUSDC"}
+    </span>
+  );
+}
+
+function FlipIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      <path
+        d="M7 7h10l-3-3M17 17H7l3 3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 function unread(read: { isError: boolean; data: unknown }): boolean {
