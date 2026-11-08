@@ -16,3 +16,11 @@ export function useMotionAllowed(): boolean {
     () => false,
   );
 }
+
+export function useMotionPreference(): boolean | undefined {
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => undefined,
+  );
+}

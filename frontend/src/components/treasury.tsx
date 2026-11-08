@@ -108,12 +108,12 @@ export function Treasury() {
 
   const burnedRows = [
     boughtBack !== undefined
-      ? { label: "Bought back and burned", value: `${formatDvr(boughtBack)} DVR` }
+      ? { label: "Bought back and burned", value: `${formatDvr(boughtBack)} DVR`, count: true }
       : undefined,
     totalBurned !== undefined
-      ? { label: "Total DVR burned", value: `${formatDvr(totalBurned)} DVR` }
+      ? { label: "Total DVR burned", value: `${formatDvr(totalBurned)} DVR`, count: true }
       : undefined,
-  ].filter((row): row is { label: string; value: string } => row !== undefined);
+  ].filter((row): row is { label: string; value: string; count: boolean } => row !== undefined);
 
   return (
     <Card className="w-full" title="Treasury" subtitle={treasurySubtitle}>
@@ -243,7 +243,7 @@ function FundSummary({
         {active ? `${farmName} · ${formatBps(farmApr)} APR` : "No active farm"}
       </Badge>
       <Speedometer caption={caption} max={max} value={farmApr} />
-      <BigStat label="Value" value={`${formatUsdc(value)} mUSDC`} />
+      <BigStat count label="Value" value={`${formatUsdc(value)} mUSDC`} />
       <StatList
         rows={[
           { label: "Idle", value: `${formatUsdc(idle)} mUSDC` },

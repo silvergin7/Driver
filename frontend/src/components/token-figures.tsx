@@ -7,6 +7,7 @@ import {
   officialPoolAbi,
   taxSplitterAbi,
 } from "@/generated/contracts";
+import { CountUp } from "@/components/count-up";
 import { addressExplorer } from "@/lib/explorer";
 import { burnedDvr } from "@/lib/burned-dvr";
 import { formatBps } from "@/lib/format-bps";
@@ -81,7 +82,11 @@ export function TokenFigures() {
       <dl className="grid min-w-0 gap-4">
         <Figure label="Total supply" value={dvrFigure(supply, failed, figures.isFetched)} />
         <Figure label="Lifetime cap" value={dvrFigure(cap, failed, figures.isFetched)} />
-        <Figure label="Total DVR burned" value={burnedFigure(burned, minted, supply, failed, figures.isFetched)} />
+        <Figure
+          count
+          label="Total DVR burned"
+          value={burnedFigure(burned, minted, supply, failed, figures.isFetched)}
+        />
         <Figure label="Buy and sell tax" value={bpsFigure(tax, failed, figures.isFetched)} />
         <div>
           <dt className="text-ink-muted">Tax split</dt>
@@ -145,11 +150,22 @@ export function TokenFigures() {
   );
 }
 
-function Figure({ label, value }: { label: string; value: string }) {
+function Figure({
+  label,
+  value,
+  count = false,
+}: {
+  label: string;
+  value: string;
+  count?: boolean;
+}) {
+  const counted = count && value.endsWith(" DVR");
   return (
     <div>
       <dt className="text-ink-muted">{label}</dt>
-      <dd className="tabular-nums text-ink">{value}</dd>
+      <dd className="tabular-nums text-ink">
+        {counted ? <CountUp value={value} /> : value}
+      </dd>
     </div>
   );
 }

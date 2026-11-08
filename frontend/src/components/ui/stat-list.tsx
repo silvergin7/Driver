@@ -1,10 +1,12 @@
+import { CountUp } from "@/components/count-up";
+
 export function StatList({
   title,
   rows,
   layout = "spread",
 }: {
   title?: string;
-  rows: readonly { label: string; value: string }[];
+  rows: readonly { label: string; value: string; count?: boolean }[];
   layout?: "spread" | "inline";
 }) {
   const spread = layout === "spread";
@@ -31,7 +33,7 @@ export function StatList({
                   : "text-sm text-ink tabular-nums"
               }
             >
-              {row.value}
+              {row.count === true ? <CountUp value={row.value} /> : row.value}
             </dd>
           </div>
         ))}
