@@ -100,5 +100,28 @@ describe("motion stylesheet", () => {
     transform: translateY(-${logoBobPx}px);
   }
 }`);
+    expect(css).toContain(`@media (hover: hover) and (pointer: fine) {
+  body {
+    cursor: url("/cursor-car.svg") 31 15, auto;
+  }
+
+  a[href]:not([aria-disabled="true"]),
+  button:not(:disabled):not([aria-disabled="true"]),
+  summary:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  input:not(:disabled):not([aria-disabled="true"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]),
+  textarea:not(:disabled):not([aria-disabled="true"]) {
+    cursor: text;
+  }
+
+  select,
+  :disabled,
+  [aria-disabled="true"] {
+    cursor: default;
+  }
+}`);
+    expect(css).not.toContain("scene-pan");
   });
 });
