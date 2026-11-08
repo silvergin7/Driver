@@ -7,13 +7,15 @@ export function Pump({
   bandClass,
   children,
 }: {
-  title: string;
+  title: ReactNode;
   bandClass: string;
   children: ReactNode;
 }) {
   return (
     <section className="relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border-2 border-line bg-surface shadow-raise">
-      <h2 className={`rounded-t-2xl px-4 py-3 text-lg font-semibold text-white ${bandClass}`}>
+      <h2
+        className={`flex items-center gap-2 rounded-t-2xl px-4 py-3 text-lg font-semibold text-white ${bandClass}`}
+      >
         {title}
       </h2>
       <div className="relative flex flex-1 flex-col gap-4 p-4 sm:pr-16">

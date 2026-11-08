@@ -11,9 +11,9 @@ import {
 } from "@/lib/action-errors";
 import { claimWindow } from "@/lib/claim-eligibility";
 import { claimStatus } from "@/lib/claim-status";
-import { TransactionLink } from "@/components/transaction-link";
-import { fitActionButtonClass } from "@/lib/control-class";
+import { FaucetPump } from "@/components/faucet-pump";
 import { formatCountdown } from "@/lib/countdown";
+import { ringPresentation } from "@/lib/ring";
 import { claimFailedMessage, claimRevertedMessage } from "@/lib/faucet-errors";
 import { formatUsdc } from "@/lib/format-usdc";
 
@@ -85,6 +85,13 @@ export function ClaimUsdc() {
     chainId: chain.id,
     query: { enabled: onChain },
   });
+  const cooldown = useReadContract({
+    abi: mockUsdcFaucetAbi,
+    address: chainContracts.mockUsdcFaucet,
+    functionName: "i_claimCooldown",
+    chainId: chain.id,
+    query: { enabled: onChain },
+  });
 
   const readsFailed =
     onChain &&
@@ -93,6 +100,7 @@ export function ClaimUsdc() {
       unread(nextClaimAt) ||
       unread(nextDailyReset) ||
       unread(claimAmount) ||
+      unread(cooldown) ||
       (block.isError && block.data === undefined));
   const readsReady =
     block.data !== undefined &&
@@ -100,7 +108,8 @@ export function ClaimUsdc() {
     dailyClaimLimit.data !== undefined &&
     nextClaimAt.data !== undefined &&
     nextDailyReset.data !== undefined &&
-    claimAmount.data !== undefined;
+    claimAmount.data !== undefined &&
+    cooldown.data !== undefined;
   const eligibility = readsReady
     ? claimWindow({
         blockTimestamp: block.data.timestamp,
@@ -163,30 +172,41 @@ export function ClaimUsdc() {
     simulating: action.simulating,
     writePending: action.writePending,
   });
+  const remaining =
+    block.data !== undefined && nextClaimAt.data !== undefined
+      ? block.data.timestamp >= nextClaimAt.data
+        ? 0n
+        : nextClaimAt.data - block.data.timestamp
+      : undefined;
+  const ring =
+    cooldown.data !== undefined && remaining !== undefined
+      ? ringPresentation({
+          dailyCap: eligibility?.status === "daily-cap",
+          remaining,
+          period: cooldown.data,
+        })
+      : undefined;
 
   return (
-    <div className="flex h-full min-w-0 flex-col gap-3">
-      {onChain && claimAmount.data !== undefined ? (
-        <p className="text-sm text-ink tabular-nums">
-          Claim amount: {formatUsdc(claimAmount.data)} mUSDC
-        </p>
-      ) : null}
-      <button
-        type="button"
-        className={fitActionButtonClass()}
-        disabled={!canClaim}
-        onClick={() => {
-          void action.send();
-        }}
-      >
-        Claim mUSDC
-      </button>
-      {status ? <p className="text-sm text-ink-muted">{status}</p> : null}
-      <TransactionLink hash={action.isSuccess ? action.hash : undefined} />
-      {reason ? <p className="text-sm text-ink-muted">{reason}</p> : null}
-      {countdown ? <p className="text-sm text-ink-muted tabular-nums">{countdown}</p> : null}
-      {action.errorMessage ? <p role="alert">{action.errorMessage}</p> : null}
-    </div>
+    <FaucetPump
+      title="mUSDC"
+      bandClass="bg-brand"
+      amount={claimAmount.data !== undefined ? formatUsdc(claimAmount.data) : undefined}
+      unit="mUSDC"
+      fraction={ring?.fraction}
+      grey={ring?.grey ?? false}
+      countdown={countdown}
+      buttonLabel="Claim mUSDC"
+      canClaim={canClaim}
+      onClaim={() => {
+        void action.send();
+      }}
+      status={status}
+      hash={action.isSuccess ? action.hash : undefined}
+      reason={reason}
+      error={action.errorMessage}
+      celebrate={claimed !== undefined}
+    />
   );
 }
 

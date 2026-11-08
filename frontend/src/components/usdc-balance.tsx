@@ -3,8 +3,8 @@
 import { useConnection, useReadContract } from "wagmi";
 import { chain, contracts } from "@/config/contracts";
 import { mockUsdcAbi } from "@/generated/contracts";
-import { BigStat } from "@/components/ui/big-stat";
-import { formatUsdc } from "@/lib/format-usdc";
+import { TokenIcon } from "@/components/token-icon";
+import { formatDisplayAmount } from "@/lib/format-display";
 
 export function UsdcBalance() {
   const connection = useConnection();
@@ -28,10 +28,18 @@ export function UsdcBalance() {
 
   const figure =
     balance.data !== undefined
-      ? formatUsdc(balance.data)
+      ? formatDisplayAmount(balance.data, 6)
       : balance.isError
         ? "mUSDC balance unavailable."
         : "Loading mUSDC balance…";
 
-  return <BigStat label="mUSDC" value={figure} />;
+  return (
+    <div className="min-w-0">
+      <p className="flex items-center gap-1.5 text-sm text-ink-muted">
+        <TokenIcon token="musdc" className="h-5 w-5" />
+        mUSDC
+      </p>
+      <p className="text-2xl font-semibold break-all text-ink tabular-nums">{figure}</p>
+    </div>
+  );
 }
