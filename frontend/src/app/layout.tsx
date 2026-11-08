@@ -47,7 +47,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               Skip to content
             </a>
             <SiteHeader />
-            <div id="content" className="flex flex-1 flex-col">
+            <div id="content" className="flex flex-none flex-col sm:flex-1">
               {children}
             </div>
             <SiteFooter />
