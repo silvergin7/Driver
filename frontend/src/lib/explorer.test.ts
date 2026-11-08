@@ -1,4 +1,5 @@
 import { getAddress, type Address } from "viem";
+import { mainnet } from "viem/chains";
 import { describe, expect, it } from "vitest";
 import { addressExplorer, transactionExplorer } from "./explorer";
 
@@ -26,6 +27,14 @@ describe("addressExplorer", () => {
     ).toEqual({
       kind: "link",
       href: `https://sepolia.etherscan.io/address/${getAddress(token)}`,
+      name: "Etherscan",
+    });
+  });
+
+  it("links an address on Ethereum mainnet", () => {
+    expect(addressExplorer(mainnet, token)).toEqual({
+      kind: "link",
+      href: `https://etherscan.io/address/${getAddress(token)}`,
       name: "Etherscan",
     });
   });

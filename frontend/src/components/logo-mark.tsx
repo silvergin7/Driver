@@ -19,6 +19,17 @@ function CarMark() {
 const tileClass =
   "rounded-xl border-2 border-sign bg-white shadow-[0_1px_2px_rgb(15_23_42/0.12)]";
 
+export function CarTile() {
+  return (
+    <span
+      aria-hidden="true"
+      className={`inline-flex h-11 w-16 shrink-0 items-center justify-center p-1 ${tileClass}`}
+    >
+      <CarMark />
+    </span>
+  );
+}
+
 export function LogoMark() {
   return (
     <Link

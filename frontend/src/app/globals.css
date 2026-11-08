@@ -107,6 +107,13 @@ body {
   );
 }
 
+:root:not([data-theme="dark"]) .scene-simulation {
+  background-image: image-set(
+    url("/scenes/simulation-day-768.webp") 1x,
+    url("/scenes/simulation-day-1600.webp") 2x
+  );
+}
+
 [data-theme="dark"] .scene-home {
   background-image: image-set(
     url("/scenes/home-night-768.webp") 1x,
@@ -149,6 +156,13 @@ body {
   );
 }
 
+[data-theme="dark"] .scene-simulation {
+  background-image: image-set(
+    url("/scenes/simulation-night-768.webp") 1x,
+    url("/scenes/simulation-night-1600.webp") 2x
+  );
+}
+
 @media (min-width: 768px) {
   :root:not([data-theme="dark"]) .scene-home {
     background-image: url("/scenes/home-day-1600.webp");
@@ -174,6 +188,10 @@ body {
     background-image: url("/scenes/swap-day-1600.webp");
   }
 
+  :root:not([data-theme="dark"]) .scene-simulation {
+    background-image: url("/scenes/simulation-day-1600.webp");
+  }
+
   [data-theme="dark"] .scene-home {
     background-image: url("/scenes/home-night-1600.webp");
   }
@@ -196,5 +214,9 @@ body {
 
   [data-theme="dark"] .scene-swap {
     background-image: url("/scenes/swap-night-1600.webp");
+  }
+
+  [data-theme="dark"] .scene-simulation {
+    background-image: url("/scenes/simulation-night-1600.webp");
   }
 }

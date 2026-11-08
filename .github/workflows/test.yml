@@ -37,6 +37,11 @@ jobs:
       - name: Run Forge tests
         run: forge test -vvv
 
+      - name: Check simulation data
+        run: |
+          forge script script/SimulateDriver.s.sol:SimulateDriver --gas-limit 10000000000
+          git diff --exit-code -- ':(top)frontend/src/content/simulation.json'
+
   frontend:
     name: Frontend
     runs-on: ubuntu-latest

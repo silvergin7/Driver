@@ -9,10 +9,10 @@ import {
   type Abi,
   type Address,
 } from "viem";
-import { sepolia } from "viem/chains";
-import { useConfig, useConnection, useReadContract } from "wagmi";
+import { chain, chainLabel, chainName, contracts } from "@/config/contracts";
 import { readContract } from "wagmi/actions";
-import { chain, chainLabel, contracts } from "@/config/contracts";
+import { useConfig, useConnection, useReadContract } from "wagmi";
+import { showsPermanentClockNotice } from "@/lib/clock-notice";
 import { switchPrompt } from "@/lib/switch-prompt";
 import {
   cruiseControlAbi,
@@ -370,7 +370,7 @@ export function OwnerControls() {
 
   return (
     <Card className="w-fit max-w-full self-center" title="Owner">
-      {chain.id === sepolia.id ? (
+      {showsPermanentClockNotice(chainName) ? (
         <p className="text-sm text-ink-muted">
           A skip or a harvest on this demo clock is permanent.
         </p>

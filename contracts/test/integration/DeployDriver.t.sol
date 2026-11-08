@@ -273,6 +273,36 @@ contract DeployDriverTest is Test {
         assertEq(demo.offset(), 1 days);
     }
 
+    function test_MainnetDeployUsesEnvDeployer() public {
+        HelperConfig helper = new HelperConfig();
+        address deployer = makeAddr("mainnetDeployer");
+        vm.setEnv("MAINNET_DEPLOYER", vm.toString(deployer));
+        vm.setEnv("SEPOLIA_DEPLOYER", vm.toString(makeAddr("sepoliaDeployer")));
+        vm.setEnv("DEPLOY_PROFILE", "demo");
+        vm.chainId(helper.MAINNET_CHAIN_ID());
+
+        DeployDriver.Deployed memory deployed = new DeployDriver().run();
+        _assertSeed(helper, deployer, deployed);
+
+        DemoDriverClock demo = DemoDriverClock(address(deployed.clock));
+        assertEq(demo.owner(), deployer);
+        assertEq(demo.offset(), 0);
+        assertEq(deployed.token.balanceOf(address(deployed.dvrFaucet)), helper.FAUCET_ALLOCATION());
+        assertEq(deployed.pool.reserveDvr(), helper.POOL_ALLOCATION());
+        assertEq(deployed.pool.reserveUsdc(), helper.POOL_USDC());
+        assertEq(address(deployed.cruiseControl.activeFarm()), address(deployed.cruise));
+        assertEq(address(deployed.degenDriver.activeFarm()), address(0));
+    }
+
+    function test_RevertWhen_ProductionRunOnMainnet() public {
+        HelperConfig helper = new HelperConfig();
+
+        DeployDriver script = new DeployDriver();
+        vm.chainId(helper.MAINNET_CHAIN_ID());
+        vm.expectRevert(DeployDriver.DeployDriver__ProductionRunOnlyOnAnvil.selector);
+        script.runProduction();
+    }
+
     function test_ProductionDeployMatchesTheDemoDeploy() public {
         HelperConfig helper = new HelperConfig();
         address deployer = helper.ANVIL_DEPLOYER();

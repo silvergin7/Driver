@@ -1,4 +1,21 @@
 {
+  "1": {
+    "DriverToken": "0x5134d2d8429c11621639409b2e4f75fdf4940210",
+    "DriverFaucet": "0x9ef50719977006265879420ce3b7f9136d413e29",
+    "MockUSDC": "0x1e21afbdf66d95ceaaf645e3e2ffa026c91fe701",
+    "MockUsdcFaucet": "0x9510f5fceb0a3b3a39e5e40c0ba9da14a6527937",
+    "DemoDriverClock": "0x11aaa0614af8e708db4d8673cad74339bbe47cf2",
+    "TaxSplitter": "0xa2dcf3b3f12eef1bcd604ea8d6dbb76ce2b256e3",
+    "OfficialPool": "0x72d06d1b5f72dcc3136bd5a5580a93efac54525b",
+    "CruiseFarm": "0x730c2257c8d34837062909d7e9ca5eac504d034a",
+    "HighwayFarm": "0xa1dce3a58314cc296fe97e565664872af1ff113a",
+    "AutobahnFarm": "0x3a9bdc55c6c15ede1132a105a0752176e44c242c",
+    "DriftFarm": "0x95826bdced66bd3fed75a79c5c3db95117f9ce9e",
+    "RoundSchedule": "0xa0403ffebdaae3858c6094cc41ebb0e2d3363b3a",
+    "CruiseControl": "0xd0c3f35b0492e1044edec2f0d6367da03c6a5a33",
+    "DegenDriver": "0x169cbb6f092a93d10d64e3f34f0629915b9d38f5",
+    "DriverVote": "0xf709ccd48dab0af9aa0e249d6fca6e95473bc5d8"
+  },
   "31337": {
     "DriverToken": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
     "DriverFaucet": "0x5fc8d32690cc91d4c39d9d3abcbd16989f875707",

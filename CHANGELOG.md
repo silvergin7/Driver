@@ -2,6 +2,15 @@
 
 Releases are tagged on `main`.
 
+## v0.2.0
+
+The same demo on Ethereum mainnet, plus a free simulation.
+
+- The live site is mainnet. The Sepolia demo remains at tag v0.1.0.
+- A Simulation page. It replays the contracts off-chain: a claim, a swap, a lock, a vote, and two harvests. No wallet and no gas.
+- A welcome window on the first visit.
+- DVR and mUSDC still have no real value. Mainnet fees are real ETH.
+
 ## v0.1.0
 
 The core demo on Sepolia.

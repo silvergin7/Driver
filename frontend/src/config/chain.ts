@@ -3,22 +3,28 @@ import { getAddress, type Address } from "viem";
 export const defaultSepoliaRpcUrl =
   "https://ethereum-sepolia-rpc.publicnode.com";
 
-export type ChainName = "anvil" | "sepolia";
+export const defaultMainnetRpcUrl = "https://ethereum-rpc.publicnode.com";
+
+export type ChainName = "anvil" | "sepolia" | "mainnet";
 
 export function chainNameFrom(value: string | undefined): ChainName {
   if (value === undefined || value === "") {
     return "anvil";
   }
-  if (value === "anvil" || value === "sepolia") {
+  if (value === "anvil" || value === "sepolia" || value === "mainnet") {
     return value;
   }
   throw new Error(
-    `NEXT_PUBLIC_CHAIN must be "anvil" or "sepolia". Received ${JSON.stringify(value)}.`,
+    `NEXT_PUBLIC_CHAIN must be "anvil", "sepolia", or "mainnet". Received ${JSON.stringify(value)}.`,
   );
 }
 
 export function sepoliaRpcFrom(value: string | undefined): string {
   return value || defaultSepoliaRpcUrl;
+}
+
+export function mainnetRpcFrom(value: string | undefined): string {
+  return value || defaultMainnetRpcUrl;
 }
 
 export function pollingIntervalMs(chainName: ChainName): number {
@@ -31,6 +37,7 @@ export function pollingIntervalMs(chainName: ChainName): number {
 export const chainLabels = {
   anvil: "Anvil",
   sepolia: "Sepolia",
+  mainnet: "Ethereum",
 } as const;
 
 export const contractFields = [

@@ -2,11 +2,13 @@ import { PageScene } from "@/components/page-scene";
 import { RoadSign } from "@/components/road-sign";
 
 const stops = [
-  "Theory test passed (contracts tested).",
-  "First lesson on the open road (Sepolia).",
-  "Driving test (first harvest live).",
-  "Driving licence (ambassador NFT).",
-  "A licence for the highway too (Fund 3), if the instructors agree.",
+  { text: "Theory test passed (contracts tested and reviewed).", done: true },
+  { text: "Practice laps (the Sepolia demo, v0.1.0).", done: true },
+  { text: "First lesson on the open road (Ethereum mainnet, v0.2.0).", done: true },
+  { text: "Driving test (the first harvest on mainnet).", done: false },
+  { text: "Driving licence (ambassador NFT).", done: false },
+  { text: "A licence for the highway too (Fund 3), if the instructors agree.", done: false },
+  { text: "Real fuel in the tank (real USDC, after an outside audit).", done: false },
 ];
 
 export default function CommunityPage() {
@@ -30,8 +32,8 @@ export default function CommunityPage() {
           <div aria-hidden="true" className="border-t-2 border-dashed border-line" />
           <ol className="flex max-w-xl flex-col gap-4 border-l-2 border-dashed border-line pl-6">
             {stops.map((stop, index) => (
-              <RoadSign key={stop} marker={String(index + 1)}>
-                {stop}
+              <RoadSign key={stop.text} marker={String(index + 1)} done={stop.done}>
+                {stop.text}
               </RoadSign>
             ))}
           </ol>
