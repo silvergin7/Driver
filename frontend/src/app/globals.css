@@ -220,3 +220,67 @@ body {
     background-image: url("/scenes/simulation-night-1600.webp");
   }
 }
+
+.wheel {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @media (hover: hover) {
+    .logo-mark:hover .wheel {
+      animation: wheel-spin 0.6s linear infinite;
+    }
+
+    .logo-mark:hover .logo-car {
+      animation: logo-bob 0.6s ease-in-out infinite alternate;
+    }
+  }
+
+  .logo-mark:focus-visible .wheel {
+    animation: wheel-spin 0.6s linear infinite;
+  }
+
+  .logo-mark:focus-visible .logo-car {
+    animation: logo-bob 0.6s ease-in-out infinite alternate;
+  }
+
+  .wheel.is-spinning {
+    animation: wheel-spin 0.6s linear infinite;
+  }
+}
+
+@keyframes wheel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes logo-bob {
+  to {
+    transform: translateY(-2px);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body {
+    cursor: url("/cursor-car.svg") 31 15, auto;
+  }
+
+  a[href]:not([aria-disabled="true"]),
+  button:not(:disabled):not([aria-disabled="true"]),
+  summary:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  input:not(:disabled):not([aria-disabled="true"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]),
+  textarea:not(:disabled):not([aria-disabled="true"]) {
+    cursor: text;
+  }
+
+  select,
+  :disabled,
+  [aria-disabled="true"] {
+    cursor: default;
+  }
+}

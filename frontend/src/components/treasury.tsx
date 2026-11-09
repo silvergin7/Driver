@@ -17,6 +17,7 @@ import { formatDvr } from "@/lib/format-dvr";
 import { formatUsdc } from "@/lib/format-usdc";
 import { farmAprBps } from "@/lib/farm-apr";
 import { Badge } from "@/components/ui/badge";
+import { Speedometer } from "@/components/speedometer";
 import { BigStat } from "@/components/ui/big-stat";
 import { Card } from "@/components/ui/card";
 import { StatList } from "@/components/ui/stat-list";
@@ -107,12 +108,12 @@ export function Treasury() {
 
   const burnedRows = [
     boughtBack !== undefined
-      ? { label: "Bought back and burned", value: `${formatDvr(boughtBack)} DVR` }
+      ? { label: "Bought back and burned", value: `${formatDvr(boughtBack)} DVR`, count: true }
       : undefined,
     totalBurned !== undefined
-      ? { label: "Total DVR burned", value: `${formatDvr(totalBurned)} DVR` }
+      ? { label: "Total DVR burned", value: `${formatDvr(totalBurned)} DVR`, count: true }
       : undefined,
-  ].filter((row): row is { label: string; value: string } => row !== undefined);
+  ].filter((row): row is { label: string; value: string; count: boolean } => row !== undefined);
 
   return (
     <Card className="w-full" title="Treasury" subtitle={treasurySubtitle}>
@@ -120,14 +121,18 @@ export function Treasury() {
       {!failed && !ready ? <p className="text-sm text-ink-muted">Loading funds…</p> : null}
       <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
         <FundSummary
+          caption="Cap"
           data={cruise.data}
           farm={cruiseFarm}
+          max={500n}
           state={cruiseFarmState}
           title="Fund 1"
         />
         <FundSummary
+          caption="Speed"
           data={degen.data}
           farm={degenFarm}
+          max={16_000n}
           state={degenFarmState}
           title="Fund 2"
         />
@@ -185,11 +190,15 @@ function farmStateReady(
 
 function FundSummary({
   title,
+  caption,
+  max,
   data,
   farm,
   state,
 }: {
   title: string;
+  caption: string;
+  max: bigint;
   data: readonly unknown[] | undefined;
   farm: Address | undefined;
   state: ReturnType<typeof useFarmState>;
@@ -233,7 +242,8 @@ function FundSummary({
       <Badge>
         {active ? `${farmName} · ${formatBps(farmApr)} APR` : "No active farm"}
       </Badge>
-      <BigStat label="Value" value={`${formatUsdc(value)} mUSDC`} />
+      <Speedometer caption={caption} max={max} value={farmApr} />
+      <BigStat count label="Value" value={`${formatUsdc(value)} mUSDC`} />
       <StatList
         rows={[
           { label: "Idle", value: `${formatUsdc(idle)} mUSDC` },

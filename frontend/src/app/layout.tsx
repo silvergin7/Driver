@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { CarAudioProvider } from "@/components/car-audio";
+import { Toaster } from "@/components/toaster";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ThemeSync } from "@/components/theme-sync";
@@ -37,19 +39,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="flex min-h-full flex-col bg-background text-ink">
         <Providers>
-          <ThemeSync />
-          <a
-            href="#content"
-            className="absolute left-4 top-4 z-[60] -translate-y-24 rounded-md bg-background px-3 py-2 text-ink focus:translate-y-0"
-          >
-            Skip to content
-          </a>
-          <SiteHeader />
-          <div id="content" className="flex flex-1 flex-col">
-            {children}
-          </div>
-          <SiteFooter />
-          <WelcomeDialog />
+          <CarAudioProvider>
+            <ThemeSync />
+            <a
+              href="#content"
+              className="absolute left-4 top-4 z-[60] -translate-y-24 rounded-md bg-background px-3 py-2 text-ink focus:translate-y-0"
+            >
+              Skip to content
+            </a>
+            <SiteHeader />
+            <div id="content" className="flex flex-none flex-col sm:flex-1">
+              {children}
+            </div>
+            <SiteFooter />
+            <WelcomeDialog />
+            <Toaster />
+          </CarAudioProvider>
         </Providers>
       </body>
     </html>

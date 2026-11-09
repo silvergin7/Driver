@@ -3,8 +3,8 @@
 import { useConnection, useReadContract } from "wagmi";
 import { chain, contracts } from "@/config/contracts";
 import { driverTokenAbi } from "@/generated/contracts";
-import { BigStat } from "@/components/ui/big-stat";
-import { formatDvr } from "@/lib/format-dvr";
+import { TokenIcon } from "@/components/token-icon";
+import { formatDisplayAmount } from "@/lib/format-display";
 
 export function DvrBalance() {
   const connection = useConnection();
@@ -28,10 +28,18 @@ export function DvrBalance() {
 
   const figure =
     balance.data !== undefined
-      ? formatDvr(balance.data)
+      ? formatDisplayAmount(balance.data, 18)
       : balance.isError
         ? "Balance unavailable."
         : "Loading balance…";
 
-  return <BigStat label="DVR" value={figure} />;
+  return (
+    <div className="min-w-0">
+      <p className="flex items-center gap-1.5 text-sm text-ink-muted">
+        <TokenIcon token="dvr" className="h-5 w-7" />
+        DVR
+      </p>
+      <p className="text-2xl font-semibold break-all text-ink tabular-nums">{figure}</p>
+    </div>
+  );
 }

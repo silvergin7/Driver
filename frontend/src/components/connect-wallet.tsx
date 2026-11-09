@@ -386,7 +386,7 @@ function AccountButton({
     closeRef.current = onClose;
   }, [onClose]);
   const visibleAddress = mdUp ? wideAddress(address) : narrowAddress(address);
-  const label = wideOnly && !mdUp ? "Account" : `Account, connected as ${visibleAddress}`;
+  const label = wideOnly ? "Account" : `Account, connected as ${visibleAddress}`;
 
   useEffect(() => {
     if (!open) {
@@ -445,9 +445,7 @@ function AccountButton({
         ref={buttonRef}
         type="button"
         className={`inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-md border border-line bg-background font-mono text-sm text-ink hover:bg-surface ${
-          wideOnly
-            ? "w-11 justify-center px-0 md:w-auto md:justify-start md:gap-1 md:px-2"
-            : "gap-0.5 px-0.5 md:gap-1 md:px-2"
+          wideOnly ? "w-11 justify-center px-0" : "gap-0.5 px-0.5 md:gap-1 md:px-2"
         }`}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -456,8 +454,12 @@ function AccountButton({
         title="Account"
         onClick={onToggle}
       >
-        <span className={wideOnly ? "hidden" : "md:hidden"}>{narrowAddress(address)}</span>
-        <span className="hidden md:inline">{wideAddress(address)}</span>
+        {wideOnly ? null : (
+          <>
+            <span className="md:hidden">{narrowAddress(address)}</span>
+            <span className="hidden md:inline">{wideAddress(address)}</span>
+          </>
+        )}
         <ChevronIcon />
       </button>
       {open ? (

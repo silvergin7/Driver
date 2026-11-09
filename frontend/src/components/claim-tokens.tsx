@@ -9,9 +9,10 @@ import {
   type ClaimEligibility,
 } from "@/lib/claim-eligibility";
 import { claimStatus } from "@/lib/claim-status";
-import { TransactionLink } from "@/components/transaction-link";
-import { fitActionButtonClass } from "@/lib/control-class";
+import { FaucetPump } from "@/components/faucet-pump";
+import { publishConfirmed, useFailureToast } from "@/components/toaster";
 import { formatCountdown } from "@/lib/countdown";
+import { ringPresentation } from "@/lib/ring";
 import { faucetErrorMessage, receiptErrorMessage } from "@/lib/faucet-errors";
 import { formatDvr } from "@/lib/format-dvr";
 
@@ -74,6 +75,13 @@ export function ClaimTokens() {
     chainId: chain.id,
     query: { enabled: onChain },
   });
+  const cooldown = useReadContract({
+    abi: driverFaucetAbi,
+    address: chainContracts.driverFaucet,
+    functionName: "i_claimCooldown",
+    chainId: chain.id,
+    query: { enabled: onChain },
+  });
   const faucetBalance = useReadContract({
     abi: driverTokenAbi,
     address: chainContracts.driverToken,
@@ -90,6 +98,7 @@ export function ClaimTokens() {
       unread(nextClaimAt) ||
       unread(nextDailyReset) ||
       unread(claimAmount) ||
+      unread(cooldown) ||
       unread(faucetBalance) ||
       (block.isError && block.data === undefined));
   const readsReady =
@@ -99,6 +108,7 @@ export function ClaimTokens() {
     nextClaimAt.data !== undefined &&
     nextDailyReset.data !== undefined &&
     claimAmount.data !== undefined &&
+    cooldown.data !== undefined &&
     faucetBalance.data !== undefined;
   const eligibility: ClaimEligibility | undefined = readsReady
     ? claimEligibility({
@@ -166,30 +176,46 @@ export function ClaimTokens() {
     simulating: action.simulating,
     writePending: action.writePending,
   });
+  const remaining =
+    block.data !== undefined && nextClaimAt.data !== undefined
+      ? block.data.timestamp >= nextClaimAt.data
+        ? 0n
+        : nextClaimAt.data - block.data.timestamp
+      : undefined;
+  const ring =
+    cooldown.data !== undefined && remaining !== undefined
+      ? ringPresentation({
+          dailyCap: eligibility?.status === "daily-cap",
+          remaining,
+          period: cooldown.data,
+        })
+      : undefined;
+  useFailureToast(action.errorMessage);
 
   return (
-    <div className="flex h-full min-w-0 flex-col gap-3">
-      {onChain && claimAmount.data !== undefined ? (
-        <p className="text-sm text-ink tabular-nums">
-          Claim amount: {formatDvr(claimAmount.data)} DVR
-        </p>
-      ) : null}
-      <button
-        type="button"
-        className={fitActionButtonClass()}
-        disabled={!canClaim}
-        onClick={() => {
-          void action.send();
-        }}
-      >
-        Claim Tokens
-      </button>
-      {status ? <p className="text-sm text-ink-muted">{status}</p> : null}
-      <TransactionLink hash={action.isSuccess ? action.hash : undefined} />
-      {reason ? <p className="text-sm text-ink-muted">{reason}</p> : null}
-      {countdown ? <p className="text-sm text-ink-muted tabular-nums">{countdown}</p> : null}
-      {action.errorMessage ? <p role="alert">{action.errorMessage}</p> : null}
-    </div>
+    <FaucetPump
+      title="DVR"
+      bandClass="bg-[#1d4ed8]"
+      amount={claimAmount.data !== undefined ? formatDvr(claimAmount.data) : undefined}
+      unit="DVR"
+      fraction={ring?.fraction}
+      grey={ring?.grey ?? false}
+      countdown={countdown}
+      buttonLabel="Claim DVR"
+      canClaim={canClaim}
+      onClaim={() => {
+        void action.send().then((claimedOk) => {
+          if (claimedOk && claimAmount.data !== undefined) {
+            publishConfirmed(`Claimed ${formatDvr(claimAmount.data)} DVR.`);
+          }
+        });
+      }}
+      status={status}
+      hash={action.isSuccess ? action.hash : undefined}
+      reason={reason}
+      error={action.errorMessage}
+      celebrate={claimed !== undefined}
+    />
   );
 }
 
